@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -14,8 +14,8 @@
 #endif
 
 #include <mspack.h>
-#include "system.h"
-#include "chm.h"
+#include <system.h>
+#include <chm.h>
 
 /* prototypes */
 static struct mschmd_header * chmd_open(
@@ -55,6 +55,9 @@ static int chmd_error(
 #if (_FILE_OFFSET_BITS < 64)
 static char *largefile_msg =
   "library not compiled to support large files.";
+#define LU "%lu"
+#else
+#define LU "%llu"
 #endif
 
 /* filenames of the three essential system files needed for decompression */
@@ -393,7 +396,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
       }
 
       if (section > 1) {
-	sys->message(fh, "invalid section number '%d'.", section);
+	sys->message(fh, "invalid section number '%u'.", section);
 	continue;
       }
 
@@ -556,11 +559,13 @@ static int chmd_extract(struct mschm_decompressor *base,
     /* get to correct offset. */
     this->d->outfh = NULL;
     if ((bytes = file->offset - this->d->offset)) {
+      D(("skip to offset " LU " by decoding " LU " bytes", file->offset, bytes))
       this->error = lzxd_decompress(this->d->state, bytes);
     }
 
     /* if getting to the correct offset was error free, unpack file */
     if (!this->error) {
+      D(("decode " LU " bytes from offset " LU, file->length, file->offset))
       this->d->outfh = fh;
       this->error = lzxd_decompress(this->d->state, file->length);
     }
@@ -794,6 +799,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   length -= this->d->offset;
 
   /* initialise LZX stream */
+  D(("starting decode from " LU, this->d->offset))
   this->d->state = lzxd_init(&this->d->sys, this->d->infh,
 			     (struct mspack_file *) this, window_bits,
 			     reset_interval / LZX_FRAME_SIZE,
