@@ -1350,9 +1350,7 @@ struct mschm_compressor {
    */
   int (*generate)(struct mschm_compressor *self,
 		  struct mschmc_file file_list[],
-		  char *output_file,
-		  char *temp_file,
-		  int use_temp_file);
+		  char *output_file);
 
   /**
    * Specifies whether a temporary file is used during CHM generation.
@@ -1444,7 +1442,8 @@ struct mschm_compressor {
    * - #MSCHMC_PARAM_INDEX: Sets whether or not to include quick lookup
    *   index chunk(s), in addition to normal directory listing chunks. A
    *   value of zero means no index chunks will be created, a non-zero value
-   *   means index chunks will be created.
+   *   means index chunks will be created. The default is zero, "don't
+   *   create an index".
    *
    * @param  self     a self-referential pointer to the mschm_compressor
    *                  instance being called

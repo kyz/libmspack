@@ -57,7 +57,7 @@ unsigned char *load_sys_data(struct mschm_decompressor *chmd,
 }
 
 char *guid(unsigned char *data) {
-  static char result[40];
+  static char result[41];
   snprintf(result, sizeof(result),
            "{%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X%02X%02X}",
            EndGetI32(&data[0]),
