@@ -1,6 +1,7 @@
 EXTRA_DIST =		debian
 INCLUDES = 		-I$(srcdir)/mspack
-CFLAGS =		-DDEBUG -Wall -Wsign-compare -Wconversion -pedantic
+CFLAGS =		-DDEBUG -g -Wall -Wsign-compare -Wconversion -pedantic \
+			$(INCLUDES)
 
 noinst_LTLIBRARIES =	libmspack.la libmscabd.la libmschmd.la
 noinst_PROGRAMS =	test/cabd_md5 test/cabd_test test/cabextract_md5 \

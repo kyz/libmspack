@@ -26,6 +26,22 @@ This is an alpha release. Only CAB and CHM decompression are
 designed and implemented.
 
 
+LEGAL ISSUES
+
+The the best of my knowledge, libmspack does not infringe on any
+compression or decompression patents. However, this is not legal
+advice, and it is recommended that you perform your own patent search.
+
+In addition the provisions of the LGPL, you are permitted to use the
+library directly as part of your build process provided you meet all of
+the following conditions:
+
+1. Any modifications to the existing libmspack source code are ALL
+   published and distributed under the LGPL license.
+2. You MUST NOT use function calls, structures or definitions unless they are
+   defined in the public library interface, "mspack.h".
+
+
 BUILDING / INSTALLING
 
 This is an alpha release. The library interface is not complete enough to
@@ -38,22 +54,29 @@ runtime failure.
 
 For now, the library can be built with the rebuild.sh script.
 
-Running "sh rebuild.sh yes" will create all the automatically-generated
-files like the configure script, and will then ./configure and make. In
-addition to GCC, you also need:
+Running rebuild.sh will create all the automatically-generated files like
+the configure script, and will then ./configure and make. In addition to
+gcc, you also need:
 
 - at least autoconf 2.57
 - at least automake 1.7
 - libtool
 
-Running rebuild.sh with no arguments will perform a thorough clean,
-deleting all automatically-generated files.
+Running cleanup.sh will perform a thorough clean, deleting all
+automatically-generated files.
 
 When enough of the library interface has been designed, correct packaging
 and library versioning will be adhered to. Changes to the binary interface
 will be reflected in a library version increases, and autoconf, automake
 and libtool will not be needed to build the software.
 
+
+DOCUMENTATION
+
+The API documentation is available online at
+http://www.kyz.uklinux.net/libmspack/doc/
+
+It is generated automatically from mspack.h with Doxygen.
 
 
 EXAMPLE
@@ -70,6 +93,10 @@ int main() {
   struct mscab_decompressor *cabd;
   struct mscabd_cabinet *cab;
   struct mscabd_file *file;
+  int test;
+
+  MSPACK_SYS_SELFTEST(test);
+  if (test != MSPACK_ERR_OK) exit(0);
 
   if ((cabd = mspack_create_cab_decompressor(NULL))) {
     if ((cab = cabd->open(cabd, "example.cab"))) {
