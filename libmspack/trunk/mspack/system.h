@@ -17,6 +17,13 @@
 
 #include <mspack.h>
 
+/* fix for problem with GCC 4 and glibc (thanks to Ville Skytta)
+ * http://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=150429
+ */
+#ifdef read
+# undef read
+#endif
+
 #ifdef DEBUG
 # include <stdio.h>
 # define D(x) do { printf("%s:%d (%s) ",__FILE__, __LINE__, __FUNCTION__); \
