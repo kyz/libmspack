@@ -1092,7 +1092,7 @@ struct mscab_decompressor {
   /**
    * Returns the error code set by the most recently called method.
    *
-   * Self is useful for open() and search(), which do not return an error
+   * This is useful for open() and search(), which do not return an error
    * code directly.
    *
    * @param  self     a self-referential pointer to the mscab_decompressor
@@ -1104,6 +1104,32 @@ struct mscab_decompressor {
 };
 
 /* --- support for .CHM (HTMLHelp) file format ----------------------------- */
+
+/**
+ * A structure which represents a file to be placed in a CHM helpfile.
+ *
+ * A contiguous array of these structures should be passed to
+ * mspack_chm_compressor::generate(). The array list is terminated with an
+ * entry whose mschmc_file::section field is set to #MSCHMC_ENDLIST, the
+ * other fields in this entry are ignored.
+ */
+struct mschmc_file {
+  /** One of #MSCHMC_ENDLIST, #MSCHMC_UNCOMP or #MSCHMC_MSCOMP. */
+  int section;
+
+  /** The filename of the source file that will be added to the CHM. This
+   * is passed directly to mspack_system::open(). */
+  char *filename;
+
+  /** The full path and filename of the file within the CHM helpfile, a
+   * UTF-1 encoded null-terminated string. */
+  char *chm_filename;
+
+  /** The length of the file, in bytes. This will be adhered to strictly
+   * and a read error will be issued if this many bytes cannot be read
+   * from the real file at CHM generation time. */
+  off_t length;
+};
 
 /**
  * A structure which represents a section of a CHM helpfile.
@@ -1139,7 +1165,7 @@ struct mschmd_sec_uncompressed {
 };
 
 /**
- * A structure which represents the compressed section of a CHM helpfile. 
+ * A structure which represents the LZX compressed section of a CHM helpfile. 
  * 
  * All fields are READ ONLY.
  */
@@ -1174,7 +1200,6 @@ struct mschmd_header {
    * as a timestamp, but it is useful as a semi-unique ID.
    */
   unsigned int timestamp;
-
       
   /**
    * The default Language and Country ID (LCID) of the user who ran the
@@ -1262,13 +1287,186 @@ struct mschmd_file {
   /** The length of this file, in bytes */
   off_t length;
 
-  /** The filename of this file -- a null terminated string in UTF8. */
+  /** The filename of this file -- a null terminated string in UTF-8. */
   char *filename;
 };
 
-/** TODO */
+/** mschmc_file::section value: end of CHM file list */
+#define MSCHMC_ENDLIST   (0)
+/** mschmc_file::section value: this file is in the Uncompressed section */
+#define MSCHMC_UNCOMP    (1)
+/** mschmc_file::section value: this file is in the MSCompressed section */
+#define MSCHMC_MSCOMP    (2)
+ 
+/** mschm_compressor::set_param() parameter: "timestamp" header */
+#define MSCHMC_PARAM_TIMESTAMP  (0)
+/** mschm_compressor::set_param() parameter: "language" header */
+#define MSCHMC_PARAM_LANGUAGE   (1)
+/** mschm_compressor::set_param() parameter: LZX window size */
+#define MSCHMC_PARAM_LZXWINDOW  (2)
+/** mschm_compressor::set_param() parameter: intra-chunk quickref density */
+#define MSCHMC_PARAM_DENSITY    (3)
+/** mschm_compressor::set_param() parameter: whether to create indices */
+#define MSCHMC_PARAM_INDEX      (4)
+
+/**
+ * A compressor for .CHM (Microsoft HTMLHelp) files.
+ *
+ * All fields are READ ONLY.
+ *
+ * @see mspack_create_chm_compressor(), mspack_destroy_chm_compressor()
+ */
 struct mschm_compressor {
-  int dummy;
+  /**
+   * Generates a CHM help file.
+   *
+   * The help file will contain up to two sections, an Uncompressed
+   * section and potentially an MSCompressed (LZX compressed)
+   * section.
+   *
+   * While the contents listing of a CHM file is always in lexical order,
+   * the file list passed in will be taken as the correct order for files
+   * within the sections.  It is in your interest to place similar files
+   * together for better compression.
+   *
+   * There are two modes of generation, to use a temporary file or not to
+   * use one. See use_temporary_file() for the behaviour of generate() in
+   * these two different modes.
+   *
+   * @param  self        a self-referential pointer to the mschm_compressor
+   *                     instance being called
+   * @param  file_list   an array of mschmc_file structures, terminated
+   *                     with an entry whose mschmc_file::section field is
+   *                     #MSCHMC_ENDLIST. The order of the list is
+   *                     preserved within each section. The length of any
+   *                     mschmc_file::chm_filename string cannot exceed
+   *                     roughly 4096 bytes. Each source file must be able
+   *                     to supply as many bytes as given in the
+   *                     mschmc_file::length field.
+   * @param  output_file the file to write the generated CHM helpfile to.
+   *                     This is passed directly to mspack_system::open()
+   * @return an error code, or MSPACK_ERR_OK if successful
+   * @see use_temporary_file() set_param()
+   */
+  int (*generate)(struct mschm_compressor *self,
+		  struct mschmc_file file_list[],
+		  char *output_file,
+		  char *temp_file,
+		  int use_temp_file);
+
+  /**
+   * Specifies whether a temporary file is used during CHM generation.
+   *
+   * The CHM file format includes data about the compressed section (such
+   * as its overall size) that is stored in the output CHM file prior to
+   * the compressed section itself. This unavoidably requires that the
+   * compressed section has to be generated, before these details can be
+   * set. There are several ways this can be handled. Firstly, the
+   * compressed section could be generated entirely in memory before
+   * writing any of the output CHM file. This approach is not used in
+   * libmspack, as the compressed section can exceed the addressable
+   * memory space on most architectures.
+   *
+   * libmspack has two options, either to write these unknowable sections
+   * with blank data, generate the compressed section, then re-open the
+   * output file for update once the compressed section has been
+   * completed, or to write the compressed section to a temporary file,
+   * then write the entire output file at once, performing a simple
+   * file-to-file copy for the compressed section.
+   *
+   * The simple solution of buffering the entire compressed section in
+   * memory can still be used, if desired. As the temporary file's
+   * filename is passed directly to mspack_system::open(), it is possible
+   * for a custom mspack_system implementation to hold this file in memory,
+   * without writing to a disk.
+   *
+   * If a temporary file is set, generate() performs the following
+   * sequence of events: the temporary file is opened for writing, the
+   * compression algorithm writes to the temporary file, the temporary
+   * file is closed.  Then the output file is opened for writing and the
+   * temporary file is re-opened for reading. The output file is written
+   * and the temporary file is read from. Both files are then closed. The
+   * temporary file itself is not deleted. If that is desired, the
+   * temporary file should be deleted after the completion of generate(),
+   * if it exists.
+   *
+   * If a temporary file is set not to be used, generate() performs the
+   * following sequence of events: the output file is opened for writing,
+   * then it is written and closed. The output file is then re-opened for
+   * update, the appropriate sections are seek()ed to and re-written, then
+   * the output file is closed.
+   *
+   * @param  self          a self-referential pointer to the
+   *                       mschm_compressor instance being called
+   * @param  use_temp_file non-zero if the temporary file should be used,
+   *                       zero if the temporary file should not be used.
+   * @param  temp_file     a file to temporarily write compressed data to,
+   *                       before opening it for reading and copying the
+   *                       contents to the output file. This is passed
+   *                       directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   * @see generate()
+   */
+  int (*use_temporary_file)(struct mschm_compressor *self,
+			    int use_temp_file,
+			    char *temp_file);
+  /**
+   * Sets a CHM compression engine parameter.
+   *
+   * The following parameters are defined:
+
+   * - #MSCHMC_PARAM_TIMESTAMP: Sets the "timestamp" of the CHM file
+   *   generated. This is not a timestamp, see mschmd_header::timestamp
+   *   for a description. If this timestamp is 0, generate() will use its
+   *   own algorithm for making a unique ID, based on the lengths and
+   *   names of files in the CHM itself. Defaults to 0, any value between
+   *   0 and (2^32)-1 is valid.
+   * - #MSCHMC_PARAM_LANGUAGE: Sets the "language" of the CHM file
+   *   generated.  This is not the language used in the CHM file, but the
+   *   language setting of the user who ran the HTMLHelp compiler. It
+   *   defaults to 0x0409. The valid range is between 0x0000 and 0x7F7F.
+   * - #MSCHMC_PARAM_LZXWINDOW: Sets the size of the LZX history window,
+   *   which is also the interval at which the compressed data stream can be
+   *   randomly accessed. The value is not a size in bytes, but a power of
+   *   two. The default value is 16 (which makes the window 2^16 bytes, or
+   *   64 kilobytes), the valid range is from 15 (32 kilobytes) to 21 (2
+   *   megabytes).
+   * - #MSCHMC_PARAM_DENSITY: Sets the "density" of quick reference
+   *   entries stored at the end of directory listing chunk. Each chunk is
+   *   4096 bytes in size, and contains as many file entries as there is
+   *   room for. At the other end of the chunk, a list of "quick reference"
+   *   pointers is included. The offset of every 'N'th file entry is given a
+   *   quick reference, where N = (2^density) + 1. The default density is
+   *   2. The smallest density is 0 (N=2), the maximum is 10 (N=1025). As
+   *   each file entry requires at least 5 bytes, the maximum number of
+   *   entries in a single chunk is roughly 800, so the maximum value 10
+   *   can be used to indicate there are no quickrefs at all.
+   * - #MSCHMC_PARAM_INDEX: Sets whether or not to include quick lookup
+   *   index chunk(s), in addition to normal directory listing chunks. A
+   *   value of zero means no index chunks will be created, a non-zero value
+   *   means index chunks will be created.
+   *
+   * @param  self     a self-referential pointer to the mschm_compressor
+   *                  instance being called
+   * @param  param    the parameter to set
+   * @param  value    the value to set the parameter to
+   * @return MSPACK_ERR_OK if all is OK, or MSPACK_ERR_ARGS if there
+   *         is a problem with either parameter or value.
+   * @see generate()
+   */
+  int (*set_param)(struct mschm_compressor *self,
+		   int param,
+		   unsigned int value);
+
+  /**
+   * Returns the error code set by the most recently called method.
+   *
+   * @param  self     a self-referential pointer to the mschm_compressor
+   *                  instance being called
+   * @return the most recent error code
+   * @see set_param(), generate()
+   */
+  int (*last_error)(struct mscab_decompressor *);
 };
 
 /**
