@@ -690,6 +690,9 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
     return this->error = MSPACK_ERR_DATAFORMAT;
   }
 
+  /* free ControlData */
+  sys->free(data);
+
   /* find window_bits from window_size */
   switch (window_size) {
   case 0x008000: window_bits = 15; break;
@@ -709,9 +712,6 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
     D(("bad controldata reset interval"))
     return this->error = MSPACK_ERR_DATAFORMAT;
   }
-
-  /* free ControlData */
-  sys->free(data);
 
   /* read ResetTable file */
   if (!(data = read_sys_file(this, sec->rtable))) {
@@ -737,6 +737,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
     return this->error = MSPACK_ERR_DATAFORMAT;
   }
 #endif
+
   /* FIXME: urgh, urgh, urgh:
    * the uncompressed length given in the reset table is not actually honest.
    * the compressed stream is padded out from the uncompressed length up to
@@ -744,7 +745,6 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
    */
   length += reset_interval - 1;
   length &= -reset_interval;
-
 
   /* pick nearest reset interval below the offset we seek to start from */
   entry = file->offset / reset_interval;
