@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS =	no-dependencies
 
-EXTRA_DIST =		cabextract.spec debian \
+EXTRA_DIST =		cabextract.spec \
 			doc/cabextract.1 doc/ja/cabextract.1 \
 			doc/magic doc/wince_cab_format.html \
 			fnmatch_.h fnmatch_loop.c getopt.h \
@@ -8,7 +8,7 @@ EXTRA_DIST =		cabextract.spec debian \
 
 man_MANS =		doc/cabextract.1
 
-INCLUDES = 		-I$(srcdir)/mspack
+AM_CPPFLAGS = 		-I$(srcdir)/mspack -DMSPACK_NO_DEFAULT_SYSTEM
 noinst_LIBRARIES =	libmspack.a
 libmspack_a_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \

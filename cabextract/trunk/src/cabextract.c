@@ -184,8 +184,28 @@ static int recall_file(struct file_mem *fml, char *name, char **from);
 static void forget_files(struct file_mem **fml);
 static int ensure_filepath(char *path);
 static char *cab_error(struct mscab_decompressor *cd);
-extern struct mspack_system cabextract_system;
 
+static struct mspack_file *cabx_open(struct mspack_system *this,
+				     char *filename, int mode);
+static void cabx_close(struct mspack_file *file);
+static int cabx_read(struct mspack_file *file, void *buffer, int bytes);
+static int cabx_write(struct mspack_file *file, void *buffer, int bytes);
+static int cabx_seek(struct mspack_file *file, off_t offset, int mode);
+static off_t cabx_tell(struct mspack_file *file);
+static void cabx_msg(struct mspack_file *file, char *format, ...);
+static void *cabx_alloc(struct mspack_system *this, size_t bytes);
+static void cabx_free(void *buffer);
+static void cabx_copy(void *src, void *dest, size_t bytes);
+
+/**
+ * A cabextract-specific implementation of mspack_system that allows
+ * the NULL filename to be opened for writing as a synonym for writing
+ * to stdout.
+ */
+static struct mspack_system cabextract_system = {
+  &cabx_open, &cabx_close, &cabx_read,  &cabx_write, &cabx_seek,
+  &cabx_tell, &cabx_msg, &cabx_alloc, &cabx_free, &cabx_copy, NULL
+};
 
 int main(int argc, char *argv[]) {
   int i, err;
@@ -652,8 +672,25 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
     strcat((char *) name, "/");
   }
 
-  /* remove leading slashes */
-  while (*fname == sep) fname++;
+  /* remove leading slashes and attempted directory traversals */
+  for (;;) {
+    if (fname[0] == sep) {
+      /* remove leading "/" or "\" */
+      fname++;
+    }
+    else if ((fname[0] == '.') && (fname[1] == sep)) {
+      /* remove leading "./" or "\" */
+      fname += 2;
+    }
+    else if ((fname[0] == '.') && (fname[1] == '.') && (fname[2] == sep)) {
+      /* remove leading "../" or "..\" */
+      fname += 3;
+    }
+    else {
+      /* no more leading slashes/directories - exit loop */
+      break;
+    }
+  }
 
   /* copy from fi->filename to new name, converting MS-DOS slashes to UNIX
    * slashes as we go. Also lowercases characters if needed.
@@ -889,8 +926,6 @@ static char *cab_error(struct mscab_decompressor *cd) {
   return "unknown error";
 }
 
-
-
 struct mspack_file_p {
   FILE *fh;
   char *name;
@@ -1003,14 +1038,5 @@ static void cabx_free(void *buffer) {
 }
 static void cabx_copy(void *src, void *dest, size_t bytes) {
   memcpy(dest, src, bytes);
+  bcopy(src, dest, bytes);
 }
-
-/**
- * A cabextract-specific implementation of mspack_system that allows
- * the NULL filename to be opened for writing as a synonym for writing
- * to stdout.
- */
-static struct mspack_system cabextract_system = {
-  &cabx_open, &cabx_close, &cabx_read,  &cabx_write, &cabx_seek,
-  &cabx_tell, &cabx_msg, &cabx_alloc, &cabx_free, &cabx_copy, NULL
-};
