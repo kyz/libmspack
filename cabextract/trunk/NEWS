@@ -1,6 +1,7 @@
-New in 0.7:
+New in 1.0:
 * The libmspack library is used for all the hard work. You should find
-  cabextract more robust, and fractionally faster.
+  cabextract more robust, and fractionally faster. See the libmspack website
+  at http://www.kyz.uklinux.net/libmspack/ for more on this library.
 * Fixed a bug (now moved to libmspack) where CAB files that had two kinds of
   compression would crash.
 * CAB files should no longer get "/" and "\" mixed up, even with non
@@ -28,10 +29,10 @@ New in 0.7:
   for examining the structure of a cab file. As this information is not
   very useful to most people, none of these three tools are installed.
 * Both the English and Japanese manual page have been updated.
-* Now reports if you're trying to unpack InstallShield cabinets.
+* cabextract now alerts you if you try to unpack InstallShield cabinets.
 * The definition of Microsoft cabinet files for UNIX's "magic" file, in
-  doc/magic.cabinet, has been fixed, and a definition of Windows CE
-  install cabinet header files has also been added in doc/magic.wince.
+  doc/magic, has been fixed, and a definition of Windows CE install cabinet
+  header files has also been added.
 
 New in 0.6:
 * Quantum method is now supported! Many thanks to Matthew Russotto for this.

@@ -1,10 +1,8 @@
 Principal author: Stuart Caie <kyzer@4u.net>
 
-Based on specification documents from Microsoft Corporation
-Quantum decompression researched and implemented by Matthew Russotto
-Huffman code adapted from unlzx by Dave Tritscher.
-InfoZip team's INFLATE implementation adapted to MSZIP by Dirk Stoecker.
-Major LZX fixes by Jae Jung.
+cabextract uses a cut-down version of the libmspack library, available at
+http://www.kyz.uklinux.net/libmspack/
+
 Japanese manual page by Katsumi Saito.
 Original manual page and Debian packaging by Eric Sharkey.
 FreeBSD packaging by Maxim Sovolev.

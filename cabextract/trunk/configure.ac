@@ -1,7 +1,7 @@
 # -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
-AC_INIT(cabextract, 0.7, kyzer@4u.net)
+AC_INIT(cabextract, 1.0, kyzer@4u.net)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/cabextract.c])
 AC_CONFIG_HEADER([config.h])
@@ -35,7 +35,7 @@ AC_FUNC_FSEEKO
 AC_FUNC_MKTIME
 AC_CHECK_FUNCS([memcpy strcasecmp strchr utime utimes])
 AC_CHECK_FUNCS([getopt_long],,[AC_CHECK_LIB([gnugetopt], [getopt_long],
-  [AC_DEFINE([HAVE_GETOPT_LONG])],[AC_LIBOBJ(getopt); AC_LIBOBJ(getopt1)])])
+  [AC_DEFINE([HAVE_GETOPT_LONG])],[AC_LIBOBJ(getopt) AC_LIBOBJ(getopt1)])])
 AC_REPLACE_FNMATCH
 
 AC_CONFIG_FILES([Makefile cabextract.spec])
