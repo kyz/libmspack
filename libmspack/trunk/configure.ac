@@ -1,6 +1,6 @@
 # -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.57)
+AC_PREREQ(2.59)
 AC_INIT([libmspack],[0.0.20040308alpha],[kyzer@4u.net])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([mspack/mspack.h])
@@ -8,7 +8,7 @@ AC_CONFIG_HEADER([config.h])
 
 # --enable-debug option
 AC_ARG_ENABLE(debug,
-  AC_HELP_STRING([--enable-debug], [enable debugging]),
+  AS_HELP_STRING(--enable-debug,enable debugging),
   enable_debug=$enableval,
   enable_debug=no)
 if test x$enable_debug == xyes; then
