@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -10,8 +10,8 @@
 /* LIT compression implementation */
 
 #include <mspack.h>
-#include "system.h"
-#include "lit.h"
+#include <system.h>
+#include <lit.h>
 
 struct mslit_compressor *
   mspack_create_lit_compressor(struct mspack_system *sys)

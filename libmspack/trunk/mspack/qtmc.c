@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The Quantum method was created by David Stafford, adapted by Microsoft
  * Corporation.
@@ -13,7 +13,7 @@
 /* Quantum compression implementation */
 
 #include <mspack.h>
-#include "system.h"
-#include "qtm.h"
+#include <system.h>
+#include <qtm.h>
 
 /* todo */

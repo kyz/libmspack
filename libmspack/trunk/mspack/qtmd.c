@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The Quantum method was created by David Stafford, adapted by Microsoft
  * Corporation.
@@ -15,8 +15,8 @@
 
 /* Quantum decompression implementation */
 
-/* This decompressor was researched and implemented by Matthew Russotto.
- * It has since been tidied up by Stuart Caie. More info at
+/* This decompressor was researched and implemented by Matthew Russotto. It
+ * has since been tidied up by Stuart Caie. More information can be found at
  * http://www.speakeasy.org/~russotto/quantumcomp.html
  */
 
@@ -25,8 +25,8 @@
 #endif
 
 #include <mspack.h>
-#include "system.h"
-#include "qtm.h"
+#include <system.h>
+#include <qtm.h>
 
 /* Quantum decompressor bitstream reading macros
  *
@@ -142,7 +142,7 @@ static void qtmd_static_init() {
  * GET_SYMBOL(model, var) fetches the next symbol from the stated model
  * and puts it in var.
  *
- * If necessary, qtmd_update_
+ * If necessary, qtmd_update_model() is called.
  */
 #define GET_SYMBOL(model, var) do {                                     \
   range = ((H - L) & 0xFFFF) + 1;                                       \
