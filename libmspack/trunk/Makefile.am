@@ -4,7 +4,7 @@ CFLAGS =		-DDEBUG -Wall -Wsign-compare -Wconversion -pedantic
 
 noinst_LTLIBRARIES =	libmspack.la libmscabd.la libmschmd.la
 noinst_PROGRAMS =	test/cabd_md5 test/cabd_test test/cabextract_md5 \
-			test/cabrip test/chmd_md5 test/chmx
+			test/cabrip test/chmd_md5 test/chmx test/chminfo
 
 libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
@@ -49,3 +49,6 @@ test_cabd_test_LDADD = 	libmspack.la
 
 test_cabrip_SOURCES =	test/cabrip.c libmspack.la
 test_cabrip_LDADD =	libmspack.la
+
+test_chminfo_SOURCES = test/chminfo.c libmschmd.la
+test_chminfo_LDADD   = libmschmd.la
