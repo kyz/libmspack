@@ -252,7 +252,7 @@ static int zip_read_lens(struct mszipd_stream *zip) {
   unsigned char bl_len[19];
 
   unsigned char lens[MSZIP_LITERAL_MAXSYMBOLS + MSZIP_DISTANCE_MAXSYMBOLS];
-  unsigned int lit_codes, dist_codes, code, last_code, bitlen_codes, i, run;
+  unsigned int lit_codes, dist_codes, code, last_code=0, bitlen_codes, i, run;
 
   RESTORE_BITS;
 
@@ -324,6 +324,7 @@ static int inflate(struct mszipd_stream *zip) {
 
     /* read in block type */
     READ_BITS(block_type, 2);
+    D(("block_type=%u last_block=%u", block_type, last_block))
 
     if (block_type == 0) {
       /* uncompressed block */
@@ -512,7 +513,12 @@ static int mszipd_flush_window(struct mszipd_stream *zip,
 			       unsigned int data_flushed)
 {
   zip->bytes_output += data_flushed;
-  return (zip->bytes_output > MSZIP_FRAME_SIZE) ? 1 : 0;
+  if (zip->bytes_output > MSZIP_FRAME_SIZE) {
+    D(("overflow: %u bytes flushed, total is now %u",
+       data_flushed, zip->bytes_output))
+    return 1;
+  }
+  return 0;
 }
 
 struct mszipd_stream *mszipd_init(struct mspack_system *system,
@@ -586,6 +592,7 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
 
     /* skip to next read 'CK' header */
     i = bits_left & 7; REMOVE_BITS(i); /* align to bytestream */
+    state = 0;
     do {
       READ_BITS(i, 8);
       if (i == 'C') state = 1;
@@ -600,7 +607,7 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
     if ((i = inflate(zip))) {
       D(("inflate error %d", i))
       if (zip->repair_mode) {
-	zip->sys->message(NULL, "MSZIP error, %d bytes of data lost.",
+	zip->sys->message(NULL, "MSZIP error, %u bytes of data lost.",
 			  MSZIP_FRAME_SIZE - zip->bytes_output);
 	for (i = zip->bytes_output; i < MSZIP_FRAME_SIZE; i++) {
 	  zip->window[i] = '\0';

@@ -998,12 +998,14 @@ static int cabd_extract(struct mscab_decompressor *base,
       if (!this->d->infh) return this->error = MSPACK_ERR_OPEN;
     }
     /* seek to start of data blocks */
-    if (sys->seek(this->d->infh, fol->data.offset, MSPACK_SYS_SEEK_START)){
+    if (sys->seek(this->d->infh, fol->data.offset, MSPACK_SYS_SEEK_START)) {
       return this->error = MSPACK_ERR_SEEK;
     }
 
     /* set up decompressor */
-    if (cabd_init_decomp(this, fol->base.comp_type)) return this->error;
+    if (cabd_init_decomp(this, (unsigned int) fol->base.comp_type)) {
+      return this->error;
+    }
 
     /* initialise new folder state */
     this->d->folder = fol;
