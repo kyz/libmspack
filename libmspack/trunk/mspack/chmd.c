@@ -346,6 +346,11 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     return MSPACK_ERR_OK;
   }
 
+  /* avoid an infinite loop if chunk_size is zero */
+  if (chm->chunk_size == 0) {
+    return MSPACK_ERR_DATAFORMAT;
+  }
+
   /* seek to the first PMGL chunk, and reduce the number of chunks to read */
   if ((x = EndGetI32(&buf[chmhs1_FirstPMGL]))) {
     if (sys->seek(fh,(off_t) (x * chm->chunk_size), MSPACK_SYS_SEEK_CUR)) {
