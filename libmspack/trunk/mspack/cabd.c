@@ -26,10 +26,6 @@
 
 /* CAB decompression implementation */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <mspack.h>
 #include <system.h>
 #include <cab.h>
@@ -598,10 +594,10 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
     }
 
     /* truncated / extraneous data warning: */
-    if (firstlen && (firstlen != filelen) &&
+    if (firstlen && ((off_t) firstlen != filelen) &&
 	(!cab || (cab->base.base_offset == 0)))
     {
-      if (firstlen < filelen) {
+      if ((off_t) firstlen < filelen) {
 	sys->message(fh, "WARNING; possible %u extra bytes at end of file.",
 		     (unsigned int) (filelen - firstlen));
       }

@@ -1,3 +1,26 @@
+2003-04-23:  Stuart Caie   <kyzer@4u.net>
+
+	* mspack.h: changed 'this' parameters to 'self' to allow compiling in
+	C++ compilers, thanks to Michal Cihar for the suggestion.
+
+	* mspack.h, system.h, mspack.def, winbuild.sh: integrated some changes
+	from Petr Blahos to let libmspack build as a Win32 DLL.
+
+	* chmd_fast_find(): added the first part of this code, and comments
+	sufficient to finish it :)
+
+2004-04-08  Stuart Caie   <kyzer@4u.net>
+
+	* test/chminfo.c: added a program for dumping useful data from CHM
+	files, e.g. index entries and reset tables. I wrote this a while ago
+	for investigating a corrupt cabinet, but I never committed it.
+
+2004-03-26  Stuart Caie   <kyzer@4u.net>
+
+	* test/cabd_memory.c: added a new test example which shows an
+	mspack_system implementation that reads and writes from memory only,
+	no file I/O. Even the source code has a little cab file embedded in it.
+
 2004-03-10  Stuart Caie   <kyzer@4u.net>
 
 	* cabd.c: updated the location of the CAB SDK.
