@@ -313,10 +313,8 @@ static int inflate(struct mszipd_stream *zip) {
   /* for the bit buffer and huffman decoding */
   register unsigned int bit_buffer;
   register int bits_left;
-  unsigned char *i_ptr, *i_end;
-
-  /* for the huffman decoding */
   register unsigned short sym;
+  unsigned char *i_ptr, *i_end;
 
   RESTORE_BITS;
 
@@ -332,9 +330,7 @@ static int inflate(struct mszipd_stream *zip) {
       unsigned char lens_buf[4];
 
       /* go to byte boundary */
-      i = bits_left & 7;
-      REMOVE_BITS(i);
-      D(("dumped %d bits to byte-align", i))
+      i = bits_left & 7; REMOVE_BITS(i);
 
       /* read 4 bytes of data, emptying the bit-buffer if necessary */
       for (i = 0; (bits_left >= 8); i++) {
@@ -355,9 +351,7 @@ static int inflate(struct mszipd_stream *zip) {
       /* get the length and its complement */
       length = lens_buf[0] | (lens_buf[1] << 8);
       i      = lens_buf[2] | (lens_buf[3] << 8);
-      D(("length is %u (0x%x), complement is %u (0x%x)",
-	 length, length, i, i))
-      if (length != ~i) return INF_ERR_COMPLEMENT;
+      if (length != (~i & 0xFFFF)) return INF_ERR_COMPLEMENT;
 
       /* read and copy the uncompressed data into the window */
       while (length > 0) {
@@ -371,8 +365,6 @@ static int inflate(struct mszipd_stream *zip) {
 	if (this_run > (unsigned int)(i_end - i_ptr)) this_run = i_end - i_ptr;
 	if (this_run > (MSZIP_FRAME_SIZE - zip->window_posn))
 	  this_run = MSZIP_FRAME_SIZE - zip->window_posn;
-	D(("writing %u uncompressed bytes to posn %u",
-	   this_run, zip->window_posn))
 
 	zip->sys->copy(i_ptr, &zip->window[zip->window_posn], this_run);
 	zip->window_posn += this_run;
