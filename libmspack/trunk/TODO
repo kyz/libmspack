@@ -1,7 +1,5 @@
 CAB
 - compression: everything
-- decompression: decouple the inflate from MS-ZIP
-- decompression: rewrite inflate from scratch. It's ugly.
 
 CHM
 - compression: everything

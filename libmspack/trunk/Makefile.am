@@ -1,9 +1,21 @@
-EXTRA_DIST =		debian
-INCLUDES = 		-I$(srcdir)/mspack
-CFLAGS =		-DDEBUG -g -Wall -Wsign-compare -Wconversion -pedantic \
-			$(INCLUDES)
+# add "-DDEBUG" to enable debug output
+# add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system
+MSPACK_FLAGS =
 
-noinst_LTLIBRARIES =	libmspack.la libmscabd.la libmschmd.la
+EXTRA_DIST =		debian doc test/test_files
+dist-hook:
+	-rm -rf `find $(distdir) -name CVS`
+	-rm -f $(distdir)/*.la
+
+
+AM_CPPFLAGS = 		-I$(srcdir)/mspack
+AM_CFLAGS =		-std=c99 -Wall -Wsign-compare -Wconversion -pedantic \
+			$(MSPACK_FLAGS)
+
+lib_LTLIBRARIES =	libmspack.la
+include_HEADERS =	mspack/mspack.h
+
+noinst_LTLIBRARIES =	libmscabd.la libmschmd.la
 noinst_PROGRAMS =	test/cabd_md5 test/cabd_test test/cabextract_md5 \
 			test/cabrip test/chmd_md5 test/chmx test/chminfo
 
@@ -17,8 +29,9 @@ libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/szdd.h mspack/szddc.c mspack/szddd.c \
 			mspack/lzx.h mspack/lzxc.c mspack/lzxd.c \
 			mspack/mszip.h mspack/mszipc.c mspack/mszipd.c \
-			mspack/qtm.h mspack/qtmd.c
-libmspack_la_LDFLAGS =	-export-symbols-regex '^mspack_'
+			mspack/qtm.h mspack/qtmd.c \
+			mspack/lzss.h mspack/des.h mspack/sha.h
+libmspack_la_LDFLAGS =	-export-symbols-regex '^mspack_' -version-info 1:0:1
 
 libmscabd_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
@@ -37,19 +50,19 @@ libmschmd_la_LDFLAGS =	-export-symbols-regex '^mspack_'
 test_chmx_SOURCES =	test/chmx.c libmschmd.la
 test_chmx_LDADD =	libmschmd.la
 
-test_chmd_md5_SOURCES =	test/chmd_md5.c test/md5.c libmschmd.la
+test_chmd_md5_SOURCES =	test/chmd_md5.c test/md5.c test/md5.h libmschmd.la
 test_chmd_md5_LDADD =	libmschmd.la
 
-test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c libmspack.la
-test_cabd_md5_LDADD =	libmspack.la
+test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c test/md5.h libmspack.la
+test_cabd_md5_LDADD =	libmscabd.la
 
-test_cabextract_md5_SOURCES = test/cabextract_md5.c test/md5.c
+test_cabextract_md5_SOURCES = test/cabextract_md5.c test/md5.c test/md5.h
 
 test_cabd_test_SOURCES=	test/cabd_test.c libmspack.la
-test_cabd_test_LDADD = 	libmspack.la
+test_cabd_test_LDADD = 	libmscabd.la
 
 test_cabrip_SOURCES =	test/cabrip.c libmspack.la
-test_cabrip_LDADD =	libmspack.la
+test_cabrip_LDADD =	libmscabd.la
 
 test_chminfo_SOURCES = test/chminfo.c libmschmd.la
 test_chminfo_LDADD   = libmschmd.la

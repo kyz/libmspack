@@ -33,7 +33,8 @@
  *
  * To determine the capabilities of the library, and the binary
  * compatibility version of any particular compressor or decompressor, use
- * the mspack_version() function.
+ * the mspack_version() function. The UNIX library interface version is
+ * defined as the highest-versioned library component.
  *
  * \section starting Getting started
  *
