@@ -387,7 +387,7 @@ static int process_cabinet(char *basename) {
       else {
 	if (args.pipe) {
 	  if (cabd->extract(cabd, file, NULL)) {
-	    fprintf(stderr, "stdout: %s\n", name, cab_error(cabd)); errors++;
+	    fprintf(stderr, "stdout: %s: %s\n", name,cab_error(cabd)); errors++;
 	  }
 	}
 	else {
