@@ -8,15 +8,13 @@ then
   mkdir mspack
 fi
 
-cd mspack
-
 for file in mspack.h system.c system.h cabd.c cab.h \
             lzxd.c lzx.h mszipd.c mszip.h qtmd.c qtm.h
 do
-  if [ -f $file ]
+  if [ -f mspack/$file ]
   then
-    if [ $SRC/$file -nt $file ]; then cp $SRC/$file .; fi
+    if [ $SRC/$file -nt mspack/$file ]; then cp $SRC/$file mspack; fi
   else
-    cp $SRC/$file .
+    cp $SRC/$file mspack
   fi
 done
