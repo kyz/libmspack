@@ -661,9 +661,10 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   if (utf8) x *= 3;
   /* length of output directory */
   if (dir) x += strlen((char *) dir);
+  x += 2;
 
-  if (!(name = malloc(x + 2))) {
-    fprintf(stderr, "Can't allocate output filename (%u bytes)\n", x + 2);
+  if (!(name = malloc(x))) {
+    fprintf(stderr, "Can't allocate output filename (%u bytes)\n", x);
     return NULL;
   }
   
@@ -682,8 +683,8 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   /* copy from fi->filename to new name, converting MS-DOS slashes to UNIX
    * slashes as we go. Also lowercases characters if needed.
    */
-  p = &name[strlen((char *)name)];
-  fe = &fname[strlen((char *)fname)];
+  p = &name[strlen((char *)name)];    /* p  = start of output filename */
+  fe = &fname[strlen((char *)fname)]; /* fe = end of input filename */
 
   if (utf8) {
     /* UTF8 translates two-byte unicode characters into 1, 2 or 3 bytes.
@@ -700,7 +701,7 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
      *  0xF0 - 0xFF = invalid
      */
     do {
-      if (fname >= fe) {
+      if (fname > fe) {
 	fprintf(stderr, "error in UTF-8 decode\n");
 	free(name);
 	return NULL;	
@@ -1036,5 +1037,4 @@ static void cabx_free(void *buffer) {
 }
 static void cabx_copy(void *src, void *dest, size_t bytes) {
   memcpy(dest, src, bytes);
-  bcopy(src, dest, bytes);
 }

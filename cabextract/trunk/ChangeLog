@@ -1,4 +1,11 @@
-2004-10-18  Stuart Caie   <kyzer@4u.net
+2004-10-19  Stuart Caie   <kyzer@4u.net>
+
+	* create_output_name(): fixed out-by-one error in UTF-8 decoder. All
+	UTF-8 filenames would reach the "error in UTF-8 decode" section,
+	because the test for that section was "pointer >= last_character",
+	not "pointer > last_character".
+
+2004-10-18  Stuart Caie   <kyzer@4u.net>
 
 	* process_cabinet(): now accepts that failure of create_output_name()
 	is an error, and also lets that function print an error message
