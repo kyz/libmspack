@@ -96,6 +96,9 @@
 struct mschm_compressor_p {
   struct mschm_compressor base;
   struct mspack_system *system;
+  char *temp_file;
+  int use_temp_file;
+  int error;
 };
 
 /* CHM decompression definitions */
