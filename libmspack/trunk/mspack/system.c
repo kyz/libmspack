@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -12,6 +12,28 @@
 #endif
 
 #include <mspack.h>
+
+int mspack_version(int entity) {
+  switch (entity) {
+  case MSPACK_VER_LIBRARY:
+  case MSPACK_VER_SYSTEM:
+  case MSPACK_VER_MSCABD:
+  case MSPACK_VER_MSCHMD:
+    return 1;
+  case MSPACK_VER_MSCABC:
+  case MSPACK_VER_MSCHMC:
+  case MSPACK_VER_MSLITD:
+  case MSPACK_VER_MSLITC:
+  case MSPACK_VER_MSHLPD:
+  case MSPACK_VER_MSHLPC:
+  case MSPACK_VER_MSSZDDD:
+  case MSPACK_VER_MSSZDDC:
+  case MSPACK_VER_MSKWAJD:
+  case MSPACK_VER_MSKWAJC:
+    return 0;
+  }
+  return -1;
+}
 
 int mspack_sys_selftest_internal(int offt_size) {
   return (sizeof(off_t) == offt_size) ? MSPACK_ERR_OK : MSPACK_ERR_SEEK;
@@ -51,6 +73,7 @@ int mspack_sys_filelen(struct mspack_system *system,
 
   return MSPACK_ERR_OK;
 }
+
 
 
 /* definition of mspack_default_system -- if the library is compiled with
