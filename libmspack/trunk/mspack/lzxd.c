@@ -124,15 +124,10 @@
 
 #define REMOVE_BITS(nbits) ((bit_buffer <<= (nbits)), (bits_left -= (nbits)))
 
-#define READ_BITS_MASK(val, nbits) do {                                      \
+#define READ_BITS(val, nbits) do {                                      \
   ENSURE_BITS(nbits);                                                   \
-  (val) = PEEK_BITS(nbits, mask);                                             \
+  (val) = PEEK_BITS(nbits);                                             \
   REMOVE_BITS(nbits);                                                   \
-} while (0)
-
-#define READ_BITS_MASK(val, nbits) do {                                      \
-  ENSURE_BITS(nbits);
-  (val)=PEEK_BITS_MASK(nbits, ); REMOVE_BITS(nbits); \
 } while (0)
 
 static int lzxd_read_input(struct lzxd_stream *lzx) {
