@@ -567,7 +567,7 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
   register int bits_left;
   unsigned char *i_ptr, *i_end;
 
-  int i, state;
+  int i, state, error;
 
   /* easy answers */
   if (!zip || (out_bytes < 0)) return MSPACK_ERR_ARGS;
@@ -604,7 +604,7 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
     zip->window_posn = 0;
     zip->bytes_output = 0;
     STORE_BITS;
-    if ((i = inflate(zip))) {
+    if ((error = inflate(zip))) {
       D(("inflate error %d", i))
       if (zip->repair_mode) {
 	zip->sys->message(NULL, "MSZIP error, %u bytes of data lost.",
@@ -615,7 +615,7 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
 	zip->bytes_output = MSZIP_FRAME_SIZE;
       }
       else {
-	return zip->error = MSPACK_ERR_DECRUNCH;
+	return zip->error = (error > 0) ? error : MSPACK_ERR_DECRUNCH;
       }
     }
     zip->o_ptr = &zip->window[0];
@@ -627,6 +627,10 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
     if (zip->sys->write(zip->output, zip->o_ptr, i) != i) {
       return zip->error = MSPACK_ERR_WRITE;
     }
+
+    /* mspack errors (i.e. read errors) are fatal and can't be recovered */
+    if ((error > 0) && zip->repair_mode) return error;
+
     zip->o_ptr  += i;
     out_bytes   -= i;
   }
