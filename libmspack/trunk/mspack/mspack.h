@@ -262,7 +262,8 @@ struct mspack_system {
    * @return a pointer to a mspack_file structure. This structure officially
    *         contains no members, its true contents are up to the
    *         mspack_system implementor. It should contain whatever is needed
-   *         for other mspack_system methods to operate.
+   *         for other mspack_system methods to operate. Returning the NULL
+   *         pointer indicates an error condition.
    * @see close(), read(), write(), seek(), tell(), message()
    */
   struct mspack_file * (*open)(struct mspack_system *self,
@@ -1652,6 +1653,28 @@ struct mshlp_decompressor {
 
 /* --- support for SZDD file format ---------------------------------------- */
 
+/** msszdd_compressor::set_param() parameter: the missing character */
+#define MSSZDDC_PARAM_MISSINGCHAR (0)
+
+/**
+ * A structure which represents an SZDD compressed file.
+ *
+ * All fields are READ ONLY.
+ */
+struct msszddd_header {
+  /** The amount of data in the SZDD file once uncompressed. */
+  off_t length;
+
+  /**
+   * The last character in the filename, traditionally replaced with an
+   * underscore to show the file is compressed. The null character is used
+   * to show that this character has not been stored (e.g. because the
+   * filename is not known). Generally, only characters that may appear in
+   * an MS-DOS filename (except ".") are valid.
+   */
+  char missing_char;
+};
+
 /**
  * A compressor for the SZDD file format.
  *
@@ -1672,9 +1695,9 @@ struct msszdd_compressor {
    * itself. This is due to the restricted filename conventions of MS-DOS,
    * most operating systems, such as UNIX, simply append another file
    * extension to the existing filename. As mspack does not deal with
-   * filenames, this is left up to you. If you wish to set the character
-   * stored in the file header, use set_param() with the
-   * #MSSZDDC_PARAM_FILENAME parameter.
+   * filenames, this is left up to you. If you wish to set the missing
+   * character stored in the file header, use set_param() with the
+   * #MSSZDDC_PARAM_MISSINGCHAR parameter.
    *
    * "Stream" compression (where the length of the input data is not
    * known) is not possible. The length of the input data is stored in the
@@ -1683,30 +1706,35 @@ struct msszdd_compressor {
    * maximum size of uncompressed file that will be accepted is 2147483647
    * bytes.
    *
-   * @param  self          a self-referential pointer to the msszdd_compressor
-   *                       instance being called
-   * @param  input_file    the name of the file to compressed. This is passed
-   *                       passed directly to mspack_system::open()
-   * @param  output_file   the name of the file to write compressed data to.
-   *                       This is passed directly to mspack_system::open().
-   * @param  input_length  the length of the uncompressed file, or -1 to
-   *                       indicate that this should be determined
-   *                       automatically by using mspack_system::seek() on
-   *                       the input file.
+   * @param  self    a self-referential pointer to the msszdd_compressor
+   *                 instance being called
+   * @param  input   the name of the file to compressed. This is passed
+   *                 passed directly to mspack_system::open()
+   * @param  output  the name of the file to write compressed data to.
+   *                 This is passed directly to mspack_system::open().
+   * @param  length  the length of the uncompressed file, or -1 to indicate
+   *                 that this should be determined automatically by using
+   *                 mspack_system::seek() on the input file.
    * @return an error code, or MSPACK_ERR_OK if successful
    * @see set_param()
    */
   int (*compress)(struct msszdd_compressor *self,
-		  char *input_file,
-		  char *output_file,
-		  off_t input_length);
+		  char *input,
+		  char *output,
+		  off_t length);
 
   /**
    * Sets an SZDD compression engine parameter.
    *
    * The following parameters are defined:
 
-   * - #MSSZDDC_PARAM_CHARACTER:
+   * - #MSSZDDC_PARAM_CHARACTER: the "missing character", the last character
+   *   in the uncompressed file's filename, which is traditionally replaced
+   *   with an underscore to show the file is compressed. Traditionally,
+   *   this can only be a character that is a valid part of an MS-DOS,
+   *   filename, but libmspack permits any character between 0x00 and 0xFF
+   *   to be stored. 0x00 is the default, and it represents "no character
+   *   stored".
    *
    * @param  self     a self-referential pointer to the msszdd_compressor
    *                  instance being called
@@ -1742,8 +1770,8 @@ struct msszdd_decompressor {
   /**
    * Opens a SZDD file and reads the header.
    *
-   * If the file opened is a valid SZDD helpfile, all headers will be read
-   * and a msszddd_header structure will be returned.
+   * If the file opened is a valid SZDD file, all headers will be read and
+   * a msszddd_header structure will be returned.
    *
    * In the case of an error occuring, NULL is returned and the error code
    * is available from last_error().
@@ -1753,7 +1781,7 @@ struct msszdd_decompressor {
    *
    * @param  self     a self-referential pointer to the msszdd_decompressor
    *                  instance being called
-   * @param  filename the filename of the SZDD compressde file. This is
+   * @param  filename the filename of the SZDD compressed file. This is
    *                  passed directly to mspack_system::open().
    * @return a pointer to a msszddd_header structure, or NULL on failure
    * @see close()
@@ -1762,9 +1790,10 @@ struct msszdd_decompressor {
 				 char *filename);
 
   /**
-   * Closes a previously opened SZDD helpfile.
+   * Closes a previously opened SZDD file.
    *
-   * This closes a SZDD helpfile and frees the msszddd_header associated with it.
+   * This closes a SZDD file and frees the msszddd_header associated with
+   * it.
    *
    * The SZDD header pointer is now invalid and cannot be used again. All
    * msszddd_file pointers referencing that SZDD are also now invalid, and
@@ -1796,12 +1825,13 @@ struct msszdd_decompressor {
 		 char *filename);
 
   /**
-   * Decompresses an SZDD file at once.
+   * Decompresses an SZDD file to an output file in one step.
    *
-   * This opens an SZDD file as input, reads the header, then decompresses the
-   * compressed data immediately to an output file, finally closing both
-   * the input and output file. It is more convenient to use if you do not
-   * need to know the SZDD output size or missing character.
+   * This opens an SZDD file as input, reads the header, then decompresses
+   * the compressed data immediately to an output file, finally closing
+   * both the input and output file. It is more convenient to use than
+   * open() then extract() then close(), if you do not need to know the
+   * SZDD output size or missing character.
    *
    * @param  self     a self-referential pointer to the msszdd_decompressor
    *                  instance being called
