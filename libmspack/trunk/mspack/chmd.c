@@ -387,7 +387,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
       do { offset   = (offset   << 7) | (*p & 0x7F); } while (*p++ & 0x80);
       do { length   = (length   << 7) | (*p & 0x7F); } while (*p++ & 0x80);
 
-      if ((section == 0) && (offset == 0) && (length == 0)) {
+      if ((offset == 0) && (length == 0)) {
 	/* null file -- used to store directory names. Why? */
 	continue;
       }
