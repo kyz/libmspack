@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The LZX method was created by Jonathan Forbes and Tomi Poutanen, adapted
  * by Microsoft Corporation.
@@ -17,8 +17,8 @@
 #endif
 
 #include <mspack.h>
-#include "system.h"
-#include "lzx.h"
+#include <system.h>
+#include <lzx.h>
 
 /* Microsoft's LZX document and their implementation of the
  * com.ms.util.cab Java package do not concur.
@@ -201,7 +201,7 @@ static int lzxd_read_input(struct lzxd_stream *lzx) {
 /* make_decode_table(nsyms, nbits, length[], table[])
  *
  * This function was coded by David Tritscher. It builds a fast huffman
- * decoding table out of just a canonical huffman code lengths table.
+ * decoding table from a canonical huffman code lengths table.
  *
  * nsyms  = total number of symbols in this huffman tree.
  * nbits  = any symbols with a code length of nbits or less can be decoded
@@ -216,64 +216,57 @@ static int make_decode_table(unsigned int nsyms, unsigned int nbits,
 			     unsigned char *length, unsigned short *table)
 {
   register unsigned short sym;
-  register unsigned int leaf;
-  register unsigned char bit_num = 1;
-  unsigned int fill;
+  register unsigned int leaf, fill;
+  register unsigned char bit_num;
   unsigned int pos         = 0; /* the current position in the decode table */
   unsigned int table_mask  = 1 << nbits;
   unsigned int bit_mask    = table_mask >> 1; /* don't do 0 length codes */
   unsigned int next_symbol = bit_mask; /* base of allocation for long codes */
 
   /* fill entries for codes short enough for a direct mapping */
-  while (bit_num <= nbits) {
+  for (bit_num = 1; bit_num <= nbits; bit_num++) {
     for (sym = 0; sym < nsyms; sym++) {
-      if (length[sym] == bit_num) {
-        leaf = pos;
-
-        if((pos += bit_mask) > table_mask) return 1; /* table overrun */
-
-        /* fill all possible lookups of this symbol with the symbol itself */
-        fill = bit_mask;
-        while (fill-- > 0) table[leaf++] = sym;
-      }
+      if (length[sym] != bit_num) continue;
+      leaf = pos;
+      if((pos += bit_mask) > table_mask) return 1; /* table overrun */
+      /* fill all possible lookups of this symbol with the symbol itself */
+      for (fill = bit_mask; fill-- > 0;) table[leaf++] = sym;
     }
     bit_mask >>= 1;
-    bit_num++;
   }
 
-  /* if there are any codes longer than nbits */
-  if (pos != table_mask) {
-    /* clear the remainder of the table */
-    for (sym = pos; sym < table_mask; sym++) table[sym] = 0;
+  /* full table already? */
+  if (pos == table_mask) return 0;
 
-    /* give ourselves room for codes to grow by up to 16 more bits */
-    pos <<= 16;
-    table_mask <<= 16;
-    bit_mask = 1 << 15;
+  /* clear the remainder of the table */
+  for (sym = pos; sym < table_mask; sym++) table[sym] = 0xFFFF;
 
-    while (bit_num <= 16) {
-      for (sym = 0; sym < nsyms; sym++) {
-        if (length[sym] == bit_num) {
-          leaf = pos >> 16;
-          for (fill = 0; fill < bit_num - nbits; fill++) {
-            /* if this path hasn't been taken yet, 'allocate' two entries */
-            if (table[leaf] == 0) {
-              table[(next_symbol << 1)] = 0;
-              table[(next_symbol << 1) + 1] = 0;
-              table[leaf] = next_symbol++;
-            }
-            /* follow the path and select either left or right for next bit */
-            leaf = table[leaf] << 1;
-            if ((pos >> (15-fill)) & 1) leaf++;
-          }
-          table[leaf] = sym;
+  /* allow codes to be up to nbits+16 long, instead of nbits */
+  pos <<= 16;
+  table_mask <<= 16;
+  bit_mask = 1 << 15;
 
-          if ((pos += bit_mask) > table_mask) return 1; /* table overflow */
-        }
+  for (bit_num = nbits+1; bit_num <= 16; bit_num++) {
+    for (sym = 0; sym < nsyms; sym++) {
+      if (length[sym] != bit_num) continue;
+
+      leaf = pos >> 16;
+      for (fill = 0; fill < bit_num - nbits; fill++) {
+	/* if this path hasn't been taken yet, 'allocate' two entries */
+	if (table[leaf] == 0xFFFF) {
+	  table[(next_symbol << 1)] = 0xFFFF;
+	  table[(next_symbol << 1) + 1] = 0xFFFF;
+	  table[leaf] = next_symbol++;
+	}
+	/* follow the path and select either left or right for next bit */
+	leaf = table[leaf] << 1;
+	if ((pos >> (15-fill)) & 1) leaf++;
       }
-      bit_mask >>= 1;
-      bit_num++;
+      table[leaf] = sym;
+
+      if ((pos += bit_mask) > table_mask) return 1; /* table overflow */
     }
+    bit_mask >>= 1;
   }
 
   /* full table? */
