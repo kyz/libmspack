@@ -1,4 +1,4 @@
-/* cabextract 1.0 - a program to extract Microsoft Cabinet files
+/* cabextract 1.1 - a program to extract Microsoft Cabinet files
  * (C) 2000-2004 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -388,7 +388,7 @@ static int process_cabinet(char *basename) {
 	    (unsigned char *) file->filename, (unsigned char *) args.dir,
 	    args.lower, isunix, file->attribs & MSCAB_ATTRIB_UTF_NAME)))
       {
-	fprintf(stderr, "out of memory!\n");
+	errors++;
 	break;
       }
 
@@ -407,17 +407,21 @@ static int process_cabinet(char *basename) {
       else {
 	if (args.pipe) {
 	  if (cabd->extract(cabd, file, NULL)) {
-	    fprintf(stderr, "stdout: %s: %s\n", name,cab_error(cabd)); errors++;
+	    fprintf(stderr, "stdout: %s: %s\n", name,cab_error(cabd));
+	    errors++;
 	  }
 	}
 	else {
 	  if (!args.quiet) printf("  extracting %s\n", name);
+
 	  if (!ensure_filepath(name)) {
-	    fprintf(stderr, "%s: can't create file path\n", name); errors++;
+	    fprintf(stderr, "%s: can't create file path\n", name);
+	    errors++;
 	  }
 	  else {
 	    if (cabd->extract(cabd, file, name)) {
-	      fprintf(stderr, "%s: %s\n", name, cab_error(cabd)); errors++;
+	      fprintf(stderr, "%s: %s\n", name, cab_error(cabd));
+	      errors++;
 	    }
 	    else {
 	      set_date_and_perm(file, name);
@@ -659,7 +663,7 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   if (dir) x += strlen((char *) dir);
 
   if (!(name = malloc(x + 2))) {
-    fprintf(stderr, "out of memory!\n");
+    fprintf(stderr, "Can't allocate output filename (%u bytes)\n", x + 2);
     return NULL;
   }
   
@@ -672,25 +676,8 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
     strcat((char *) name, "/");
   }
 
-  /* remove leading slashes and attempted directory traversals */
-  for (;;) {
-    if (fname[0] == sep) {
-      /* remove leading "/" or "\" */
-      fname++;
-    }
-    else if ((fname[0] == '.') && (fname[1] == sep)) {
-      /* remove leading "./" or "\" */
-      fname += 2;
-    }
-    else if ((fname[0] == '.') && (fname[1] == '.') && (fname[2] == sep)) {
-      /* remove leading "../" or "..\" */
-      fname += 3;
-    }
-    else {
-      /* no more leading slashes/directories - exit loop */
-      break;
-    }
-  }
+  /* remove leading slashes */
+  while (*fname == sep) fname++;
 
   /* copy from fi->filename to new name, converting MS-DOS slashes to UNIX
    * slashes as we go. Also lowercases characters if needed.
@@ -714,6 +701,7 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
      */
     do {
       if (fname >= fe) {
+	fprintf(stderr, "error in UTF-8 decode\n");
 	free(name);
 	return NULL;	
       }
@@ -764,6 +752,16 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
       else if (lower)      c = (unsigned char) tolower((int) c);
     } while ((*p++ = c));
   }
+
+  /* search for "../" in cab filename part and change to "xx/".  This
+   * prevents any unintended directory traversal. */
+  for (p = &name[dir ? strlen(dir)+1 : 0]; *p; p++) {
+    if ((p[0] == '.') && (p[1] == '.') && (p[2] == '/')) {
+      p[0] = p[1] = 'x';
+      p += 2;
+    }
+  }
+
   return (char *) name;
 }
 

@@ -1,4 +1,4 @@
-cabextract 1.0 - a program to extract Microsoft Cabinet files.
+cabextract 1.1 - a program to extract Microsoft Cabinet files.
 (C) 2000-2004 Stuart Caie <kyzer@4u.net>
 This is free software with ABSOLUTELY NO WARRANTY.
 
@@ -39,4 +39,4 @@ $ cabextract -d boogie wibble.cab
 Listing files from a cabinet file:
 $ cabextract -l wibble.cab
 
-Stuart Caie <kyzer@4u.net>, 2004-03-08.
+Stuart Caie <kyzer@4u.net>, 2004-10-18.

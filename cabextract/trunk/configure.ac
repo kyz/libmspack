@@ -1,7 +1,7 @@
 # -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
-AC_INIT(cabextract, 1.0, kyzer@4u.net)
+AC_INIT(cabextract, 1.1, kyzer@4u.net)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/cabextract.c])
 AC_CONFIG_HEADER([config.h])
