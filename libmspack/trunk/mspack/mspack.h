@@ -1256,7 +1256,7 @@ struct mschm_decompressor {
    * Extracts a file from a CHM helpfile.
    *
    * This extracts a file from a CHM helpfile and writes it to the given
-   * filename. The filename of the file in mscabd_file::filename, is not
+   * filename. The filename of the file, mscabd_file::filename, is not
    * used by extract(), but can be used by the caller as a guide for
    * constructing an appropriate filename.
    *
@@ -1320,24 +1320,22 @@ struct mschm_decompressor {
    * details only when they are needed. The CHM file format includes an
    * on-disk file index to allow this.
    *
-   * Given a case-sensitive filename, find_fast() will search the on-disk
+   * Given a case-sensitive filename, fast_find() will search the on-disk
    * index for that file.
    *
    * If the file was found, the caller-provided mschmd_file structure will
    * be filled out like so:
-   * - next: NULL
    * - section: the correct value for the found file
    * - offset: the correct value for the found file
    * - length: the correct value for the found file
-   * - filename: NULL
+   * - all other structure elements: NULL or 0
    *
    * If the file was not found, MSPACK_ERR_OK will still be returned as the
    * result, but the caller-provided structure will be filled out like so:
-   * - next: NULL
    * - section: NULL
    * - offset: 0
    * - length: 0
-   * - filename: NULL
+   * - all other structure elements: NULL or 0
    *
    * This method is intended to be used in conjunction with CHM helpfiles
    * opened with fast_open(), but it also works with helpfiles opened
