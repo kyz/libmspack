@@ -14,8 +14,8 @@ lib_LTLIBRARIES =	libmspack.la
 include_HEADERS =	mspack/mspack.h
 
 noinst_LTLIBRARIES =	libmscabd.la libmschmd.la
-noinst_PROGRAMS =	test/cabd_md5 test/cabd_memory test/cabd_test
-			test/cabextract_md5 test/cabrip test/chmd_md5
+noinst_PROGRAMS =	test/cabd_md5 test/cabd_memory test/cabd_test \
+			test/cabextract_md5 test/cabrip test/chmd_md5 \
 			test/chmx test/chminfo
 
 libmspack_la_SOURCES =	mspack/mspack.h \
@@ -52,18 +52,18 @@ test_chmx_LDADD =	libmschmd.la
 test_chmd_md5_SOURCES =	test/chmd_md5.c test/md5.c test/md5.h libmschmd.la
 test_chmd_md5_LDADD =	libmschmd.la
 
-test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c test/md5.h libmscab.la
+test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c test/md5.h libmscabd.la
 test_cabd_md5_LDADD =	libmscabd.la
 
 test_cabextract_md5_SOURCES = test/cabextract_md5.c test/md5.c test/md5.h
 
-test_cabd_test_SOURCES=	test/cabd_test.c libmscab.la
+test_cabd_test_SOURCES=	test/cabd_test.c libmscabd.la
 test_cabd_test_LDADD = 	libmscabd.la
 
-test_cabrip_SOURCES =	test/cabrip.c libmscab.la
+test_cabrip_SOURCES =	test/cabrip.c libmscabd.la
 test_cabrip_LDADD =	libmscabd.la
 
-test_cabd_memory_SOURCES = test/cabd_memory.c libmscab.la
+test_cabd_memory_SOURCES = test/cabd_memory.c libmscabd.la
 test_cabd_memory_LDADD = libmscabd.la
 
 test_chminfo_SOURCES = test/chminfo.c libmschmd.la

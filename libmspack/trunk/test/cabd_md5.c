@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     mspack_destroy_cab_decompressor(cabd);
   }
   else {
-    fprintf(stderr, "can't make decompressor %d\n", cabd->last_error(cabd));
+    fprintf(stderr, "can't make decompressor\n");
   }
   return 0;
 }

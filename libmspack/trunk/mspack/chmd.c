@@ -9,10 +9,6 @@
 
 /* CHM decompression implementation */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <mspack.h>
 #include <system.h>
 #include <chm.h>
@@ -263,7 +259,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   }
 
   /* check both header GUIDs */
-  if (memcmp(&buf[chmhead_GUID1], &guids[0], 32) != 0) {
+  if (mspack_memcmp(&buf[chmhead_GUID1], &guids[0], 32) != 0) {
     D(("incorrect GUIDs"))
     return MSPACK_ERR_SIGNATURE;
   }
@@ -416,14 +412,14 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
 
       if (name[0] == ':' && name[1] == ':') {
 	/* system file */
-	if (memcmp(&name[2], &content_name[2], 31) == 0) {
-	  if (memcmp(&name[33], &content_name[33], 8) == 0) {
+	if (mspack_memcmp(&name[2], &content_name[2], 31) == 0) {
+	  if (mspack_memcmp(&name[33], &content_name[33], 8) == 0) {
 	    chm->sec1.content = fi;
 	  }
-	  else if (memcmp(&name[33], &control_name[33], 11) == 0) {
+	  else if (mspack_memcmp(&name[33], &control_name[33], 11) == 0) {
 	    chm->sec1.control = fi;
 	  }
-	  else if (memcmp(&name[33], &rtable_name[33], 72) == 0) {
+	  else if (mspack_memcmp(&name[33], &rtable_name[33], 72) == 0) {
 	    chm->sec1.rtable = fi;
 	  }
 	}
@@ -451,7 +447,69 @@ static int chmd_fast_find(struct mschm_decompressor *base,
 			  struct mschmd_header *chm, char *filename,
 			  struct mschmd_file *f_ptr, int f_size)
 {
-  return MSPACK_ERR_ARGS;
+  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) base;
+  struct mspack_system *sys;
+  struct mspack_file *fh;
+  unsigned int block;
+  unsigned char *chunk;
+
+  if (!this || !chm || !f_ptr || (f_size != sizeof(struct mschmd_file))) {
+    return MSPACK_ERR_ARGS;
+  }
+  sys = this->system;
+
+  if (!(chunk = sys->alloc(sys, chm->chunk_size))) {
+    return MSPACK_ERR_NOMEMORY;
+  }
+
+  if (!(fh = sys->open(sys, chm->filename, MSPACK_SYS_OPEN_READ))) {
+    sys->free(chunk);
+    return MSPACK_ERR_OPEN;
+  }
+
+  /* go through all PMGI blocks (if there are any present) */
+  block = (chm->index_root >= 0) ? chm->index_root : 0;
+  do {
+    /* seek to block and read it */
+    if (sys->seek(fh, (off_t) (chm->dir_offset + (block * chm->chunk_size)),
+		  MSPACK_SYS_SEEK_CUR))
+    {
+      sys->free(chunk);
+      sys->close(fh);
+      return MSPACK_ERR_SEEK;
+    }
+    if (sys->read(fh, chunk, (int)chm->chunk_size) != (int)chm->chunk_size) {
+      sys->free(chunk);
+      sys->close(fh);
+      return MSPACK_ERR_READ;
+    }
+
+    /* check the signature. Is is PGML or PGMI? */
+    if (!((chunk[0] == 'P') && (chunk[1] == 'G') && (chunk[2] == 'M') &&
+	  ((chunk[3] == 'L') || (chunk[3] == 'I'))))
+    {
+      sys->free(chunk);
+      sys->close(fh);
+      return MSPACK_ERR_DATAFORMAT;
+    }
+    /* if PGML, we have found the listing page! */
+    if (chunk[3] == 'L') {
+      /* LOOP EXIT POINT */
+      break;
+    }
+
+    /* perform binary search on quickrefs */
+    /* perform linear search on quickref segment */
+
+  } while (1); /* see LOOP EXIT POINT above */
+
+  /* a loop through all blocks, if chm->index_root < 0 */
+  /* otherwise just this block */
+
+  /* perform binary search on quickrefs */
+  /* perform linear search on quickref segment */
+  sys->close(fh);
+  sys->free(chunk);
 }
 
 

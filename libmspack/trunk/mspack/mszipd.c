@@ -12,10 +12,6 @@
 
 /* MS-ZIP decompression implementation. */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <mspack.h>
 #include <system.h>
 #include <mszip.h>

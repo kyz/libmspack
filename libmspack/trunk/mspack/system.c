@@ -7,10 +7,6 @@
  * For further details, see the file COPYING.LIB distributed with libmspack
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include <mspack.h>
 
 int mspack_version(int entity) {
