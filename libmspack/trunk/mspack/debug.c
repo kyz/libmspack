@@ -1,5 +1,14 @@
 /* random debugging routines for cut'n'paste when developing */
 
+static char *binary(unsigned int val, unsigned int bits) {
+  static char data[33] = "";
+  char *ptr = &data[bits];
+  if (bits > 32) return "bits>32";
+  *ptr-- = '\0'; 
+  while (bits--) { *ptr-- = (val & 1) ? '1' : '0'; val >>= 1; }
+  return &data[0];
+}
+
 static void cabinfo(struct mscabd_cabinet_p *cab) {
   struct mscabd_folder_data *dat;
   struct mscabd_folder_p *fol;
