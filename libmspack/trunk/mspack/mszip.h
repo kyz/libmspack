@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The deflate method was created by Phil Katz. MSZIP is equivalent to the
  * deflate method.
@@ -15,41 +15,55 @@
 
 /* MSZIP (deflate) compression / (inflate) decompression definitions */
 
-#define MSZIP_FRAME_SIZE  (32768)       /* window size                       */
-#define MSZIPD_LBITS      (9)           /* bits in literal/length lookup tbl */
-#define MSZIPD_DBITS	  (6)           /* bits in distance lookup table     */
-#define MSZIPD_BMAX       (16)          /* maximum bit length of any code    */
-#define MSZIPD_NMAX       (288)         /* maximum codes in any set          */
+#define MSZIP_FRAME_SIZE          (32768) /* size of LZ history window */
+#define MSZIP_MAX_HUFFBITS        (16)    /* maximum huffman code length */
+#define MSZIP_LITERAL_MAXSYMBOLS  (288)   /* literal/length huffman tree */
+#define MSZIP_LITERAL_TABLEBITS   (2)
+#define MSZIP_DISTANCE_MAXSYMBOLS (32)    /* distance huffman tree */
+#define MSZIP_DISTANCE_TABLEBITS  (6)
 
-/* huffman table entry */
-struct mszipd_huft {
-  unsigned char e;                      /* # of extra bits or operation      */
-  unsigned char b;                      /* # of bits in this code or subcode */
-  union {
-    unsigned short n;                   /* literal or length/distance base   */
-    struct mszipd_huft *t;              /* pointer to next level of table    */
-  } v;
-};
+/* if there are less direct lookup entries than symbols, the longer
+ * code pointers will be <= maxsymbols. This must not happen, or we
+ * will decode entries badly */
+#if (1 << MSZIP_LITERAL_TABLEBITS) < (MSZIP_LITERAL_MAXSYMBOLS * 2)
+# define MSZIP_LITERAL_TABLESIZE (MSZIP_LITERAL_MAXSYMBOLS * 4)
+#else
+# define MSZIP_LITERAL_TABLESIZE ((1 << MSZIP_LITERAL_TABLEBITS) + \
+				  (MSZIP_LITERAL_MAXSYMBOLS * 2))
+#endif
+
+#if (1 << MSZIP_DISTANCE_TABLEBITS) < (MSZIP_DISTANCE_MAXSYMBOLS * 2)
+# define MSZIP_DISTANCE_TABLESIZE (MSZIP_DISTANCE_MAXSYMBOLS * 4)
+#else
+# define MSZIP_DISTANCE_TABLESIZE ((1 << MSZIP_DISTANCE_TABLEBITS) + \
+				  (MSZIP_DISTANCE_MAXSYMBOLS * 2))
+#endif
 
 struct mszipd_stream {
-  struct mspack_system *sys;            /* I/O routines                      */
-  struct mspack_file   *input;          /* input file handle                 */
-  struct mspack_file   *output;         /* output file handle                */
-  unsigned int window_posn;             /* offset within window              */
+  struct mspack_system *sys;            /* I/O routines          */
+  struct mspack_file   *input;          /* input file handle     */
+  struct mspack_file   *output;         /* output file handle    */
+  unsigned int window_posn;             /* offset within window  */
 
-  unsigned int ll[288+32];              /* code lengths                      */
-  int lx[MSZIPD_BMAX+1];                /* memory for l[-1..MSZIPD_BMAX-1]   */
-  struct mszipd_huft *u[MSZIPD_BMAX];   /* table stack                       */
-  unsigned int x[MSZIPD_BMAX+1];        /* bit offsets, then code stack      */
-  unsigned int v[MSZIPD_NMAX];          /* values in order of bit length     */
+  /* inflate() will call this whenever the window should be emptied. */
+  int (*flush_window)(struct mszipd_stream *, unsigned int);
+
+  int error, repair_mode, bytes_output;
 
   /* I/O buffering */
   unsigned char *inbuf, *i_ptr, *i_end, *o_ptr, *o_end;
   unsigned int bit_buffer, bits_left, inbuf_size;
 
-  int error, repair_mode;
 
-  /* 32kb decoding window */
+  /* huffman code lengths */
+  unsigned char  LITERAL_len[MSZIP_LITERAL_MAXSYMBOLS];
+  unsigned char  DISTANCE_len[MSZIP_DISTANCE_MAXSYMBOLS];
+
+  /* huffman decoding tables */
+  unsigned short LITERAL_table [MSZIP_LITERAL_TABLESIZE];
+  unsigned short DISTANCE_table[MSZIP_DISTANCE_TABLESIZE];
+
+  /* 32kb history window */
   unsigned char window[MSZIP_FRAME_SIZE];
 };
 

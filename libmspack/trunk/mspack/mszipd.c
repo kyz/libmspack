@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The deflate method was created by Phil Katz. MSZIP is equivalent to the
  * deflate method.
@@ -10,53 +10,47 @@
  * For further details, see the file COPYING.LIB distributed with libmspack
  */
 
-/* MS-ZIP decompression implementation */
+/* MS-ZIP decompression implementation. */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
 #include <mspack.h>
-#include "system.h"
-#include "mszip.h"
+#include <system.h>
+#include <mszip.h>
 
-/* based on an implementation by Dirk Stoecker, itself derived from the
- * Info-ZIP sources.
- */
-
-/* Tables for deflate from PKZIP's appnote.txt. */
-
-/* Order of the bit length code lengths */
-static const unsigned char mszipd_border[] = {
-  16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+/* match lengths for literal codes 257.. 285 */
+static const unsigned short lit_lengths[29] = {
+  3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27,
+  31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258
 };
 
-/* Copy lengths for literal codes 257..285 */
-static const unsigned short mszipd_cplens[] = {
-  3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51,
-  59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0
-};
-
-/* Extra bits for literal codes 257..285 */
-static const unsigned short mszipd_cplext[] = {
-  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,
-  4, 5, 5, 5, 5, 0, 99, 99 /* 99==invalid */
-};
-
-/* Copy offsets for distance codes 0..29 */
-static const unsigned short mszipd_cpdist[] = {
+/* match offsets for distance codes 0 .. 29 */
+static const unsigned short dist_offsets[30] = {
   1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385,
   513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577
 };
 
-/* Extra bits for distance codes */
-static const unsigned short mszipd_cpdext[] = {
-  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10,
-  10, 11, 11, 12, 12, 13, 13
+/* extra bits required for literal codes 257.. 285 */
+static const unsigned char lit_extrabits[29] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2,
+  2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
 };
 
-/* ANDing with mszipd_mask[n] masks the lower n bits */
-static const unsigned short mszipd_mask[] = {
+/* extra bits required for distance codes 0 .. 29 */
+static const unsigned char dist_extrabits[30] = {
+  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6,
+  6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13
+};
+
+/* the order of the bit length Huffman code lengths */
+static const unsigned char bitlen_order[19] = {
+  16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+};
+
+/* ANDing with bit_mask[n] masks the lower n bits */
+static const unsigned short bit_mask[17] = {
  0x0000, 0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f, 0x00ff,
  0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff
 };
@@ -75,7 +69,7 @@ static const unsigned short mszipd_mask[] = {
   bits_left  = zip->bits_left;                                          \
 } while (0)
 
-#define NEED_BITS(nbits) do {                                           \
+#define ENSURE_BITS(nbits) do {                                         \
   while (bits_left < (nbits)) {                                         \
     if (i_ptr >= i_end) {                                               \
       if (zipd_read_input(zip)) return zip->error;                      \
@@ -86,22 +80,18 @@ static const unsigned short mszipd_mask[] = {
   }                                                                     \
 } while (0)
 
-#define PEEK_BITS(mask) (bit_buffer & mask)
+#define PEEK_BITS(nbits)   (bit_buffer & ((1<<(nbits))-1))
+#define PEEK_BITS_T(nbits) (bit_buffer & bit_mask[(nbits)])
 
-#define DUMP_BITS(nbits) ((bit_buffer >>= (nbits)), (bits_left -= (nbits)))
+#define REMOVE_BITS(nbits) ((bit_buffer >>= (nbits)), (bits_left -= (nbits)))
 
-#define READ_BITS_MASK(val, nbits, mask) do {                           \
-  NEED_BITS(nbits); (val) = PEEK_BITS(mask); DUMP_BITS(nbits);          \
+#define READ_BITS(val, nbits) do {                                      \
+  ENSURE_BITS(nbits); (val) = PEEK_BITS(nbits); REMOVE_BITS(nbits);     \
 } while (0)
 
-#define READ_BITS(val, nbits) READ_BITS_MASK(val, nbits, mszipd_mask[nbits])
-#define READ_1BIT(val)        READ_BITS_MASK(val, 1, 0x01)
-#define READ_2BITS(val)       READ_BITS_MASK(val, 2, 0x03)
-#define READ_3BITS(val)       READ_BITS_MASK(val, 3, 0x07)
-#define READ_4BITS(val)       READ_BITS_MASK(val, 4, 0x0F)
-#define READ_5BITS(val)       READ_BITS_MASK(val, 5, 0x1F)
-#define READ_7BITS(val)       READ_BITS_MASK(val, 7, 0x7F)
-#define READ_8BITS(val)       READ_BITS_MASK(val, 8, 0xFF)
+#define READ_BITS_T(val, nbits) do {                                    \
+  ENSURE_BITS(nbits); (val) = PEEK_BITS_T(nbits); REMOVE_BITS(nbits);   \
+} while (0)
 
 static int zipd_read_input(struct mszipd_stream *zip) {
   int read = zip->sys->read(zip->input, &zip->inbuf[0], (int)zip->inbuf_size);
@@ -112,452 +102,425 @@ static int zipd_read_input(struct mszipd_stream *zip) {
   return MSPACK_ERR_OK;
 }
 
+/* inflate() error codes */
+#define INF_ERR_BLOCKTYPE   (-1)  /* unknown block type                      */
+#define INF_ERR_COMPLEMENT  (-2)  /* block size complement mismatch          */
+#define INF_ERR_FLUSH       (-3)  /* error from flush_window() callback      */
+#define INF_ERR_BITBUF      (-4)  /* too many bits in bit buffer             */
+#define INF_ERR_SYMLENS     (-5)  /* too many symbols in blocktype 2 header  */
+#define INF_ERR_BITLENTBL   (-6)  /* failed to build bitlens huffman table   */
+#define INF_ERR_LITERALTBL  (-7)  /* failed to build literals huffman table  */
+#define INF_ERR_DISTANCETBL (-8)  /* failed to build distance huffman table  */
+#define INF_ERR_BITOVERRUN  (-9)  /* bitlen RLE code goes over table size    */
+#define INF_ERR_BADBITLEN   (-10) /* invalid bit-length code                 */
+#define INF_ERR_LITCODE     (-11) /* out-of-range literal code               */
+#define INF_ERR_DISTCODE    (-12) /* out-of-range distance code              */
+#define INF_ERR_DISTANCE    (-13) /* somehow, distance is beyond 32k         */
+#define INF_ERR_HUFFSYM     (-14) /* out of bits decoding huffman symbol     */
 
-static void mszipd_huft_free(struct mszipd_stream *zip, struct mszipd_huft *h)
+/* make_decode_table(nsyms, nbits, length[], table[])
+ *
+ * This function was coded by David Tritscher. It builds a fast huffman
+ * decoding table out of just a canonical huffman code lengths table.
+ *
+ * NOTE: this is NOT identical to the make_decode_table() in lzxd.c. This
+ * one reverses the quick-lookup bit pattern. Bits are read MSB to LSB in LZX,
+ * but LSB to MSB in MSZIP.
+ *
+ * nsyms  = total number of symbols in this huffman tree.
+ * nbits  = any symbols with a code length of nbits or less can be decoded
+ *          in one lookup of the table.
+ * length = A table to get code lengths from [0 to nsyms-1]
+ * table  = The table to fill up with decoded symbols and pointers.
+ *
+ * Returns 0 for OK or 1 for error
+ */
+static int make_decode_table(unsigned int nsyms, unsigned int nbits,
+			     unsigned char *length, unsigned short *table)
 {
-  struct mszipd_huft *n;
+  register unsigned int leaf, reverse, fill;
+  register unsigned short sym, next_sym;
+  register unsigned char bit_num;
+  unsigned int pos         = 0; /* the current position in the decode table */
+  unsigned int table_mask  = 1 << nbits;
+  unsigned int bit_mask    = table_mask >> 1; /* don't do 0 length codes */
 
-  /* Go through linked list, freeing from the allocated (h[-1]) address */
-  while (h) {
-    h--;
-    n = h->v.t;
-    zip->sys->free(h);
-    h = n;
-  } 
-}
+  /* fill entries for codes short enough for a direct mapping */
+  for (bit_num = 1; bit_num <= nbits; bit_num++) {
+    for (sym = 0; sym < nsyms; sym++) {
+      if (length[sym] != bit_num) continue;
 
-static int mszipd_huft_build(struct mszipd_stream *zip, unsigned int *b,
-			     unsigned int n, unsigned int s, unsigned short *d,
-			     unsigned short *e, struct mszipd_huft **t, int *m)
-{
-  unsigned int a;                 /* counter for codes of length k */
-  unsigned int c[MSZIPD_BMAX+1];  /* bit length count table */
-  unsigned int el;                /* length of EOB code (value 256) */
-  unsigned int f;                 /* i repeats in table every f entries */
-  int g;                          /* maximum code length */
-  int h;                          /* table level */
-  register unsigned int i;        /* counter, current code */
-  register unsigned int j;        /* counter */
-  register int k;                 /* number of bits in current code */
-  int *l;                         /* stack of bits per table */
-  register unsigned int *p;       /* pointer into c[], b[] and v[] */
-  register struct mszipd_huft *q; /* points to current table */
-  struct mszipd_huft r;           /* table entry for structure assignment */
-  register int w;                 /* bits before this table == (l * h) */
-  unsigned int *xp;               /* pointer into x */
-  int y;                          /* number of dummy codes added */
-  unsigned int z;                 /* number of entries in current table */
+      /* reverse the significant bits */
+      fill = length[sym]; reverse = pos >> (nbits - fill); leaf = 0;
+      do {leaf <<= 1; leaf |= reverse & 1; reverse >>= 1;} while (--fill);
 
-  l = &zip->lx[1];
+      if((pos += bit_mask) > table_mask) return 1; /* table overrun */
 
-  /* Generate counts for each bit length */
-  el = n > 256 ? b[256] : MSZIPD_BMAX; /* set length of EOB code, if any */
-
-  for (i = 0; i <= MSZIPD_BMAX; i++) {
-    c[i] = 0;
+      /* fill all possible lookups of this symbol with the symbol itself */
+      fill = bit_mask; next_sym = 1 << bit_num;
+      do { table[leaf] = sym; leaf += next_sym; } while (--fill);
+    }
+    bit_mask >>= 1;
   }
 
-  /* assume all entries <= MSZIPD_BMAX */
-  p = b;  i = n;
-  do { c[*p]++; p++;} while (--i);
+  /* exit with success if table is now complete */
+  if (pos == table_mask) return 0;
 
-  /* null input--all zero length codes */
-  if (c[0] == n) {
-    *t = NULL;
-    *m = 0;
-    return 0;
+  /* mark all remaining table entries as unused */
+  for (sym = pos; sym < table_mask; sym++) {
+    reverse = sym; leaf = 0; fill = nbits;
+    do { leaf <<= 1; leaf |= reverse & 1; reverse >>= 1; } while (--fill);
+    table[leaf] = 0xFFFF;
   }
 
-  /* Find minimum and maximum length, bound *m by those */
-  for (j = 1; j <= MSZIPD_BMAX; j++) {
-    if (c[j]) break;
-  }
-  k = j;                        /* minimum code length */
-  if (*m < j) *m = j;
+  /* where should the longer codes be allocated from? */
+  next_sym = ((table_mask >> 1) < nsyms) ? nsyms : (table_mask >> 1);
 
-  for (i = MSZIPD_BMAX; i; i--) {
-    if (c[i]) break;
-  }
-  g = i;                        /* maximum code length */
-  if (*m > i) *m = i;
+  /* give ourselves room for codes to grow by up to 16 more bits.
+   * codes now start at bit nbits+16 and end at (nbits+16-codelength) */
+  pos <<= 16;
+  table_mask <<= 16;
+  bit_mask = 1 << 15;
 
-  /* Adjust last length count to fill out codes, if needed */
-  for (y = 1 << j; j < i; j++, y <<= 1) {
-    /* bad input: more codes than bits */
-    if ((y -= c[j]) < 0) return 2;
-  }
-  if ((y -= c[i]) < 0) return 2;
-  c[i] += y;
+  for (bit_num = nbits+1; bit_num <= MSZIP_MAX_HUFFBITS; bit_num++) {
+    for (sym = 0; sym < nsyms; sym++) {
+      if (length[sym] != bit_num) continue;
 
-  /* Generate starting offsets into the value table for each length */
-  zip->x[1] = j = 0;
-  p = c + 1;  xp = &zip->x[2];
-  while (--i) *xp++ = (j += *p++);  /* note that i == g from above */
+      /* leaf = the first nbits of the code, reversed */
+      reverse = pos >> 16; leaf = 0; fill = nbits;
+      do {leaf <<= 1; leaf |= reverse & 1; reverse >>= 1;} while (--fill);
 
-  /* Make a table of values in order of bit lengths */
-  p = b;  i = 0;
-  do { if ((j = *p++) != 0) zip->v[zip->x[j]++] = i; } while (++i < n);
-
-  /* Generate the Huffman codes and for each, make the table entries */
-  zip->x[0] = i = 0;          /* first Huffman code is zero */
-  p = &zip->v[0];             /* grab values in bit order */
-  h = -1;                     /* no tables yet--level -1 */
-  w = l[-1] = 0;              /* no bits decoded yet */
-  zip->u[0] = NULL;           /* just to keep compilers happy */
-  q = NULL;                   /* ditto */
-  z = 0;                      /* ditto */
-
-  /* go through the bit lengths (k already is bits in shortest code) */
-  for (; k <= g; k++) {
-    a = c[k];
-    while (a--) {
-      /* here i is the Huffman code of length k bits for value *p */
-      /* make tables up to required level */
-      while (k > w + l[h]) {
-        w += l[h++];            /* add bits already decoded */
-
-        /* compute minimum size table less than or equal to *m bits */
-        z = (z = g - w) > *m ? *m : z;        /* upper limit */
-        if ((f = 1 << (j = k - w)) > a + 1)   /* try a k-w bit table */
-        {                       /* too few codes for k-w bit table */
-          f -= a + 1;           /* deduct codes from patterns left */
-          xp = c + k;
-          while (++j < z) {     /* try smaller tables up to z bits */
-            if ((f <<= 1) <= *++xp) break; /* enough codes to use up j bits */
-            f -= *xp;           /* else deduct codes from patterns */
-          }
-        }
-        if (((w + j) > el) && (w < el)) {
-	  j = el - w; /* make EOB code end at table */
+      for (fill = 0; fill < (bit_num - nbits); fill++) {
+	/* if this path hasn't been taken yet, 'allocate' two entries */
+	if (table[leaf] == 0xFFFF) {
+	  table[(next_sym << 1)     ] = 0xFFFF;
+	  table[(next_sym << 1) + 1 ] = 0xFFFF;
+	  table[leaf] = next_sym++;
 	}
-        z = 1 << j;             /* table entries for j-bit table */
-        l[h] = j;               /* set table size in stack */
-
-        /* allocate and link in new table */
-	q = zip->sys->alloc(zip->sys, (z+1) * sizeof(struct mszipd_huft));
-        if (!q) {
-          if (h) mszipd_huft_free(zip, zip->u[0]);
-          return 3;             /* not enough memory */
-        }
-        *t = q + 1;             /* link to list for mszipd_huft_free() */
-        *(t = &(q->v.t)) = NULL;
-        zip->u[h] = ++q;             /* table starts after link */
-
-        /* connect to last table, if there is one */
-        if (h) {
-          zip->x[h] = i;             /* save pattern for backing up */
-          r.b = l[h-1];    /* bits to dump before this table */
-          r.e = (16 + j);  /* bits in this table */
-          r.v.t = q;            /* pointer to this table */
-          j = (i & ((1 << w) - 1)) >> (w - l[h-1]);
-          zip->u[h-1][j] = r;        /* connect to last table */
-        }
+	/* follow the path and select either left or right for next bit */
+	leaf = (table[leaf] << 1) | ((pos >> (15 - fill)) & 1);
       }
+      table[leaf] = sym;
 
-      /* set up table entry in r */
-      r.b = k - w;
-      if (p >= &zip->v[n]) {
-        r.e = 99;               /* out of values--invalid code */
-      }
-      else if (*p < s) {
-        r.e = (*p < 256) ? 16 : 15;    /* 256 is end-of-block code */
-        r.v.n = *p++;           /* simple code is just the value */
-      }
-      else {
-        r.e = e[*p - s];   /* non-simple--look up in lists */
-        r.v.n = d[*p++ - s];
-      }
-
-      /* fill code-like entries with r */
-      f = 1 << (k - w);
-      for (j = i >> w; j < z; j += f) q[j] = r;
-
-      /* backwards increment the k-bit code i */
-      for (j = 1 << (k - 1); i & j; j >>= 1) i ^= j;
-      i ^= j;
-
-      /* backup over finished tables */
-      /* don't need to update q */
-      while ((i & ((1 << w) - 1)) != zip->x[h]) w -= l[--h];
+      if ((pos += bit_mask) > table_mask) return 1; /* table overflow */
     }
+    bit_mask >>= 1;
   }
 
-  /* return actual size of base table */
-  *m = l[0];
-
-  /* Return true (1) if we were given an incomplete table */
-  return (y != 0) && (g != 1);
+  /* full table? */
+  return (pos != table_mask) ? 1 : 0;
 }
 
-static int mszipd_inflate_codes(struct mszipd_stream *zip,
-				struct mszipd_huft *tl,
-				struct mszipd_huft *td,
-				int bl, int bd)
-{
-  register unsigned int e;  /* table entry flag/number of extra bits */
-  unsigned int n, d;        /* length and index for copy */
-  unsigned int w;           /* current window position */
-  struct mszipd_huft *t; /* pointer to table entry */
-  unsigned int ml, md;      /* masks for bl and bd bits */
+/* READ_HUFFSYM(tablename, var) decodes one huffman symbol from the
+ * bitstream using the stated table and puts it in var.
+ */
+#define READ_HUFFSYM(tbl, var) do {                                     \
+  /* huffman symbols can be up to 16 bits long */                       \
+  ENSURE_BITS(MSZIP_MAX_HUFFBITS);                                      \
+  /* immediate table lookup of [tablebits] bits of the code */          \
+  sym = zip->tbl##_table[PEEK_BITS(MSZIP_##tbl##_TABLEBITS)];		\
+  /* is the symbol is longer than [tablebits] bits? (i=node index) */   \
+  if (sym >= MSZIP_##tbl##_MAXSYMBOLS) {                                \
+    /* decode remaining bits by tree traversal */                       \
+    i = MSZIP_##tbl##_TABLEBITS - 1;					\
+    do {                                                                \
+      /* check next bit. error if we run out of bits before decode */	\
+      if (i++ > MSZIP_MAX_HUFFBITS) {					\
+        D(("out of bits in huffman decode"))                            \
+        return INF_ERR_HUFFSYM;                                         \
+      }                                                                 \
+      /* double node index and add 0 (left branch) or 1 (right) */	\
+      sym = zip->tbl##_table[(sym << 1) | ((bit_buffer >> i) & 1)];	\
+      /* while we are still in node indicies, not decoded symbols */    \
+    } while (sym >= MSZIP_##tbl##_MAXSYMBOLS);                          \
+  }                                                                     \
+  /* result */                                                          \
+  (var) = sym;                                                          \
+  /* look up the code length of that symbol and discard those bits */   \
+  i = zip->tbl##_len[sym];                                              \
+  REMOVE_BITS(i);                                                       \
+} while (0)
 
-  /* for the bit buffer */
+static int zip_read_lens(struct mszipd_stream *zip) {
+  /* for the bit buffer and huffman decoding */
   register unsigned int bit_buffer;
   register int bits_left;
   unsigned char *i_ptr, *i_end;
 
+  /* bitlen Huffman codes -- immediate lookup, 7 bit max code length */
+  unsigned short bl_table[(1 << 7)];
+  unsigned char bl_len[19];
 
-  /* make local copies of globals */
+  unsigned char lens[MSZIP_LITERAL_MAXSYMBOLS + MSZIP_DISTANCE_MAXSYMBOLS];
+  unsigned int lit_codes, dist_codes, code, last_code, bitlen_codes, i, run;
+
   RESTORE_BITS;
-  w = zip->window_posn; /* initialize window position */
 
-  /* inflate the coded data */
+  /* read the number of codes */
+  READ_BITS(lit_codes,    5); lit_codes    += 257;
+  READ_BITS(dist_codes,   5); dist_codes   += 1;
+  READ_BITS(bitlen_codes, 4); bitlen_codes += 4;
+  if (lit_codes  > MSZIP_LITERAL_MAXSYMBOLS)  return INF_ERR_SYMLENS;
+  if (dist_codes > MSZIP_DISTANCE_MAXSYMBOLS) return INF_ERR_SYMLENS;
 
-  /* precompute masks for speed */
-  ml = mszipd_mask[bl];
-  md = mszipd_mask[bd];
+  /* read in the bit lengths in their unusual order */
+  for (i = 0; i < bitlen_codes; i++) READ_BITS(bl_len[bitlen_order[i]], 3);
+  while (i < 19) bl_len[bitlen_order[i++]] = 0;
 
-  for (;;) {
-    NEED_BITS(bl);
-    t = &tl[PEEK_BITS(ml)];
-    e = t->e;
-    if (e > 16) {
-      do {
-        if (e == 99) return 1;
-        DUMP_BITS(t->b);
-        e -= 16;
-        NEED_BITS(e);
-	t = &t->v.t[PEEK_BITS(mszipd_mask[e])];
-	e = t->e;
-      } while (e > 16);
-    }
-    DUMP_BITS(t->b);
+  /* create decoding table with an immediate lookup */
+  if (make_decode_table(19, 7, &bl_len[0], &bl_table[0])) {
+    return INF_ERR_BITLENTBL;
+  }
 
-    if (e == 16) {
-      /* literal */
-      zip->window[w++] = t->v.n;
-    }
+  /* read literal / distance code lengths */
+  for (i = 0; i < (lit_codes + dist_codes); i++) {
+    /* single-level huffman lookup */
+    ENSURE_BITS(7);
+    code = bl_table[PEEK_BITS(7)];
+    REMOVE_BITS(bl_len[code]);
+
+    if (code < 16) lens[i] = last_code = code;
     else {
-      /* EOB or length. exit if EOB */
-      if (e == 15) break;
-
-      /* get length of block to copy */
-      READ_BITS(n, e);
-      n += t->v.n;
-
-      /* decode distance of block to copy */
-      NEED_BITS(bd);
-      t = &td[PEEK_BITS(md)];
-      e = t->e;
-      if (e > 16) {
-        do {
-          if (e == 99) return 1;
-          DUMP_BITS(t->b);
-	  e -= 16;
-          NEED_BITS(e);
-	  t = &t->v.t[PEEK_BITS(mszipd_mask[e])];
-	  e = t->e;
-        } while (e > 16);
+      switch (code) {
+      case 16: READ_BITS(run, 2); run += 3;  code = last_code; break;
+      case 17: READ_BITS(run, 3); run += 3;  code = 0;         break;
+      case 18: READ_BITS(run, 7); run += 11; code = 0;         break;
+      default: D(("bad code!: %u", code)) return INF_ERR_BADBITLEN;
       }
-      DUMP_BITS(t->b);
-
-      READ_BITS(d, e);
-      d = w - t->v.n - d;
-
-      /* copy matched block */
-      do {
-	d &= MSZIP_FRAME_SIZE-1;
-	e = MSZIP_FRAME_SIZE - ((d > w) ? d : w);
-	e = ((e > n) ? n : e);
-        n -= e;
-        do { zip->window[w++] = zip->window[d++]; } while (--e);
-      } while (n);
+      if ((i + run) > (lit_codes + dist_codes)) return INF_ERR_BITOVERRUN;
+      while (run--) lens[i++] = code;
+      i--;
     }
   }
 
-  /* restore the globals from the locals */
-  zip->window_posn = w;
+  /* copy LITERAL code lengths and clear any remaining */
+  i = lit_codes;
+  zip->sys->copy(&lens[0], &zip->LITERAL_len[0], i);
+  while (i < MSZIP_LITERAL_MAXSYMBOLS) zip->LITERAL_len[i++] = 0;
+
+  i = dist_codes;
+  zip->sys->copy(&lens[lit_codes], &zip->DISTANCE_len[0], i);
+  while (i < MSZIP_DISTANCE_MAXSYMBOLS) zip->DISTANCE_len[i++] = 0;
+
   STORE_BITS;
-
-  /* done */
   return 0;
 }
 
-int Zipinflate_dynamic(void)
-{
-  return 0;
-}
+/* a clean implementation of RFC 1951 / inflate */
+static int inflate(struct mszipd_stream *zip) {
+  unsigned int last_block, block_type, distance, length, this_run, i;
 
-int mszip_inflate(struct mszipd_stream *zip) {
-  int last_block, block_type;
-
-  /* for the bit buffer */
+  /* for the bit buffer and huffman decoding */
   register unsigned int bit_buffer;
   register int bits_left;
   unsigned char *i_ptr, *i_end;
+
+  /* for the huffman decoding */
+  register unsigned short sym;
+
+  RESTORE_BITS;
 
   do {
-    RESTORE_BITS;
-
     /* read in last block bit */
-    READ_1BIT(last_block);
+    READ_BITS(last_block, 1);
 
     /* read in block type */
-    READ_2BITS(block_type);
+    READ_BITS(block_type, 2);
 
-    switch (block_type) {
-    case 0:
-      /* stored block */
-      {
-	unsigned int m, n;
+    if (block_type == 0) {
+      /* uncompressed block */
+      unsigned char lens_buf[4];
 
-	/* go to byte boundary */
-	n = bits_left & 7;
-	DUMP_BITS(n);
+      /* go to byte boundary */
+      i = bits_left & 7;
+      REMOVE_BITS(i);
+      D(("dumped %d bits to byte-align", i))
 
-	/* get the length and its complement */
-	READ_BITS(n, 16);
-	READ_BITS(m, 16);
-	if (n != ~m) return 1;
-
-	/* read and output the compressed data */
-	m = zip->window_posn;
-	while (n--) {READ_8BITS(zip->window[m++]);}
+      /* read 4 bytes of data, emptying the bit-buffer if necessary */
+      for (i = 0; (bits_left >= 8); i++) {
+	if (i == 4) return INF_ERR_BITBUF;
+	lens_buf[i] = PEEK_BITS(8);
+	REMOVE_BITS(8);
       }
-      break;
-    case 1:
-      /* fixed block */
-      {
-	struct mszipd_huft *fixed_tl;
-	struct mszipd_huft *fixed_td;
-	unsigned int *l = &zip->ll[0];
-	int fixed_bl, fixed_bd;
-	int i;
+      if (bits_left != 0) return INF_ERR_BITBUF;
+      while (i < 4) {
+	if (i_ptr >= i_end) {
+	  if (zipd_read_input(zip)) return zip->error;
+	  i_ptr = zip->i_ptr;
+	  i_end = zip->i_end;
+	}
+	lens_buf[i++] = *i_ptr++;
+      }
 
-	/* literal table */
+      /* get the length and its complement */
+      length = lens_buf[0] | (lens_buf[1] << 8);
+      i      = lens_buf[2] | (lens_buf[3] << 8);
+      D(("length is %u (0x%x), complement is %u (0x%x)",
+	 length, length, i, i))
+      if (length != ~i) return INF_ERR_COMPLEMENT;
+
+      /* read and copy the uncompressed data into the window */
+      while (length > 0) {
+	if (i_ptr >= i_end) {
+	  if (zipd_read_input(zip)) return zip->error;
+	  i_ptr = zip->i_ptr;
+	  i_end = zip->i_end;
+	}
+
+	this_run = length;
+	if (this_run > (unsigned int)(i_end - i_ptr)) this_run = i_end - i_ptr;
+	if (this_run > (MSZIP_FRAME_SIZE - zip->window_posn))
+	  this_run = MSZIP_FRAME_SIZE - zip->window_posn;
+	D(("writing %u uncompressed bytes to posn %u",
+	   this_run, zip->window_posn))
+
+	zip->sys->copy(i_ptr, &zip->window[zip->window_posn], this_run);
+	zip->window_posn += this_run;
+	i_ptr    += this_run;
+	length   -= this_run;
+
+	if (zip->window_posn == MSZIP_FRAME_SIZE) {
+	  if (zip->flush_window(zip, MSZIP_FRAME_SIZE)) return INF_ERR_FLUSH;
+	  zip->window_posn = 0;
+	}
+      }
+    }
+    else if ((block_type == 1) || (block_type == 2)) {
+      /* Huffman-compressed LZ77 block */
+      unsigned int window_posn, match_posn, code;
+
+      if (block_type == 1) {
+	/* block with fixed Huffman codes */
 	i = 0;
-	while (i < 144) l[i++] = 8;
-	while (i < 256) l[i++] = 9;
-	while (i < 280) l[i++] = 7;
-	while (i < 288) l[i++] = 8;
-	fixed_bl = 7;
-	i = mszipd_huft_build(zip, l, 288, 257, mszipd_cplens, mszipd_cplext,
-			      &fixed_tl, &fixed_bl);
-	if (i) return i;
-
-	/* distance table */
-	/* make an incomplete code set */
-	for (i = 0; i < 30; i++) l[i] = 5;
-	fixed_bd = 5;
-	i = mszipd_huft_build(zip, l, 30, 0, mszipd_cpdist, mszipd_cpdext,
-			      &fixed_td, &fixed_bd);
-	if (i > 1) {
-	  mszipd_huft_free(zip, fixed_tl);
-	  return i;
-	}
-
-	/* decompress until an end-of-block code */
-	STORE_BITS;
-	i = mszipd_inflate_codes(zip, fixed_tl, fixed_td, fixed_bl, fixed_bd);
-	mszipd_huft_free(zip, fixed_td);
-	mszipd_huft_free(zip, fixed_tl);
-	if (i) return i;
+	while (i < 144) zip->LITERAL_len[i++] = 8;
+	while (i < 256) zip->LITERAL_len[i++] = 9;
+	while (i < 280) zip->LITERAL_len[i++] = 7;
+	while (i < 288) zip->LITERAL_len[i++] = 8;
+	for (i = 0; i < 32; i++) zip->DISTANCE_len[i] = 5;
       }
-      break;
-    case 2:
-      /* dynamic block */
+      else {
+	/* block with dynamic Huffman codes */
+	STORE_BITS;
+	if ((i = zip_read_lens(zip))) return i;
+	RESTORE_BITS;
+      }
+
+      /* now huffman lengths are read for either kind of block, 
+       * create huffman decoding tables */
+      if (make_decode_table(MSZIP_LITERAL_MAXSYMBOLS, MSZIP_LITERAL_TABLEBITS,
+			    &zip->LITERAL_len[0], &zip->LITERAL_table[0]))
       {
-	int i, bl, bd;
-	unsigned int j, *ll, l, m, n, nb, nl, nd;
-	struct mszipd_huft *tl, *td;
+	return INF_ERR_LITERALTBL;
+      }
 
-	ll = &zip->ll[0];
+      if (make_decode_table(MSZIP_DISTANCE_MAXSYMBOLS,MSZIP_DISTANCE_TABLEBITS,
+			    &zip->DISTANCE_len[0], &zip->DISTANCE_table[0]))
+      {
+	return INF_ERR_DISTANCETBL;
+      }
 
-	/* read in table lengths */
-	READ_5BITS(nl); nl += 257; /* number of bit length codes */
-	READ_5BITS(nd); nd += 1;   /* number of distance codes */
-	READ_4BITS(nb); nb += 4;   /* number of bit length codes */
-	if ((nl > 288) || (nd > 32)) return 1; /* bad lengths */
-
-	/* read in bit-length-code lengths */
-	for (j = 0; j < nb; j++) READ_3BITS(ll[mszipd_border[j]]);
-	while (j < 19) ll[mszipd_border[j++]] = 0;
-
-	/* build decoding table for trees--single level, 7 bit lookup */
-	bl = 7;
-	i = mszipd_huft_build(zip, ll, 19, 19, NULL, NULL, &tl, &bl);
-	if (i != 0) {
-	  if(i == 1) mszipd_huft_free(zip, tl);
-	  return i; /* incomplete code set */
+      /* decode forever until end of block code */
+      window_posn = zip->window_posn;
+      while (1) {
+	READ_HUFFSYM(LITERAL, code);
+	if (code < 256) {
+	  zip->window[window_posn++] = (unsigned char) code;
+	  if (window_posn == MSZIP_FRAME_SIZE) {
+	    if (zip->flush_window(zip, MSZIP_FRAME_SIZE)) return INF_ERR_FLUSH;
+	    window_posn = 0;
+	  }
 	}
+	else if (code == 256) {
+	  /* END OF BLOCK CODE: loop break point */
+	  break;
+	}
+	else {
+	  code -= 257;
+	  if (code > 29) return INF_ERR_LITCODE;
+	  READ_BITS_T(length, lit_extrabits[code]);
+	  length += lit_lengths[code];
 
-	/* read in literal and distance code lengths */
-	n = nl + nd;
-	m = mszipd_mask[bl];
-	i = l = 0;
-	while (i < n) {
-	  NEED_BITS(bl);
-	  td = &tl[PEEK_BITS(m)];
-	  j = td->b;
-	  DUMP_BITS(j);
-	  j = td->v.n;
-	  /* length of code in bits (0..15) */
-	  if (j < 16) {
-	    /* save last length in l */
-	    ll[i++] = l = j;
-	  }
-	  else if (j == 16) {
-	    /* repeat last length 3 to 6 times */
-	    READ_2BITS(j); j += 3;
-	    if((i + j) > n) return 1;
-	    while (j--) ll[i++] = l;
-	  }
-	  else if (j == 17) {
-	    /* 3 to 10 zero length codes */
-	    READ_3BITS(j); j += 3;
-	    if ((i + j) > n) return 1;
-	    while (j--) ll[i++] = 0;
-	    l = 0;
+	  READ_HUFFSYM(DISTANCE, code);
+	  if (code > 30) return INF_ERR_DISTCODE;
+	  READ_BITS_T(distance, dist_extrabits[code]);
+	  distance += dist_offsets[code];
+
+	  /* match position is window position minus distance. If distance
+	   * is more than window position numerically, it must 'wrap
+	   * around' the frame size. */ 
+	  match_posn = ((distance > window_posn) ? MSZIP_FRAME_SIZE : 0)
+	    + window_posn - distance;
+
+	  /* copy match */
+	  if (length < 12) {
+	    /* short match, use slower loop but no loop setup code */
+	    while (length--) {
+	      zip->window[window_posn++] = zip->window[match_posn++];
+	      match_posn &= MSZIP_FRAME_SIZE - 1;
+
+	      if (window_posn == MSZIP_FRAME_SIZE) {
+		if (zip->flush_window(zip, MSZIP_FRAME_SIZE))
+		  return INF_ERR_FLUSH;
+		window_posn = 0;
+	      }
+	    }
 	  }
 	  else {
-	    /* j == 18: 11 to 138 zero length codes */
-	    READ_7BITS(j); j += 11;
-	    if ((i + j) > n) return 1;
-	    while (j--) ll[i++] = 0;
-	    l = 0;
+	    /* longer match, use faster loop but with setup expense */
+	    unsigned char *runsrc, *rundest;
+	    do {
+	      this_run = length;
+	      if ((match_posn + this_run) > MSZIP_FRAME_SIZE)
+		this_run = MSZIP_FRAME_SIZE - match_posn;
+	      if ((window_posn + this_run) > MSZIP_FRAME_SIZE)
+		this_run = MSZIP_FRAME_SIZE - window_posn;
+
+	      rundest = &zip->window[window_posn]; window_posn += this_run;
+	      runsrc  = &zip->window[match_posn];  match_posn  += this_run;
+	      length -= this_run;
+	      while (this_run--) *rundest++ = *runsrc++;
+
+	      /* flush if necessary */
+	      if (window_posn == MSZIP_FRAME_SIZE) {
+		if (zip->flush_window(zip, MSZIP_FRAME_SIZE))
+		  return INF_ERR_FLUSH;
+		window_posn = 0;
+	      }
+	      if (match_posn == MSZIP_FRAME_SIZE) match_posn = 0;
+	    } while (length > 0);
 	  }
-	}
-	/* free decoding table for trees */
-	mszipd_huft_free(zip, tl);
 
-	/* build the decoding tables for literal/length and distance codes */
-	bl = MSZIPD_LBITS;
-	i = mszipd_huft_build(zip, ll, nl, 257, mszipd_cplens, mszipd_cplext,
-			      &tl, &bl);
-	if (i != 0) {
-	  if (i == 1) mszipd_huft_free(zip, tl);
-	  return i; /* incomplete code set */
-	}
-	bd = MSZIPD_DBITS;
-	mszipd_huft_build(zip, ll + nl, nd, 0, mszipd_cpdist, mszipd_cpdext,
-			  &td, &bd);
+	} /* else (code >= 257) */
 
-	/* decompress until an end-of-block code */
-	STORE_BITS;
-	if (mszipd_inflate_codes(zip, tl, td, bl, bd)) return 1;
-
-	/* free the decoding tables, return */
-	mszipd_huft_free(zip, tl);
-	mszipd_huft_free(zip, td);
-      }
-      break;
-    default:
-      /* bad block type */
-      return 2;
+      } /* while (forever) -- break point at 'code == 256' */
+      zip->window_posn = window_posn;
+    }
+    else {
+      /* block_type == 3 -- bad block type */
+      return INF_ERR_BLOCKTYPE;
     }
   } while (!last_block);
 
+  /* flush the remaining data */
+  if (zip->window_posn) {
+    if (zip->flush_window(zip, zip->window_posn)) return INF_ERR_FLUSH;
+  }
+  STORE_BITS;
+
   /* return success */
   return 0;
+}
+
+/* inflate() calls this whenever the window should be flushed. As
+ * MSZIP only expands to the size of the window, the implementation used
+ * simply keeps track of the amount of data flushed, and if more than 32k
+ * is flushed, an error is raised.
+ */  
+static int mszipd_flush_window(struct mszipd_stream *zip,
+			       unsigned int data_flushed)
+{
+  zip->bytes_output += data_flushed;
+  return (zip->bytes_output > MSZIP_FRAME_SIZE) ? 1 : 0;
 }
 
 struct mszipd_stream *mszipd_init(struct mspack_system *system,
@@ -592,21 +555,21 @@ struct mszipd_stream *mszipd_init(struct mspack_system *system,
   zip->inbuf_size      = input_buffer_size;
   zip->error           = MSPACK_ERR_OK;
   zip->repair_mode     = repair_mode;
+  zip->flush_window    = &mszipd_flush_window;
 
   zip->i_ptr = zip->i_end = &zip->inbuf[0];
-  zip->o_ptr = zip->o_end = &zip->window[0];
+  zip->o_ptr = zip->o_end = NULL;
   zip->bit_buffer = 0; zip->bits_left = 0;
-
   return zip;
 }
 
 int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
-  int i;
-
   /* for the bit buffer */
   register unsigned int bit_buffer;
   register int bits_left;
   unsigned char *i_ptr, *i_end;
+
+  int i, state;
 
   /* easy answers */
   if (!zip || (out_bytes < 0)) return MSPACK_ERR_ARGS;
@@ -625,28 +588,55 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
   if (out_bytes == 0) return MSPACK_ERR_OK;
 
 
-  RESTORE_BITS;
-
   while (out_bytes > 0) {
     /* unpack another block */
+    RESTORE_BITS;
 
-    /* align to bytestream */
-    i = bits_left & 7;
-    DUMP_BITS(i);
+    /* skip to next read 'CK' header */
+    i = bits_left & 7; REMOVE_BITS(i); /* align to bytestream */
+    do {
+      READ_BITS(i, 8);
+      if (i == 'C') state = 1;
+      else if ((state == 1) && (i == 'K')) state = 2;
+      else state = 0;
+    } while (state != 2);
 
-    /* read 'CK' header */
-    i = 0;
-    while (i != 'K') {
-      while (i != 'C') READ_8BITS(i);
-      READ_8BITS(i);
-    } while (i != 'K');
+    /* inflate a block, repair and realign if necessary */
     zip->window_posn = 0;
+    zip->bytes_output = 0;
     STORE_BITS;
+    if ((i = inflate(zip))) {
+      D(("inflate error %d", i))
+      if (zip->repair_mode) {
+	zip->sys->message(NULL, "MSZIP error, %d bytes of data lost.",
+			  MSZIP_FRAME_SIZE - zip->bytes_output);
+	for (i = zip->bytes_output; i < MSZIP_FRAME_SIZE; i++) {
+	  zip->window[i] = '\0';
+	}
+	zip->bytes_output = MSZIP_FRAME_SIZE;
+      }
+      else {
+	return zip->error = MSPACK_ERR_DECRUNCH;
+      }
+    }
+    zip->o_ptr = &zip->window[0];
+    zip->o_end = &zip->o_ptr[zip->bytes_output];
 
+    /* write a frame */
+    i = (out_bytes < (off_t)zip->bytes_output) ?
+      (int)out_bytes : zip->bytes_output;
+    if (zip->sys->write(zip->output, zip->o_ptr, i) != i) {
+      return zip->error = MSPACK_ERR_WRITE;
+    }
+    zip->o_ptr  += i;
+    out_bytes   -= i;
   }
 
-  return MSPACK_ERR_DECRUNCH;
-
+  if (out_bytes) {
+    D(("bytes left to output"))
+    return zip->error = MSPACK_ERR_DECRUNCH;
+  }
+  return MSPACK_ERR_OK;
 }
 
 void mszipd_free(struct mszipd_stream *zip) {
