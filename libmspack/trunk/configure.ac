@@ -6,6 +6,17 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([mspack/mspack.h])
 AC_CONFIG_HEADER([config.h])
 
+# --enable-debug option
+AC_ARG_ENABLE(debug,
+  AC_HELP_STRING([--enable-debug], [enable debugging]),
+  enable_debug=$enableval,
+  enable_debug=no)
+if test x$enable_debug == xyes; then
+  AC_DEFINE(DEBUG, 1, [Turn debugging mode on?])
+fi
+AM_CONDITIONAL(DEBUG, test x$enable_debug = 'xyes')
+
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
