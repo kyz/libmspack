@@ -37,6 +37,7 @@ AC_CHECK_FUNCS([memcpy strcasecmp strchr utime utimes])
 AC_CHECK_FUNCS([getopt_long],,[AC_CHECK_LIB([gnugetopt], [getopt_long],
   [AC_DEFINE([HAVE_GETOPT_LONG])],[AC_LIBOBJ(getopt) AC_LIBOBJ(getopt1)])])
 AC_REPLACE_FNMATCH
+AC_REPLACE_FUNCS([mempcpy])
 
 AC_CONFIG_FILES([Makefile cabextract.spec])
 AC_OUTPUT

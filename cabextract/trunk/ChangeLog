@@ -1,3 +1,29 @@
+2004-10-15  Stuart Caie   <kyzer@4u.net>
+
+	* create_output_name(): removes leading "./" and "../" as well as
+	leading slashes from the input filename. Thanks to David Banz for
+	pointing this out, as well as http://www.securityfocus.com/bid/11376/
+	
+2004-07-16  Stuart Caie   <kyzer@4u.net>
+
+	* Makefile.am: added -DMSPACK_NO_DEFAULT_SYSTEM. Why wasn't this in
+	earlier?
+
+	* src/cabextract.c: added prototypes of the cabx_ functions,
+	removed the prototype of cabextract_system and moved the real
+	cabextract_system to before main(). This is so AIX doesn't fail on
+	seeing an extern and a static definition of the same
+	global. That's messed up!
+
+	* alloca.c, fnmatch*, getopt*, mempcpy.c: imported these from
+	gcc's latest libiberty. This should fix problems with Cygwin.
+	
+2004-03-18  Stuart Caie   <kyzer@4u.net>
+
+	* process_cabinet(): added missing printf argument when errors on
+	extracting to stdout occur. Thanks to Moritz Barsnick for finding
+	it.
+
 2004-03-08  Stuart Caie   <kyzer@4u.net>
 
 	* all: tidy-ups for 1.0 release
