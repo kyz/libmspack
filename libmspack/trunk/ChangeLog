@@ -1,3 +1,14 @@
+2004-03-10  Stuart Caie   <kyzer@4u.net>
+
+	* cabd.c: updated the location of the CAB SDK.
+
+	* cabd.c: changed a couple of MSPACK_ERR_READ errors not based on
+	read() failures into MSPACK_ERR_DATAFORMAT errors.
+
+	* mszipd_decompress(): repair mode now aborts after writing a
+	repaired block if the error was a hard error (e.g. read error, out
+	of blocks, etc)
+
 2004-03-08  Stuart Caie   <kyzer@4u.net>
 
 	* Makefile.am: now builds and installs a versioned library.
