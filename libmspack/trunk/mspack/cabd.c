@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -35,8 +35,8 @@
 #endif
 
 #include <mspack.h>
-#include "system.h"
-#include "cab.h"
+#include <system.h>
+#include <cab.h>
 
 /* Notes on compliance with cabinet specification:
  *
@@ -110,7 +110,7 @@ static int cabd_merge(
 static int cabd_extract(
   struct mscab_decompressor *base, struct mscabd_file *file, char *filename);
 static int cabd_init_decomp(
-  struct mscab_decompressor_p *this, int ct);
+  struct mscab_decompressor_p *this, unsigned int ct);
 static void cabd_free_decomp(
   struct mscab_decompressor_p *this);
 static int cabd_sys_read(
@@ -118,7 +118,8 @@ static int cabd_sys_read(
 static int cabd_sys_write(
   struct mspack_file *file, void *buffer, int bytes);
 static int cabd_sys_read_block(
-  struct mspack_system *sys, struct mscabd_decompress_state *d, int *out);
+  struct mspack_system *sys, struct mscabd_decompress_state *d, int *out,
+  int ignore_cksum);
 static unsigned int cabd_checksum(
   unsigned char *data, unsigned int bytes, unsigned int cksum);
 static struct noned_state *noned_init(
@@ -652,7 +653,7 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
     }
 
     /* FAQ avoidance strategy */
-    if ((offset == 0) && (EndGetI32(p) == 0x28635349)) {
+    if ((offset == 0) && (EndGetI32(&buf[0]) == 0x28635349)) {
       sys->message(fh, "WARNING; found InstallShield header. "
 		   "This is probably an InstallShield file. "
 		   "Use UNSHIELD (http://synce.sf.net) to unpack it.");
@@ -1059,7 +1060,8 @@ static int cabd_extract(struct mscab_decompressor *base,
  * cabd_free_decomp frees decompression state, according to which method
  * was used.
  */
-static int cabd_init_decomp(struct mscab_decompressor_p *this, int ct) {
+static int cabd_init_decomp(struct mscab_decompressor_p *this, unsigned int ct)
+{
   struct mspack_file *fh = (struct mspack_file *) this;
 
   if (!this || !this->d) {
@@ -1085,12 +1087,12 @@ static int cabd_init_decomp(struct mscab_decompressor_p *this, int ct) {
     break;
   case cffoldCOMPTYPE_QUANTUM:
     this->d->decompress = (int (*)(void *, off_t)) &qtmd_decompress;
-    this->d->state = qtmd_init(&this->d->sys, fh, fh, (ct >> 8) & 0x1f,
+    this->d->state = qtmd_init(&this->d->sys, fh, fh, (int) (ct >> 8) & 0x1f,
 			       this->param[MSCABD_PARAM_DECOMPBUF]);
     break;
   case cffoldCOMPTYPE_LZX:
     this->d->decompress = (int (*)(void *, off_t)) &lzxd_decompress;
-    this->d->state = lzxd_init(&this->d->sys, fh, fh, (ct >> 8) & 0x1f, 0,
+    this->d->state = lzxd_init(&this->d->sys, fh, fh, (int) (ct >> 8) & 0x1f, 0,
 			       this->param[MSCABD_PARAM_DECOMPBUF], (off_t) 0);
     break;
   default:
@@ -1128,7 +1130,10 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
   struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) file;
   unsigned char *buf = (unsigned char *) buffer;
   struct mspack_system *sys = this->system;
-  int avail, todo, outlen;
+  int avail, todo, outlen, ignore_cksum;
+
+  ignore_cksum = this->param[MSCABD_PARAM_FIXMSZIP] &&
+    ((this->d->comp_type & cffoldCOMPTYPE_MASK) == cffoldCOMPTYPE_MSZIP);
 
   todo = bytes;
   while (todo > 0) {
@@ -1153,7 +1158,7 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
       }
 
       /* read a block */
-      this->error = cabd_sys_read_block(sys, this->d, &outlen);
+      this->error = cabd_sys_read_block(sys, this->d, &outlen, ignore_cksum);
       if (this->error) return -1;
 
       /* special Quantum hack -- trailer byte to allow the decompressor
@@ -1176,7 +1181,8 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
       else {
 	/* not the last block */
 	if (outlen != CAB_BLOCKMAX) {
-	  this->system->message(this->d->infh, "non-maximal data block");
+	  this->system->message(this->d->infh,
+				"WARNING; non-maximal data block");
 	}
       }
     } /* if (avail) */
@@ -1200,7 +1206,8 @@ static int cabd_sys_write(struct mspack_file *file, void *buffer, int bytes) {
  * one cab file, if it does then the fragments will be reassembled
  */
 static int cabd_sys_read_block(struct mspack_system *sys,
-			       struct mscabd_decompress_state *d, int *out)
+			       struct mscabd_decompress_state *d,
+			       int *out, int ignore_cksum)
 {
   unsigned char hdr[cfdata_SIZEOF];
   unsigned int cksum;
@@ -1230,6 +1237,12 @@ static int cabd_sys_read_block(struct mspack_system *sys,
       return MSPACK_ERR_DATAFORMAT;
     }
 
+     /* blocks must not expand to more than CAB_BLOCKMAX */
+    if (EndGetI16(&hdr[cfdata_UncompressedSize]) > CAB_BLOCKMAX) {
+      D(("block size > CAB_BLOCKMAX"))
+      return MSPACK_ERR_DATAFORMAT;
+    }
+
     /* read the block data */
     if (sys->read(d->infh, d->i_end, len) != len) {
       return MSPACK_ERR_READ;
@@ -1238,7 +1251,10 @@ static int cabd_sys_read_block(struct mspack_system *sys,
     /* perform checksum test on the block (if one is stored) */
     if ((cksum = EndGetI32(&hdr[cfdata_CheckSum]))) {
       unsigned int sum2 = cabd_checksum(d->i_end, (unsigned int) len, 0);
-      if (cabd_checksum(&hdr[4], 4, sum2) != cksum) return MSPACK_ERR_CHECKSUM;
+      if (cabd_checksum(&hdr[4], 4, sum2) != cksum) {
+	if (!ignore_cksum) return MSPACK_ERR_CHECKSUM;
+	sys->message(d->infh, "WARNING; bad block checksum found");
+      }
     }
 
     /* advance end of block pointer to include newly read data */
