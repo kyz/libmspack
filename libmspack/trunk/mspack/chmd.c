@@ -341,14 +341,14 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     chm->sec0.offset = chm->dir_offset + (chm->chunk_size * chm->num_chunks);
   }
 
-  /* if we are doing a quick read, stop here! */
-  if (!entire) {
-    return MSPACK_ERR_OK;
-  }
-
   /* avoid an infinite loop if chunk_size is zero */
   if (chm->chunk_size == 0) {
     return MSPACK_ERR_DATAFORMAT;
+  }
+
+  /* if we are doing a quick read, stop here! */
+  if (!entire) {
+    return MSPACK_ERR_OK;
   }
 
   /* seek to the first PMGL chunk, and reduce the number of chunks to read */
