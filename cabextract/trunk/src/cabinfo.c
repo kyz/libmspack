@@ -1,5 +1,5 @@
 /* cabinfo -- dumps useful information from cabinets
- * (C) 2000 Stuart Caie <kyzer@4u.net>
+ * (C) 2000-2004 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -283,7 +283,7 @@ void getinfo() {
 
   int num_folders, num_files, num_blocks = 0;
   int header_res = 0, folder_res = 0, data_res = 0;
-  int i, x, offset, base_offset, files_offset, base;
+  int i, x, y, offset, base_offset, files_offset, base;
 
   base_offset = GETOFFSET;
 
@@ -465,11 +465,11 @@ void getinfo() {
       GETLONG(cffile_FolderOffset),
       GETWORD(cffile_FolderIndex),
       name,
-      GETWORD(cffile_Date) & 0x1f,
-      (GETWORD(cffile_Date)>>5) & 0xf,
-      (GETWORD(cffile_Date)>>9) + 1980,
-      GETWORD(cffile_Time) >> 11,
-      (GETWORD(cffile_Time)>>5) & 0x3f,
+       GETWORD(cffile_Date)       & 0x1f,
+      (GETWORD(cffile_Date) >> 5) & 0xf,
+      (GETWORD(cffile_Date) >> 9) + 1980,
+       GETWORD(cffile_Time) >> 11,
+      (GETWORD(cffile_Time) >> 5) & 0x3f,
       (GETWORD(cffile_Time) << 1) & 0x3e,
       x,
       (x & cffile_A_RDONLY) ? "RDONLY " : "",
@@ -486,11 +486,11 @@ void getinfo() {
   for (i = 0; i < num_blocks; i++) {
     offset = GETOFFSET;
     READ(&buf, cfdata_SIZEOF);
-    printf("Block %5d: offset %10d / csum %08x / c=%5d / u=%5d\n",
-      i, offset, GETLONG(cfdata_CheckSum),
-      x = GETWORD(cfdata_CompressedSize),
-      GETWORD(cfdata_UncompressedSize)
-    );
+    x = GETWORD(cfdata_CompressedSize);
+    y = GETWORD(cfdata_UncompressedSize);
+    printf("Block %5d: offset %10d / csum %08x / c=%5d / u=%5d%s\n",
+	   i, offset, GETLONG(cfdata_CheckSum), x, y,
+	   ((x > (32768+6144)) || (y > 32768)) ? " INVALID" : "");
     SKIP(x);
   }
 

@@ -50,7 +50,7 @@
 
 	* cabextract.c: started refactoring cabextract to use the
 	libmspack library. Moved everything out of cabextract.c and will
-	start moving things back ni as necessary.
+	start moving things back in as necessary.
 
 	* doc, mspack: added a doc directory, where fun things like manual
 	pages, magic files and file format documents go. Made a directory for

@@ -1,16 +1,23 @@
-cabextract 0.7alpha - a program to extract Microsoft Cabinet files.
-(C) 2000-2003 Stuart Caie <kyzer@4u.net>
+cabextract 1.0 - a program to extract Microsoft Cabinet files.
+(C) 2000-2004 Stuart Caie <kyzer@4u.net>
 This is free software with ABSOLUTELY NO WARRANTY.
-
--- NOTE WELL: This version of cabextract is ALPHA software. It does NOT
-   support extraction of MSZIP compressed cabinet files. --
 
 Cabinet (.CAB) files are a form of archive, which Microsoft use to
 distribute their software, and things like Windows Font Packs. The
 cabextract program unpacks these files.
 
-For more information, see http://www.kyz.uklinux.net/cabextract.php3
+For more information, see http://www.kyz.uklinux.net/cabextract.php
 or run the command 'cabextract --help'.
+
+Microsoft cabinet files should not be confused with InstallShield cabinet
+files. InstallShield files are generally called "_sys.cab", "data1.hdr"
+"data1.cab", "data2.cab" and so on, and are found in the same directory as
+"setup.exe". They begin with the magic characters "ISc(" rather than
+"MSCF". cabextract will print the message "This is probably an
+InstallShield file." when it finds such a file. The file "doc/magic" in
+the cabextract source archive includes additional file-identification
+rules for the UNIX file(1) command, which distinguishes between Microsoft
+and InstallShield cabinet files.
 
 Example usage:
 
@@ -32,4 +39,4 @@ $ cabextract -d boogie wibble.cab
 Listing files from a cabinet file:
 $ cabextract -l wibble.cab
 
-Stuart Caie <kyzer@4u.net>, {date}.
+Stuart Caie <kyzer@4u.net>, 2004-03-08.
