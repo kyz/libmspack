@@ -186,10 +186,10 @@ extern int mspack_sys_selftest_internal(int);
  * - 2, 3, ...: this interface has additional functionality, clearly marked
  *   in the documentation as "version 2", "version 3" and so on.
  *
- * @param interface the interface to request current version of
+ * @param entity the interface to request current version of
  * @return the version of the requested interface
  */
-extern int mspack_version(int interface);
+extern int mspack_version(int entity);
 
 /** Pass to mspack_version() to get the overall library version */
 #define MSPACK_VER_LIBRARY   (0)
