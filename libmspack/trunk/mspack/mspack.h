@@ -1100,7 +1100,7 @@ struct mscab_decompressor {
    * @return the most recent error code
    * @see open(), search()
    */
-  int (*last_error)(struct mscab_decompressor *);
+  int (*last_error)(struct mscab_decompressor *self);
 };
 
 /* --- support for .CHM (HTMLHelp) file format ----------------------------- */
@@ -1109,7 +1109,7 @@ struct mscab_decompressor {
  * A structure which represents a file to be placed in a CHM helpfile.
  *
  * A contiguous array of these structures should be passed to
- * mspack_chm_compressor::generate(). The array list is terminated with an
+ * mschm_compressor::generate(). The array list is terminated with an
  * entry whose mschmc_file::section field is set to #MSCHMC_ENDLIST, the
  * other fields in this entry are ignored.
  */
@@ -1465,7 +1465,7 @@ struct mschm_compressor {
    * @return the most recent error code
    * @see set_param(), generate()
    */
-  int (*last_error)(struct mscab_decompressor *);
+  int (*last_error)(struct mschm_compressor *self);
 };
 
 /**
@@ -1531,7 +1531,7 @@ struct mschm_decompressor {
    * and mschmd_header::sysfiles list and mschmd_file structures generated
    * on the fly by fast_find().
    *
-   * @param  self     a self-referential pointer to the mscab_decompressor
+   * @param  self     a self-referential pointer to the mschm_decompressor
    *                  instance being called
    * @param  file     the file to be decompressed
    * @param  filename the filename of the file being written to
@@ -1614,7 +1614,7 @@ struct mschm_decompressor {
    * @param  filename the filename of the file to search for
    * @param  f_ptr    a pointer to a caller-provded mschmd_file structure
    * @param  f_size   <tt>sizeof(struct mschmd_file)</tt>
-   * @return MSPACK_ERR_OK, or an error code
+   * @return an error code, or MSPACK_ERR_OK if successful
    * @see open(), close(), fast_find(), extract()
    */
   int (*fast_find)(struct mschm_decompressor *self,
@@ -1652,14 +1652,181 @@ struct mshlp_decompressor {
 
 /* --- support for SZDD file format ---------------------------------------- */
 
-/** TODO */
+/**
+ * A compressor for the SZDD file format.
+ *
+ * All fields are READ ONLY.
+ *
+ * @see mspack_create_szdd_compressor(), mspack_destroy_szdd_compressor()
+ */
 struct msszdd_compressor {
-  int dummy; 
+  /**
+   * Reads an input file and creates a compressed output file in the
+   * SZDD compressed file format. The SZDD compression format is quick
+   * but gives poor compression. It is possible for the compressed output
+   * file to be larger than the input file.
+   *
+   * Conventionally, SZDD compressed files have the final character in
+   * their filename replaced with an underscore, to show they are
+   * compressed.  The missing character is stored in the compressed file
+   * itself. This is due to the restricted filename conventions of MS-DOS,
+   * most operating systems, such as UNIX, simply append another file
+   * extension to the existing filename. As mspack does not deal with
+   * filenames, this is left up to you. If you wish to set the character
+   * stored in the file header, use set_param() with the
+   * #MSSZDDC_PARAM_FILENAME parameter.
+   *
+   * "Stream" compression (where the length of the input data is not
+   * known) is not possible. The length of the input data is stored in the
+   * header of the SZDD file and must therefore be known before any data
+   * is compressed. Due to technical limitations of the file format, the
+   * maximum size of uncompressed file that will be accepted is 2147483647
+   * bytes.
+   *
+   * @param  self          a self-referential pointer to the msszdd_compressor
+   *                       instance being called
+   * @param  input_file    the name of the file to compressed. This is passed
+   *                       passed directly to mspack_system::open()
+   * @param  output_file   the name of the file to write compressed data to.
+   *                       This is passed directly to mspack_system::open().
+   * @param  input_length  the length of the uncompressed file, or -1 to
+   *                       indicate that this should be determined
+   *                       automatically by using mspack_system::seek() on
+   *                       the input file.
+   * @return an error code, or MSPACK_ERR_OK if successful
+   * @see set_param()
+   */
+  int (*compress)(struct msszdd_compressor *self,
+		  char *input_file,
+		  char *output_file,
+		  off_t input_length);
+
+  /**
+   * Sets an SZDD compression engine parameter.
+   *
+   * The following parameters are defined:
+
+   * - #MSSZDDC_PARAM_CHARACTER:
+   *
+   * @param  self     a self-referential pointer to the msszdd_compressor
+   *                  instance being called
+   * @param  param    the parameter to set
+   * @param  value    the value to set the parameter to
+   * @return MSPACK_ERR_OK if all is OK, or MSPACK_ERR_ARGS if there
+   *         is a problem with either parameter or value.
+   * @see generate()
+   */
+  int (*set_param)(struct msszdd_compressor *self,
+		   int param,
+		   unsigned int value);
+
+  /**
+   * Returns the error code set by the most recently called method.
+   *
+   * @param  self     a self-referential pointer to the msszdd_compressor
+   *                  instance being called
+   * @return the most recent error code
+   * @see compress()
+   */
+  int (*last_error)(struct mschm_decompressor *self);
 };
 
-/** TODO */
+/**
+ * A decompressor for SZDD compressed files.
+ *
+ * All fields are READ ONLY.
+ *
+ * @see mspack_create_szdd_decompressor(), mspack_destroy_szdd_decompressor()
+ */
 struct msszdd_decompressor {
-  int dummy; 
+  /**
+   * Opens a SZDD file and reads the header.
+   *
+   * If the file opened is a valid SZDD helpfile, all headers will be read
+   * and a msszddd_header structure will be returned.
+   *
+   * In the case of an error occuring, NULL is returned and the error code
+   * is available from last_error().
+   *
+   * The filename pointer should be considered "in use" until close() is
+   * called on the SZDD file.
+   *
+   * @param  self     a self-referential pointer to the msszdd_decompressor
+   *                  instance being called
+   * @param  filename the filename of the SZDD compressde file. This is
+   *                  passed directly to mspack_system::open().
+   * @return a pointer to a msszddd_header structure, or NULL on failure
+   * @see close()
+   */
+  struct msszddd_header *(*open)(struct msszdd_decompressor *self,
+				 char *filename);
+
+  /**
+   * Closes a previously opened SZDD helpfile.
+   *
+   * This closes a SZDD helpfile and frees the msszddd_header associated with it.
+   *
+   * The SZDD header pointer is now invalid and cannot be used again. All
+   * msszddd_file pointers referencing that SZDD are also now invalid, and
+   * cannot be used again.
+   *
+   * @param  self     a self-referential pointer to the msszdd_decompressor
+   *                  instance being called
+   * @param  szdd     the SZDD file to close
+   * @see open()
+   */
+  void (*close)(struct msszdd_decompressor *self,
+		struct msszddd_header *szdd);
+
+  /**
+   * Extracts the compressed data from a SZDD file.
+   *
+   * This decompresses the compressed SZDD data stream and writes it to
+   * an output file.
+   *
+   * @param  self     a self-referential pointer to the msszdd_decompressor
+   *                  instance being called
+   * @param  szdd     the SZDD file to extract data from
+   * @param  filename the filename to write the decompressed data to. This
+   *                  is passed directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*extract)(struct msszdd_decompressor *self,
+		 struct msszddd_header *szdd,
+		 char *filename);
+
+  /**
+   * Decompresses an SZDD file at once.
+   *
+   * This opens an SZDD file as input, reads the header, then decompresses the
+   * compressed data immediately to an output file, finally closing both
+   * the input and output file. It is more convenient to use if you do not
+   * need to know the SZDD output size or missing character.
+   *
+   * @param  self     a self-referential pointer to the msszdd_decompressor
+   *                  instance being called
+   * @param  input    the filename of the input SZDD file. This is passed
+   *                  directly to mspack_system::open().
+   * @param  output   the filename to write the decompressed data to. This
+   *                  is passed directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*decompress)(struct msszdd_decompressor *self,
+		    char *input,
+		    char *output);
+
+  /**
+   * Returns the error code set by the most recently called method.
+   *
+   * This is useful for open() which does not return an
+   * error code directly.
+   *
+   * @param  self     a self-referential pointer to the msszdd_decompressor
+   *                  instance being called
+   * @return the most recent error code
+   * @see open(), search()
+   */
+  int (*last_error)(struct msszdd_decompressor *self);
 };
 
 /* --- support for KWAJ file format ---------------------------------------- */
