@@ -1,3 +1,15 @@
+2005-03-22:  Stuart Caie   <kyzer@4u.net>
+
+	* system.h: now undefs "read", as the latest glibc defines read()
+	as a macro which messes everything up. Thanks to Ville Skyttä for
+	the update.
+
+2005-03-14:  Stuart Caie   <kyzer@4u.net>
+
+	* test/multifh.c: write an mspack_system implementation that can
+	handle normal disk files, open file handles, open file descriptors
+	and raw memory all at the same time.
+
 2005-02-24:  Stuart Caie   <kyzer@4u.net>
 
 	* chmd_read_headers(): avoid infinite loop when chmhs1_ChunkSize is
