@@ -3,6 +3,12 @@
 	* chmd_read_headers(): avoid infinite loop when chmhs1_ChunkSize is
 	zero. Thanks to Serge Semashko for the research and discovery.
 
+2005-02-18:  Stuart Caie   <kyzer@4u.net>
+
+	* mspack.h: renamed the "interface" parameter of mspack_version() to
+	"entity", as interface is a reserved word in C++. Thanks to Yuriy Z
+	for the discovery.
+
 2004-12-09:  Stuart Caie   <kyzer@4u.net>
 
 	* lzss.h, szdd.h, szddd.h: more work on the SZDD/LZSS design.
