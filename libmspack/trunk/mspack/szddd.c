@@ -9,7 +9,6 @@
 
 /* SZDD decompression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <szdd.h>
 

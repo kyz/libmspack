@@ -9,7 +9,6 @@
 
 /* CAB compression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <cab.h>
 

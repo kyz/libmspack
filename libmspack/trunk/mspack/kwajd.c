@@ -9,7 +9,6 @@
 
 /* KWAJ decompression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <kwaj.h>
 

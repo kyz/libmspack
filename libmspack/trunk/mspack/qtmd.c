@@ -20,7 +20,6 @@
  * http://www.speakeasy.org/~russotto/quantumcomp.html
  */
 
-#include <mspack.h>
 #include <system.h>
 #include <qtm.h>
 

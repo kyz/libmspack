@@ -12,7 +12,6 @@
 
 /* MS-ZIP decompression implementation. */
 
-#include <mspack.h>
 #include <system.h>
 #include <mszip.h>
 

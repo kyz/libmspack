@@ -9,7 +9,6 @@
 
 /* CHM compression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <chm.h>
 

@@ -10,9 +10,12 @@
 #ifndef MSPACK_SYSTEM_H
 #define MSPACK_SYSTEM_H 1
 
+/* ensure config.h is read before mspack.h */
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
+#include <mspack.h>
 
 #ifdef DEBUG
 # include <stdio.h>
