@@ -1,0 +1,84 @@
+libmspack, alpha release
+
+The purpose of libmspack is to provide compressors and decompressors,
+archivers and dearchivers for Microsoft compression formats: CAB, CHM,
+HLP, KWAJ, LIT and SZDD.
+
+The library is not intended as a generalised "any archiver" interface.
+Users of the library must explicitly choose the format they intend to
+work with.
+
+All special features of the above formats will be covered as fully as
+possible -- for example, CAB's multi-part cabinet sets, or CHM's fast
+lookup indices. All compression methods used by the formats will be
+implemented as completely as possible.
+
+However, other than what is required for access to these formats and
+their features, no other functionality is intended. There is no file
+metadata translation functionality. All file I/O is abstracted,
+although a default implementation using the standard C library is
+provided.
+
+
+PROGRESS SO FAR
+
+This is an alpha release. Only CAB and CHM decompression are
+designed and implemented.
+
+
+BUILDING / INSTALLING
+
+This is an alpha release. The library interface is not complete enough to
+be worthy of installation as a shared library, package or dependancy.
+
+For use in other applications, it is best to include the library source
+code directly with the application using the library. Asking application
+users to "download and install libmspack" may result in compilation or
+runtime failure.
+
+For now, the library can be built with the rebuild.sh script.
+
+Running "sh rebuild.sh yes" will create all the automatically-generated
+files like the configure script, and will then ./configure and make. In
+addition to GCC, you also need:
+
+- at least autoconf 2.57
+- at least automake 1.7
+- libtool
+
+Running rebuild.sh with no arguments will perform a thorough clean,
+deleting all automatically-generated files.
+
+When enough of the library interface has been designed, correct packaging
+and library versioning will be adhered to. Changes to the binary interface
+will be reflected in a library version increases, and autoconf, automake
+and libtool will not be needed to build the software.
+
+
+
+EXAMPLE
+
+Here is a simple example of usage, which will create a CAB decompressor,
+then use that to open an existing Microsoft CAB file called "example.cab",
+and list the names of all the files contained in that cab.
+
+#include <stdio.h>
+#include <unistd.h>
+#include <mspack.h>
+
+int main() {
+  struct mscab_decompressor *cabd;
+  struct mscabd_cabinet *cab;
+  struct mscabd_file *file;
+
+  if ((cabd = mspack_create_cab_decompressor(NULL))) {
+    if ((cab = cabd->open(cabd, "example.cab"))) {
+      for (file = cab->files; file; file = file->next) {
+        printf("%s\n", file->filename);
+      }
+      cabd->close(cabd, cab);
+    }
+    mspack_destroy_cab_decompressor(cabd);
+  }
+  return 0;
+}
