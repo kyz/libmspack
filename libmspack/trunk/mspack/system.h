@@ -10,6 +10,10 @@
 #ifndef MSPACK_SYSTEM_H
 #define MSPACK_SYSTEM_H 1
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #ifdef DEBUG
 # include <stdio.h>
 # define D(x) do { printf("%s:%d (%s) ",__FILE__, __LINE__, __FUNCTION__); \
@@ -19,15 +23,20 @@
 #endif
 
 /* endian-neutral reading of little-endian data */
-#define __egi32(a,n) ( (((a)[n+3]) << 24) | (((a)[n+2]) << 16) | \
-		       (((a)[n+1]) <<  8) |  ((a)[n+0])        )
+#define __egi32(a,n) ( ((((unsigned char *) a)[n+3]) << 24) | \
+		       ((((unsigned char *) a)[n+2]) << 16) | \
+		       ((((unsigned char *) a)[n+1]) <<  8) | \
+		       ((((unsigned char *) a)[n+0])))
 #define EndGetI64(a) ((((unsigned long long int) __egi32(a,4)) << 32) | \
 		      ((unsigned int) __egi32(a,0)))
 #define EndGetI32(a) __egi32(a,0)
 #define EndGetI16(a) ((((a)[1])<<8)|((a)[0]))
 
 /* endian-neutral reading of big-endian data */
-#define EndGetM32(a) ((((a)[0])<<24)|(((a)[1])<<16)|(((a)[2])<<8)|((a)[3]))
+#define EndGetM32(a) (((((unsigned char *) a)[0]) << 24) | \
+		      ((((unsigned char *) a)[1]) << 16) | \
+		      ((((unsigned char *) a)[2]) <<  8) | \
+		      ((((unsigned char *) a)[3])))
 #define EndGetM16(a) ((((a)[0])<<8)|((a)[1]))
 
 extern struct mspack_system *mspack_default_system;
@@ -39,20 +48,25 @@ extern int mspack_sys_filelen(struct mspack_system *system,
 /* validates a system structure */
 extern int mspack_valid_system(struct mspack_system *sys);
 
+#if HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#if HAVE_STRING_H
+# include <string.h>
+#endif
+
+#if HAVE_MEMCMP
+# define mspack_memcmp memcmp
+#else
 /* inline memcmp() */
-static inline int memcmp(const void *s1, const void *s2, size_t n) {
+static inline int mspack_memcmp(const void *s1, const void *s2, size_t n) {
   unsigned char *c1 = (unsigned char *) s1;
   unsigned char *c2 = (unsigned char *) s2;
   if (n == 0) return 0;
   while (--n && (*c1 == *c2)) c1++, c2++;
   return *c1 - *c2;
 }
-
-/* inline strlen() */
-static inline size_t strlen(const char *s) {
-  const char *e = s;
-  while (*e) e++;
-  return e - s;
-}
+#endif
 
 #endif
