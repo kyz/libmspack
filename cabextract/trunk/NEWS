@@ -1,3 +1,12 @@
+New in 1.1:
+* A security vulnerability has been fixed. If the files within a cabinet
+  file include the directory ".." in their filename, this will be changed to
+  "xx", to prevent directory traversal by a malicious cabinet (e.g. a cabinet
+  with "..\etc\passwd", "..\..\etc\passwd" and so on)
+* The GNU library code used has been upgraded to the latest from libiberty,
+  so it should now work better with Cygwin.
+* cabextract should now compile cleanly on AIX.
+
 New in 1.0:
 * The libmspack library is used for all the hard work. You should find
   cabextract more robust, and fractionally faster. See the libmspack website

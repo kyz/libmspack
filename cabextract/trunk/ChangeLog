@@ -1,3 +1,12 @@
+2004-10-18  Stuart Caie   <kyzer@4u.net
+
+	* process_cabinet(): now accepts that failure of create_output_name()
+	is an error, and also lets that function print an error message
+	rather than printing one itself.
+
+	* create_output_name(): improved the two error messages that could
+	be printed.
+
 2004-10-15  Stuart Caie   <kyzer@4u.net>
 
 	* create_output_name(): removes leading "./" and "../" as well as
