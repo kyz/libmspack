@@ -1,4 +1,9 @@
-2003-04-23:  Stuart Caie   <kyzer@4u.net>
+2004-06-12:  Stuart Caie   <kyzer@4u.net>
+
+	* lzxd_static_init(): removed write to lzxd_extra_bits[52], thanks
+	to Nigel Horne from the ClamAV project.
+
+2004-04-23:  Stuart Caie   <kyzer@4u.net>
 
 	* mspack.h: changed 'this' parameters to 'self' to allow compiling in
 	C++ compilers, thanks to Michal Cihar for the suggestion.
