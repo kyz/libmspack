@@ -95,30 +95,43 @@ struct lzxd_stream {
   unsigned char  e8_buf[LZX_FRAME_SIZE];
 };
 
-/* allocates LZX decompression state for decoding the given stream.
+/**
+ * Allocates and initialises LZX decompression state for decoding an LZX
+ * stream.
  *
- * - returns NULL if window_bits is outwith the range 15 to 21 (inclusive).
+ * This routine uses system->alloc() to allocate memory. If memory
+ * allocation fails, or the parameters to this function are invalid,
+ * NULL is returned.
  *
- * - uses system->alloc() to allocate memory
- *
- * - returns NULL if not enough memory
- *
- * - window_bits is the size of the LZX window, from 32Kb (15) to 2Mb (21).
- *
- * - reset_interval is how often the bitstream is reset, measured in
- *   multiples of 32Kb bytes output. For CAB LZX streams, this is always 0
- *   (does not occur).
- *
- * - input_buffer_size is how many bytes to use as an input bitstream buffer
- *
- * - output_length is the length in bytes of the entirely decompressed
- *   output stream, if known in advance. It is used to correctly perform
- *   the Intel E8 transformation, which must stop 6 bytes before the very
- *   end of the decompressed stream. It is not otherwise used or adhered
- *   to. If the full decompressed length is known in advance, set it here.
- *   If it is NOT known, use the value 0, and call lzxd_set_output_length()
- *   once it is known. If never set, 4 of the final 6 bytes of the output
- *   stream may be incorrect.
+ * @param system             an mspack_system structure used to read from
+ *                           the input stream and write to the output
+ *                           stream, also to allocate and free memory.
+ * @param input              an input stream with the LZX data.
+ * @param output             an output stream to write the decoded data to.
+ * @param window_bits        the size of the decoding window, which must be
+ *                           between 15 and 21 inclusive.
+ * @param reset_interval     the interval at which the LZX bitstream is
+ *                           reset, in multiples of LZX frames (32678
+ *                           bytes), e.g. a value of 2 indicates the input
+ *                           stream resets after every 65536 output bytes.
+ *                           A value of 0 indicates that the bistream never
+ *                           resets, such as in CAB LZX streams.
+ * @param input_buffer_size  the number of bytes to use as an input
+ *                           bitstream buffer.
+ * @param output_length      the length in bytes of the entirely
+ *                           decompressed output stream, if known in
+ *                           advance. It is used to correctly perform the
+ *                           Intel E8 transformation, which must stop 6
+ *                           bytes before the very end of the
+ *                           decompressed stream. It is not otherwise used
+ *                           or adhered to. If the full decompressed
+ *                           length is known in advance, set it here.
+ *                           If it is NOT known, use the value 0, and call
+ *                           lzxd_set_output_length() once it is
+ *                           known. If never set, 4 of the final 6 bytes
+ *                           of the output stream may be incorrect.
+ * @return a pointer to an initialised lzxd_stream structure, or NULL if
+ * there was not enough memory or parameters to the function were wrong.
  */
 extern struct lzxd_stream *lzxd_init(struct mspack_system *system,
 				     struct mspack_file *input,
@@ -132,35 +145,40 @@ extern struct lzxd_stream *lzxd_init(struct mspack_system *system,
 extern void lzxd_set_output_length(struct lzxd_stream *lzx,
 				   off_t output_length);
 
-/* decompresses, or decompresses more of, an LZX stream.
+/**
+ * Decompresses entire or partial LZX streams.
  *
- * - out_bytes of data will be decompressed and the function will return
- *   with an MSPACK_ERR_OK return code.
+ * The number of bytes of data that should be decompressed is given as the
+ * out_bytes parameter. If more bytes are decoded than are needed, they
+ * will be kept over for a later invocation.
  *
- * - decompressing will stop as soon as out_bytes is reached. if the true
- *   amount of bytes decoded spills over that amount, they will be kept for
- *   a later invocation of lzxd_decompress().
+ * The output bytes will be passed to the system->write() function given in
+ * lzxd_init(), using the output file handle given in lzxd_init(). More than
+ * one call may be made to system->write().
+
+ * Input bytes will be read in as necessary using the system->read()
+ * function given in lzxd_init(), using the input file handle given in
+ * lzxd_init().  This will continue until system->read() returns 0 bytes,
+ * or an error. Errors will be passed out of the function as
+ * MSPACK_ERR_READ errors.  Input streams should convey an "end of input
+ * stream" by refusing to supply all the bytes that LZX asks for when they
+ * reach the end of the stream, rather than return an error code.
  *
- * - the output bytes will be passed to the system->write() function given in
- *   lzxd_init(), using the output file handle given in lzxd_init(). More
- *   than one call may be made to system->write().
+ * If any error code other than MSPACK_ERR_OK is returned, the stream
+ * should be considered unusable and lzxd_decompress() should not be
+ * called again on this stream.
  *
- * - LZX will read input bytes as necessary using the system->read() function
- *   given in lzxd_init(), using the input file handle given in lzxd_init().
- *   This will continue until system->read() returns 0 bytes, or an error.
- *   input streams should convey an "end of input stream" by refusing to
- *   supply all the bytes that LZX asks for when they reach the end of the
- *   stream, rather than return an error code.
- *
- * - if an error code other than MSPACK_ERR_OK is returned, the stream should
- *   be considered unusable and lzxd_decompress() should not be called again
- *   on this stream.
+ * @param lzx       LZX decompression state, as allocated by lzxd_init().
+ * @param out_bytes the number of bytes of data to decompress.
+ * @return an error code, or MSPACK_ERR_OK if successful
  */
 extern int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes);
 
-/* frees all state associated with an LZX data stream
+/**
+ * Frees all state associated with an LZX data stream. This will call
+ * system->free() using the system pointer given in lzxd_init().
  *
- * - calls system->free() using the system pointer given in lzxd_init()
+ * @param lzx LZX decompression state to free.
  */
 void lzxd_free(struct lzxd_stream *lzx);
 
