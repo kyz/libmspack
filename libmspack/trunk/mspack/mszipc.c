@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The deflate method was created by Phil Katz. MSZIP is equivalent to the
  * deflate method.
@@ -13,7 +13,7 @@
 /* MS-ZIP compression implementation */
 
 #include <mspack.h>
-#include "system.h"
-#include "mszip.h"
+#include <system.h>
+#include <mszip.h>
 
 /* todo */

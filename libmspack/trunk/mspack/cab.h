@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -10,9 +10,9 @@
 #ifndef MSPACK_CAB_H
 #define MSPACK_CAB_H 1
 
-#include "mszip.h"
-#include "qtm.h"
-#include "lzx.h"
+#include <mszip.h>
+#include <qtm.h>
+#include <lzx.h>
 
 /* generic CAB definitions */
 
@@ -87,7 +87,7 @@ struct mscabd_decompress_state {
   unsigned int block;                /* which block are we decompressing?    */
   struct mspack_system sys;          /* special I/O code for decompressor    */
   int comp_type;                     /* type of compression used by folder   */
-  int (*decompress)(void *, off_t);  /* decompressor code              */
+  int (*decompress)(void *, off_t);  /* decompressor code                    */
   void *state;                       /* decompressor state                   */
   struct mscabd_cabinet_p *incab;    /* cabinet where input data comes from  */
   struct mspack_file *infh;          /* input file handle                    */
@@ -119,9 +119,9 @@ struct mscabd_folder_data {
 
 struct mscabd_folder_p {
   struct mscabd_folder base;
-  struct mscabd_folder_data data;    /* where are the data blocks?     */
-  struct mscabd_file *merge_prev;    /* do we need to merge backwards? */
-  struct mscabd_file *merge_next;    /* do we need to merge forwards?  */
+  struct mscabd_folder_data data;    /* where are the data blocks?           */
+  struct mscabd_file *merge_prev;    /* do we need to merge backwards?       */
+  struct mscabd_file *merge_next;    /* do we need to merge forwards?        */
 };
 
 #endif

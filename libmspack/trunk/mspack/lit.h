@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -10,9 +10,9 @@
 #ifndef MSPACK_LIT_H
 #define MSPACK_LIT_H 1
 
-#include "lzx.h"
-#include "des.h"
-#include "sha.h"
+#include <lzx.h>
+#include <des.h>
+#include <sha.h>
 
 /* generic LIT definitions */
 

@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The Quantum method was created by David Stafford, adapted by Microsoft
  * Corporation.

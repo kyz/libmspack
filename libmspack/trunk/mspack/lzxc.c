@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * The LZX method was created by Jonathan Forbes and Tomi Poutanen, adapted
  * by Microsoft Corporation.
@@ -13,7 +13,7 @@
 /* LZX compression implementation */
 
 #include <mspack.h>
-#include "system.h"
-#include "lzx.h"
+#include <system.h>
+#include <lzx.h>
 
 /* todo */

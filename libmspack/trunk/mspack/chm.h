@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003 Stuart Caie.
+ * (C) 2003-2004 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -10,7 +10,7 @@
 #ifndef MSPACK_CHM_H
 #define MSPACK_CHM_H 1
 
-#include "lzx.h"
+#include <lzx.h>
 
 /* generic CHM definitions */
 
