@@ -739,6 +739,7 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
  *                 file permissions will be set.
  */
 static void set_date_and_perm(struct mscabd_file *file, char *filename) {
+  mode_t mode;
 #if HAVE_UTIME
   struct tm tm;
   struct utimbuf utb;
@@ -769,7 +770,6 @@ static void set_date_and_perm(struct mscabd_file *file, char *filename) {
   mode = 0444;
   if (  file->attribs & MSCAB_ATTRIB_EXEC)    mode |= 0111;
   if (!(file->attribs & MSCAB_ATTRIB_RDONLY)) mode |= 0222;
-  printf("mode=%o umask=%o > result=%o\n", mode, user_umask, mode & ~user_umask);
   chmod(filename, mode & ~user_umask);
 }
 
