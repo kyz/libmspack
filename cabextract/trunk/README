@@ -1,0 +1,35 @@
+cabextract 0.7alpha - a program to extract Microsoft Cabinet files.
+(C) 2000-2003 Stuart Caie <kyzer@4u.net>
+This is free software with ABSOLUTELY NO WARRANTY.
+
+-- NOTE WELL: This version of cabextract is ALPHA software. It does NOT
+   support extraction of MSZIP compressed cabinet files. --
+
+Cabinet (.CAB) files are a form of archive, which Microsoft use to
+distribute their software, and things like Windows Font Packs. The
+cabextract program unpacks these files.
+
+For more information, see http://www.kyz.uklinux.net/cabextract.php3
+or run the command 'cabextract --help'.
+
+Example usage:
+
+Extracting files from a cabinet file:
+$ cabextract wibble.cab
+
+Extracting files from an executable which contains a cabinet file:
+$ cabextract wibble.exe
+[cabextract will automatically search executables for embedded cabinets]
+
+Extracting files from a set of cabinet files; wib01.cab, wib02.cab, ...:
+$ cabextract wib01.cab
+[cabextract will automatically get the names of the other files]
+
+Extracting files to a directory of your choice (in this case, 'boogie'):
+$ cabextract -d boogie wibble.cab
+[cabextract will create the directory if it does not already exist]
+
+Listing files from a cabinet file:
+$ cabextract -l wibble.cab
+
+Stuart Caie <kyzer@4u.net>, {date}.
