@@ -1,0 +1,22 @@
+CAB
+- compression: everything
+- decompression: decouple the inflate from MS-ZIP
+- decompression: rewrite inflate from scratch. It's ugly.
+
+CHM
+- compression: everything
+- decompression: implement fast_find()
+
+HLP
+- everything
+
+LIT
+- everything
+
+SZDD
+- everything
+
+KWAJ
+- everything
+
+
