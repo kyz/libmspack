@@ -1,5 +1,5 @@
 /* libmspack -- a library for working with Microsoft compression formats.
- * (C) 2003 Stuart Caie <kyzer@4u.net>
+ * (C) 2003-2004 Stuart Caie <kyzer@4u.net>
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -29,7 +29,11 @@
  * - .HLP (MS Help) files, which use LZSS compression
  * - .CAB (MS Cabinet) files, which use deflate, LZX or Quantum compression
  * - .CHM (HTML Help) files, which use LZX compression
- * - .LIT (EBook) files, which use LZX compression and DES encryption
+ * - .LIT (MS EBook) files, which use LZX compression and DES encryption
+ *
+ * To determine the capabilities of the library, and the binary
+ * compatibility version of any particular compressor or decompressor, use
+ * the mspack_version() function.
  *
  * \section starting Getting started
  *
@@ -149,6 +153,66 @@ extern "C" {
 
 /** Part of the MSPACK_SYS_SELFTEST() macro, must not be used directly. */
 extern int mspack_sys_selftest_internal(int);
+
+/**
+ * Enquire about the binary compatibility version of a specific interface in
+ * the library. Currently, the following interfaces are defined:
+ *
+ * - #MSPACK_VER_LIBRARY: the overall library
+ * - #MSPACK_VER_SYSTEM: the mspack_system interface
+ * - #MSPACK_VER_MSCABD: the mscab_decompressor interface
+ * - #MSPACK_VER_MSCABC: the mscab_compressor interface
+ * - #MSPACK_VER_MSCHMD: the mschm_decompressor interface
+ * - #MSPACK_VER_MSCHMC: the mschm_compressor interface
+ * - #MSPACK_VER_MSLITD: the mslit_decompressor interface
+ * - #MSPACK_VER_MSLITC: the mslit_compressor interface
+ * - #MSPACK_VER_MSHLPD: the mshlp_decompressor interface
+ * - #MSPACK_VER_MSHLPC: the mshlp_compressor interface
+ * - #MSPACK_VER_MSSZDDD: the msszdd_decompressor interface
+ * - #MSPACK_VER_MSSZDDC: the msszdd_compressor interface
+ * - #MSPACK_VER_MSKWAJD: the mskwaj_decompressor interface
+ * - #MSPACK_VER_MSKWAJC: the mskwaj_compressor interface
+ *
+ * The result of the function should be interpreted as follows:
+ * - -1: this interface is completely unknown to the library
+ * - 0: this interface is known, but non-functioning
+ * - 1: this interface has all basic functionality
+ * - 2, 3, ...: this interface has additional functionality, clearly marked
+ *   in the documentation as "version 2", "version 3" and so on.
+ *
+ * @param interface the interface to request current version of
+ * @return the version of the requested interface
+ */
+extern int mspack_version(int interface);
+
+/** Pass to mspack_version() to get the overall library version */
+#define MSPACK_VER_LIBRARY   (0)
+/** Pass to mspack_version() to get the mspack_system version */
+#define MSPACK_VER_SYSTEM    (1)
+/** Pass to mspack_version() to get the mscab_decompressor version */
+#define MSPACK_VER_MSCABD    (2)
+/** Pass to mspack_version() to get the mscab_compressor version */
+#define MSPACK_VER_MSCABC    (3)
+/** Pass to mspack_version() to get the mschm_decompressor version */
+#define MSPACK_VER_MSCHMD    (4)
+/** Pass to mspack_version() to get the mschm_compressor version */
+#define MSPACK_VER_MSCHMC    (5)
+/** Pass to mspack_version() to get the mslit_decompressor version */
+#define MSPACK_VER_MSLITD    (6)
+/** Pass to mspack_version() to get the mslit_compressor version */
+#define MSPACK_VER_MSLITC    (7)
+/** Pass to mspack_version() to get the mshlp_decompressor version */
+#define MSPACK_VER_MSHLPD    (8)
+/** Pass to mspack_version() to get the mshlp_compressor version */
+#define MSPACK_VER_MSHLPC    (9)
+/** Pass to mspack_version() to get the msszdd_decompressor version */
+#define MSPACK_VER_MSSZDDD   (10)
+/** Pass to mspack_version() to get the msszdd_compressor version */
+#define MSPACK_VER_MSSZDDC   (11)
+/** Pass to mspack_version() to get the mskwaj_decompressor version */
+#define MSPACK_VER_MSKWAJD   (12)
+/** Pass to mspack_version() to get the mskwaj_compressor version */
+#define MSPACK_VER_MSKWAJC   (13)
 
 /* --- file I/O abstraction ------------------------------------------------ */
 
@@ -687,7 +751,7 @@ struct mscabd_folder {
    * data blocks present in other files, if this folder spans more than
    * one cabinet.
    */
-  int num_blocks;
+  unsigned int num_blocks;
 };
 
 /**
