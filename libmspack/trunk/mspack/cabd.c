@@ -16,16 +16,12 @@
  * cabinet.
  *
  * For a complete description of the format, get the official Microsoft
- * CAB SDK. It has disappeared from the official Microsoft MSDN website,
- * and the redistribution requirements do not appear to allow general
- * redistribution. However, it can still be found in many places on the
- * internet. It has the filename "cab-sdk.exe" and the MD5 digest
- * 3ab05ce91d9da93d8dc73152e40de994.  Example:
- * http://www.powerload.fsnet.co.uk/download/cab-sdk.exe
+ * CAB SDK. It can be found at the following URL:
  *
- * You can use open source tool "cabextract" [or this library's
- * mscab_decompressor::search()] to find and extract the cabinet embedded
- * in this executable.
+ *   http://msdn.microsoft.com/library/en-us/dncabsdk/html/cabdl.asp
+ *
+ * It is a self-extracting ZIP file, which can be extracted with the unzip
+ * command.
  */
 
 /* CAB decompression implementation */
@@ -540,7 +536,7 @@ static char *cabd_read_string(struct mspack_system *sys,
   /* search for a null terminator in the buffer */
   for (i = 0, ok = 0; i < len; i++) if (!buf[i]) { ok = 1; break; }
   if (!ok) {
-    *error = MSPACK_ERR_READ;
+    *error = MSPACK_ERR_DATAFORMAT;
     return NULL;
   }
 
@@ -1155,7 +1151,7 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
 
       /* check if we're out of input blocks, advance block counter */
       if (this->d->block++ >= this->d->folder->base.num_blocks) {
-	this->error = MSPACK_ERR_READ;
+	this->error = MSPACK_ERR_DATAFORMAT;
 	break;
       }
 
