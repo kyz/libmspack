@@ -13,13 +13,20 @@
 #include <lzss.h>
 
 /* generic SZDD definitions */
+#define szddhead_Signature  (0x00)
+#define szddhead_CompType   (0x08)
+#define szddhead_FileChar   (0x09)
+#define szddhead_FileLength (0x0A)
+#define szddhead_SIZEOF     (0x0E)
+
+#define SZDD_COMPTYPE_A     (0x41)
 
 /* SZDD compression definitions */
 
 struct msszdd_compressor_p {
   struct msszdd_compressor base;
   struct mspack_system *system;
-  /* todo */
+  int error;
 };
 
 /* SZDD decompression definitions */
@@ -27,7 +34,12 @@ struct msszdd_compressor_p {
 struct msszdd_decompressor_p {
   struct msszdd_decompressor base;
   struct mspack_system *system;
-  /* todo */
+  int error;
+};
+
+struct msszddd_header_p {
+  struct msszddd_header base;
+  struct mspack_file *fh;
 };
 
 #endif
