@@ -12,7 +12,6 @@
 
 /* LZX decompression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <lzx.h>
 

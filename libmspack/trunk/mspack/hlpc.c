@@ -9,7 +9,6 @@
 
 /* HLP compression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <hlp.h>
 

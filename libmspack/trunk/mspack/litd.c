@@ -9,7 +9,6 @@
 
 /* LIT decompression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <lit.h>
 

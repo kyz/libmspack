@@ -9,7 +9,6 @@
 
 /* CHM decompression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <chm.h>
 

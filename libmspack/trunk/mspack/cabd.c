@@ -26,7 +26,6 @@
 
 /* CAB decompression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <cab.h>
 

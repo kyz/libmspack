@@ -12,7 +12,6 @@
 
 /* Quantum compression implementation */
 
-#include <mspack.h>
 #include <system.h>
 #include <qtm.h>
 
