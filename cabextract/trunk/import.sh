@@ -18,3 +18,10 @@ do
     cp $SRC/$file mspack
   fi
 done
+
+if [ -f mspack/ChangeLog ]
+then
+  if [ ../libmspack/ChangeLog -nt mspack/ChangeLog ]; then cp ../libmspack/ChangeLog mspack; fi
+else
+  cp ../libmspack/ChangeLog mspack
+fi
