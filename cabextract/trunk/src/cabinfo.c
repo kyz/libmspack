@@ -1,5 +1,5 @@
 /* cabinfo -- dumps useful information from cabinets
- * (C) 2000-2004 Stuart Caie <kyzer@4u.net>
+ * (C) 2000-2005 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -458,7 +458,7 @@ void getinfo() {
       "Offset within folder   = %u\n"
       "Folder index           = 0x%04x [%s]\n"
       "Date / time            = %02d/%02d/%4d %02d:%02d:%02d\n"
-      "File attributes        = 0x%02x %s%s%s%s%s\n",
+      "File attributes        = 0x%02x %s%s%s%s%s%s\n",
       offset,
       namebuf,
       GETLONG(cffile_UncompressedSize),
@@ -472,11 +472,12 @@ void getinfo() {
       (GETWORD(cffile_Time) >> 5) & 0x3f,
       (GETWORD(cffile_Time) << 1) & 0x3e,
       x,
-      (x & cffile_A_RDONLY) ? "RDONLY " : "",
-      (x & cffile_A_HIDDEN) ? "HIDDEN " : "",
-      (x & cffile_A_SYSTEM) ? "SYSTEM " : "",
-      (x & cffile_A_ARCH)   ? "ARCH "   : "",
-      (x & cffile_A_EXEC)   ? "EXEC "   : ""
+      (x & cffile_A_RDONLY)      ? "RDONLY " : "",
+      (x & cffile_A_HIDDEN)      ? "HIDDEN " : "",
+      (x & cffile_A_SYSTEM)      ? "SYSTEM " : "",
+      (x & cffile_A_ARCH)        ? "ARCH "   : "",
+      (x & cffile_A_EXEC)        ? "EXEC "   : "",
+      (x & cffile_A_NAME_IS_UTF) ? "UTF-8"   : ""
     );
   }
 

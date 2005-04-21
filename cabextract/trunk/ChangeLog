@@ -1,3 +1,8 @@
+2005-04-21  Stuart Caie   <kyzer@4u.net>
+
+	* src/cabinfo.c: This now prints if the NAME_IS_UTF flag is set for
+	each file.
+
 2004-10-19  Stuart Caie   <kyzer@4u.net>
 
 	* create_output_name(): fixed out-by-one error in UTF-8 decoder. All
