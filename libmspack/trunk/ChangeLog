@@ -1,3 +1,8 @@
+2005-06-30:  Stuart Caie   <kyzer@4u.net>
+
+	* cabd_search(): fixed problems with searching files > 4GB for
+	cabinets.
+
 2005-03-22:  Stuart Caie   <kyzer@4u.net>
 
 	* system.h: now undefs "read", as the latest glibc defines read()

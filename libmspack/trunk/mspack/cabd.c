@@ -29,6 +29,17 @@
 #include <system.h>
 #include <cab.h>
 
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 32
+#endif
+#if (_FILE_OFFSET_BITS < 64)
+static char *largefile_msg =
+  "library not compiled to support large files.";
+#define LD "ld"
+#else
+#define LD "lld"
+#endif
+
 /* Notes on compliance with cabinet specification:
  *
  * One of the main changes between cabextract 0.6 and libmspack's cab
@@ -86,7 +97,7 @@ static struct mscabd_cabinet *cabd_search(
 static int cabd_find(
   struct mscab_decompressor_p *this, unsigned char *buf,
   struct mspack_file *fh, char *filename, off_t flen,
-  unsigned int *firstlen, struct mscabd_cabinet_p **firstcab);
+  off_t *firstlen, struct mscabd_cabinet_p **firstcab);
 
 static int cabd_prepend(
   struct mscab_decompressor *base, struct mscabd_cabinet *cab,
@@ -572,8 +583,7 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
   struct mspack_system *sys;
   unsigned char *search_buf;
   struct mspack_file *fh;
-  unsigned int firstlen = 0;
-  off_t filelen;
+  off_t filelen, firstlen = 0;
 
   if (!base) return NULL;
   sys = this->system;
@@ -593,16 +603,17 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
     }
 
     /* truncated / extraneous data warning: */
-    if (firstlen && ((off_t) firstlen != filelen) &&
+    if (firstlen && (firstlen != filelen) &&
 	(!cab || (cab->base.base_offset == 0)))
     {
-      if ((off_t) firstlen < filelen) {
-	sys->message(fh, "WARNING; possible %u extra bytes at end of file.",
-		     (unsigned int) (filelen - firstlen));
+      if (firstlen < filelen) {
+	sys->message(fh, "WARNING; possible %" LD
+		     " extra bytes at end of file.",
+		     filelen - firstlen);
       }
       else {
-	sys->message(fh, "WARNING; file possibly truncated by %u bytes.",
-		     (unsigned int) (firstlen - filelen));
+	sys->message(fh, "WARNING; file possibly truncated by %" LD " bytes.",
+		     firstlen - filelen);
       }
     }
     
@@ -620,14 +631,14 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
 
 static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
 		     struct mspack_file *fh, char *filename, off_t flen,
-		     unsigned int *firstlen,
-		     struct mscabd_cabinet_p **firstcab)
+		     off_t *firstlen, struct mscabd_cabinet_p **firstcab)
 {
   struct mscabd_cabinet_p *cab, *link = NULL;
-  off_t caboff, offset, foffset=0, cablen=0;
+  off_t caboff, offset, foffset, cablen, length;
   struct mspack_system *sys = this->system;
   unsigned char *p, *pend, state = 0;
-  int false_cabs = 0, length;
+  unsigned int cablen_u32, foffset_u32;
+  int false_cabs = 0;
 
   /* search through the full file length */
   for (offset = 0; offset < flen; offset += length) {
@@ -639,7 +650,7 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
     }
 
     /* fill the search buffer with data from disk */
-    if (sys->read(fh, &buf[0], length) != length) {
+    if (sys->read(fh, &buf[0], (int) length) != (int) length) {
       return MSPACK_ERR_READ;
     }
 
@@ -670,24 +681,41 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
       /* we don't care about bytes 4-7 (see default: for action) */
 
       /* bytes 8-11 are the overall length of the cabinet */
-      case 8:  cablen  = *p++;       state++; break;
-      case 9:  cablen |= *p++ << 8;  state++; break;
-      case 10: cablen |= *p++ << 16; state++; break;
-      case 11: cablen |= *p++ << 24; state++; break;
+      case 8:  cablen_u32  = *p++;       state++; break;
+      case 9:  cablen_u32 |= *p++ << 8;  state++; break;
+      case 10: cablen_u32 |= *p++ << 16; state++; break;
+      case 11: cablen_u32 |= *p++ << 24; state++; break;
 
       /* we don't care about bytes 12-15 (see default: for action) */
 
       /* bytes 16-19 are the offset within the cabinet of the filedata */
-      case 16: foffset  = *p++;       state++; break;
-      case 17: foffset |= *p++ << 8;  state++; break;
-      case 18: foffset |= *p++ << 16; state++; break;
-      case 19: foffset |= *p++ << 24;
+      case 16: foffset_u32  = *p++;       state++; break;
+      case 17: foffset_u32 |= *p++ << 8;  state++; break;
+      case 18: foffset_u32 |= *p++ << 16; state++; break;
+      case 19: foffset_u32 |= *p++ << 24;
 	/* now we have recieved 20 bytes of potential cab header. work out
 	 * the offset in the file of this potential cabinet */
 	caboff = offset + (p - &buf[0]) - 20;
 
 	/* should reading cabinet fail, restart search just after 'MSCF' */
 	offset = caboff + 4;
+
+	/* if off_t is only 32-bits signed, there will be overflow problems
+	 * with cabinets reaching past the 2GB barrier (or just claiming to)
+	 */
+#if _FILE_OFFSET_BITS < 64
+	if (cablen_u32 & ~0x7FFFFFFF) {
+	  sys->message(fh, largefile_msg);
+	  cablen_u32 = 0x7FFFFFFF;
+	}
+	if (foffset_u32 & ~0x7FFFFFFF) {
+	  sys->message(fh, largefile_msg);
+	  foffset_u32 = 0x7FFFFFFF;
+	}
+#endif
+	/* copy the unsigned 32-bit offsets to signed off_t variables */
+	foffset = (off_t) foffset_u32;
+	cablen  = (off_t) cablen_u32;
 
 	/* capture the "length of cabinet" field if there is a cabinet at
 	 * offset 0 in the file, regardless of whether the cabinet can be
@@ -727,8 +755,9 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
 
 	/* restart search */
 	if (offset >= flen) return MSPACK_ERR_OK;
-	if (sys->seek(fh, offset, MSPACK_SYS_SEEK_START))
+	if (sys->seek(fh, offset, MSPACK_SYS_SEEK_START)) {
 	  return MSPACK_ERR_SEEK;
+	}
 	length = 0;
 	p = pend;
 	state = 0;

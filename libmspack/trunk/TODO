@@ -18,3 +18,6 @@ KWAJ
 - everything
 
 
+BUGS
+- LZX decoder frame-crossing bugs (barvis.chm)
+- segfauly for qtm windows < 32kb (xlview1.cab)
