@@ -16,9 +16,45 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#if HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#if HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+#if HAVE_STRING_H
+# include <string.h>
+#endif
+#if HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#if HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+
+#ifdef HAVE_FSEEKO
+# define FSEEK fseeko
+# define FTELL ftello
+# define FILELEN off_t
+#else
+# define FSEEK fseek
+# define FTELL ftell
+# define FILELEN long
+#endif
+
+#ifndef _FILE_OFFSET_BITS
+# define _FILE_OFFSET_BITS 32
+#endif
+#if _FILE_OFFSET_BITS < 64
+# define FL "d"
+#else
+# define FL "lld"
+#endif
+
 
 /* structure offsets */
 #define cfhead_Signature         (0x00)
@@ -74,7 +110,7 @@
 
 FILE *fh;
 char *filename;
-unsigned long filelength;
+FILELEN filelength;
 void search();
 void getinfo();
 
@@ -84,7 +120,7 @@ void getinfo();
 #define GETWORD(n) EndGetI16(&buf[n])
 #define GETBYTE(n) ((int)buf[n])
 
-#define GETOFFSET      (ftell(fh))
+#define GETOFFSET      (FTELL(fh))
 #define READ(buf,len)  if (myread((void *)(buf),(len))) return
 #define SKIP(offset)   if (myseek((offset),SEEK_CUR)) return
 #define SEEK(offset)   if (myseek((offset),SEEK_SET)) return
@@ -92,8 +128,8 @@ void getinfo();
 
 
 int myread(void *buf, int length) {
-  int remain = filelength - GETOFFSET;
-  if (length > remain) length = remain;
+  FILELEN remain = filelength - GETOFFSET;
+  if (length > remain) length = (int) remain;
   if (fread(buf, 1, length, fh) != length) {
     perror(filename);
     return 1;
@@ -101,8 +137,8 @@ int myread(void *buf, int length) {
   return 0;
 }
 
-int myseek(unsigned long offset, int mode) {
-  if (fseek(fh, offset, mode) != 0) {
+int myseek(FILELEN offset, int mode) {
+  if (FSEEK(fh, offset, mode) != 0) {
     perror(filename);
     return 1;
   }
@@ -122,21 +158,21 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (fseek(fh, 0, SEEK_END) != 0) {
+  if (FSEEK(fh, 0, SEEK_END) != 0) {
     perror(filename);
     fclose(fh);
     return 1;
   }
 
-  filelength = (unsigned long) ftell(fh);
+  filelength = FTELL(fh);
 
-  if (fseek(fh, 0, SEEK_SET) != 0) {
+  if (FSEEK(fh, 0, SEEK_SET) != 0) {
     perror(filename);
     fclose(fh);
     return 1;
   }
 
-  printf("Examining file \"%s\" (%u bytes)...\n", filename, filelength);
+  printf("Examining file \"%s\" (%" FL " bytes)...\n", filename, filelength);
   search();
   fclose(fh);
   return 0;
@@ -148,8 +184,8 @@ unsigned char search_buf[SEARCH_SIZE];
 
 void search() {
   unsigned char *pstart = &search_buf[0], *pend, *p;
-  unsigned long offset, caboff, cablen, foffset;
-  size_t length;
+  FILELEN offset, caboff, cablen, foffset, length;
+  unsigned long cablen32, foffset32;
   int state = 0;
 
   for (offset = 0; offset < filelength; offset += length) {
@@ -184,17 +220,17 @@ void search() {
 	
 	/* we don't care about bytes 4-7 */
 	/* bytes 8-11 are the overall length of the cabinet */
-      case 8:  cablen  = *p++;       state++; break;
-      case 9:  cablen |= *p++ << 8;  state++; break;
-      case 10: cablen |= *p++ << 16; state++; break;
-      case 11: cablen |= *p++ << 24; state++; break;
+      case 8:  cablen32  = *p++;       state++; break;
+      case 9:  cablen32 |= *p++ << 8;  state++; break;
+      case 10: cablen32 |= *p++ << 16; state++; break;
+      case 11: cablen32 |= *p++ << 24; state++; break;
 	
 	/* we don't care about bytes 12-15 */
 	/* bytes 16-19 are the offset within the cabinet of the filedata */
-      case 16: foffset  = *p++;       state++; break;
-      case 17: foffset |= *p++ << 8;  state++; break;
-      case 18: foffset |= *p++ << 16; state++; break;
-      case 19: foffset |= *p++ << 24;
+      case 16: foffset32  = *p++;       state++; break;
+      case 17: foffset32 |= *p++ << 8;  state++; break;
+      case 18: foffset32 |= *p++ << 16; state++; break;
+      case 19: foffset32 |= *p++ << 24;
 	/* now we have recieved 20 bytes of potential cab header. */
 	/* work out the offset in the file of this potential cabinet */
 	caboff = offset + (p-pstart) - 20;
@@ -202,12 +238,14 @@ void search() {
 	 * of the cabinet, and that the offset + the alleged length are
 	 * 'roughly' within the end of overall file length
 	 */
+	foffset = (FILELEN) foffset32;
+	cablen  = (FILELEN) cablen32;
 	if ((foffset < cablen) &&
 	    ((caboff + foffset) < (filelength + 32)) &&
 	    ((caboff + cablen) < (filelength + 32)) )
 	{
 	  /* found a potential result - try loading it */
-	  printf("Found cabinet header at offset %u\n", caboff);
+	  printf("Found cabinet header at offset %" FL "\n", caboff);
 	  SEEK(caboff);
 	  getinfo();
 	  offset = caboff + cablen;
@@ -246,7 +284,7 @@ void search() {
 
 /* translate UTF -> ASCII */
 int convertUTF(unsigned char *in) {
-  unsigned char c, *out = in, *end = in + strlen(in) + 1;
+  unsigned char c, *out = in, *end = in + strlen((char *) in) + 1;
   unsigned int x;
 
   do {
@@ -281,9 +319,10 @@ void getinfo() {
   unsigned char namebuf[CAB_NAMEMAX];
   char *name;
 
+  FILELEN offset, base_offset, files_offset, base;
   int num_folders, num_files, num_blocks = 0;
   int header_res = 0, folder_res = 0, data_res = 0;
-  int i, x, y, offset, base_offset, files_offset, base;
+  int i, x, y;
 
   base_offset = GETOFFSET;
 
@@ -295,7 +334,7 @@ void getinfo() {
     "\n*** HEADER SECTION ***\n\n"
     "Cabinet signature      = '%4.4s'\n"
     "Cabinet size           = %u bytes\n"
-    "Offset of files        = %u\n"
+    "Offset of files        = %" FL "\n"
     "Cabinet format version = %d.%d\n"
     "Number of folders      = %u\n"
     "Number of files        = %u\n"
@@ -345,36 +384,37 @@ void getinfo() {
     printf("WARNING: header reserved space > 60000\n");
 
   if (header_res) {
-    printf("[Reserved header: offset %lu, size %u]\n", GETOFFSET, header_res);
+    printf("[Reserved header: offset %" FL ", size %u]\n", GETOFFSET,
+	   header_res);
     SKIP(header_res);
   }
 
   if (x & cfheadPREV_CABINET) {
     base = GETOFFSET;
     READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen(namebuf) + 1);
+    SEEK(base + strlen((char *) namebuf) + 1);
     printf("Previous cabinet file  = %s\n", namebuf);
-    if (strlen(namebuf) > 256) printf("WARNING: name length > 256\n");
+    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
 
     base = GETOFFSET;
     READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen(namebuf) + 1);
+    SEEK(base + strlen((char *) namebuf) + 1);
     printf("Previous disk name     = %s\n", namebuf);
-    if (strlen(namebuf) > 256) printf("WARNING: name length > 256\n");
+    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
   }
 
   if (x & cfheadNEXT_CABINET) {
     base = GETOFFSET;
     READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen(namebuf) + 1);
+    SEEK(base + strlen((char *) namebuf) + 1);
     printf("Next cabinet file      = %s\n", namebuf);
-    if (strlen(namebuf) > 256) printf("WARNING: name length > 256\n");
+    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
 
     base = GETOFFSET;
     READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen(namebuf) + 1);
+    SEEK(base + strlen((char *) namebuf) + 1);
     printf("Next disk name         = %s\n", namebuf);
-    if (strlen(namebuf) > 256) printf("WARNING: name length > 256\n");
+    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
   }
 
   printf("\n*** FOLDERS SECTION ***\n");
@@ -392,8 +432,8 @@ void getinfo() {
     }
 
     printf(
-      "\n[New folder at offset %u]\n"
-      "Offset of folder       = %u\n"
+      "\n[New folder at offset %" FL "]\n"
+      "Offset of folder       = %" FL "\n"
       "Num. blocks in folder  = %u\n"
       "Compression type       = 0x%04x [%s]\n",
 
@@ -407,7 +447,8 @@ void getinfo() {
     num_blocks += GETWORD(cffold_NumBlocks);
 
     if (folder_res) {
-      printf("[Reserved folder: offset %lu, size %u]\n", GETOFFSET, folder_res);
+      printf("[Reserved folder: offset %" FL ", size %u]\n", GETOFFSET,
+	     folder_res);
       SKIP(folder_res);
     }
   }
@@ -443,8 +484,8 @@ void getinfo() {
     
     base = GETOFFSET;
     READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen(namebuf) + 1);
-    if (strlen(namebuf) > 256) printf("WARNING: name length > 256\n");
+    SEEK(base + strlen((char *) namebuf) + 1);
+    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
 
     /* convert filename */
     if (x & cffile_A_NAME_IS_UTF) {
@@ -452,7 +493,7 @@ void getinfo() {
     }
 
     printf(
-      "\n[New file at offset %u]\n"
+      "\n[New file at offset %" FL "]\n"
       "File name              = %s\n"
       "File size              = %u bytes\n"
       "Offset within folder   = %u\n"
@@ -489,7 +530,7 @@ void getinfo() {
     READ(&buf, cfdata_SIZEOF);
     x = GETWORD(cfdata_CompressedSize);
     y = GETWORD(cfdata_UncompressedSize);
-    printf("Block %5d: offset %10d / csum %08x / c=%5d / u=%5d%s\n",
+    printf("Block %6d: offset %12" FL " / csum %08x / c=%5u / u=%5u%s\n",
 	   i, offset, GETLONG(cfdata_CheckSum), x, y,
 	   ((x > (32768+6144)) || (y > 32768)) ? " INVALID" : "");
     SKIP(x);
