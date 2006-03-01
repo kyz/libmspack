@@ -1,5 +1,5 @@
 /* cabextract 1.2 - a program to extract Microsoft Cabinet files
- * (C) 2000-2005 Stuart Caie <kyzer@4u.net>
+ * (C) 2000-2006 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
