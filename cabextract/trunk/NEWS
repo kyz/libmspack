@@ -1,3 +1,10 @@
+New in 1.2:
+* "-t" option: Allows you to test that every file can be extracted without
+  having to extract it. This also prints the MD5 checksum of the file.
+* UTF-8 filenames are now decoded correctly.
+* Large files (>2GB) are now searched correctly for cabinets.
+* Problems with the GNU library code have been fixed.
+
 New in 1.1:
 * A security vulnerability has been fixed. If the files within a cabinet
   file include the directory ".." in their filename, this will be changed to

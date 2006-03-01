@@ -19,6 +19,6 @@ libmspack_a_SOURCES =	mspack/mspack.h \
 
 bin_PROGRAMS =		cabextract
 noinst_PROGRAMS =	src/cabinfo
-cabextract_SOURCES =	src/cabextract.c
-cabextract_LDADD =	libmspack.a @LIBOBJS@ @ALLOCA@
+cabextract_SOURCES =	src/cabextract.c md5.h md5.c
+cabextract_LDADD =	libmspack.a @LIBOBJS@
 
