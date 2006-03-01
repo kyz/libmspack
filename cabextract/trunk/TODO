@@ -1,11 +1,6 @@
-BUG: "cabextract -F file" works but "cabextract -d dir -F file" doesn't,
-when file is an exact filename.
-
 Automatic renaming of files in their long form, for Windows CE install
 cabs.  This would probably be another program using libmspack, rather than
 auto-detected by cabextract.
-
-Decompress files without extraction, and show MD5 of files.
 
 Provide tool for finding OLE2 streams and dumping them. Some InstallShield
 Wizard use MS CAB files inside MS OLE2 streams. They look normal, but

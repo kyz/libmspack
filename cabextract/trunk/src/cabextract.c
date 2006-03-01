@@ -1,5 +1,5 @@
-/* cabextract 1.1 - a program to extract Microsoft Cabinet files
- * (C) 2000-2004 Stuart Caie <kyzer@4u.net>
+/* cabextract 1.2 - a program to extract Microsoft Cabinet files
+ * (C) 2000-2005 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -127,6 +127,7 @@ extern time_t mktime(struct tm *tp);
 #endif
 
 #include <mspack.h>
+#include <md5.h>
 
 /* structures and global variables */
 struct option optlist[] = {
@@ -139,6 +140,7 @@ struct option optlist[] = {
   { "pipe",      0, NULL, 'p' },
   { "quiet",     0, NULL, 'q' },
   { "single",    0, NULL, 's' },
+  { "test",      0, NULL, 't' },
   { "version",   0, NULL, 'v' },
   { NULL,        0, NULL, 0   }
 };
@@ -151,7 +153,7 @@ struct file_mem {
 };
 
 struct cabextract_args {
-  int help, lower, pipe, view, quiet, single, fix;
+  int help, lower, pipe, view, quiet, single, fix, test;
   char *dir, *filter;
 };
 
@@ -165,8 +167,31 @@ struct file_mem *cab_seen = NULL;
 mode_t user_umask;
 
 struct cabextract_args args = {
-  0, 0, 0, 0, 0, 0, 0, NULL, NULL
+  0, 0, 0, 0, 0, 0, 0, 0,
+  NULL, NULL
 };
+
+
+/** A special filename. Extracting to this filename will send the output
+ * to standard output instead of a file on disk. The magic happens in
+ * cabx_open() when the STDOUT_FNAME pointer is given as a filename, so
+ * treat this like a constant rather than a string.
+ */
+char *STDOUT_FNAME = "stdout";
+
+/** A special filename. Extracting to this filename will send the output
+ * through an MD5 checksum calculator, instead of a file on disk. The
+ * magic happens in cabx_open() when the TEST_FNAME pointer is given as a
+ * filename, so treat this like a constant rather than a string. 
+ */
+
+char *TEST_FNAME = "test";
+
+/** A global MD5 context, used when a file is written to TEST_FNAME */
+struct md5_ctx md5_context;
+
+/** The resultant MD5 checksum, used when a file is written to TEST_FNAME */
+unsigned char md5_result[16];
 
 /* prototypes */
 static int process_cabinet(char *cabname);
@@ -211,7 +236,7 @@ int main(int argc, char *argv[]) {
   int i, err;
 
   /* parse options */
-  while ((i = getopt_long(argc, argv, "d:fF:hlLpqsv", optlist, NULL)) != -1) {
+  while ((i = getopt_long(argc, argv, "d:fF:hlLpqstv", optlist, NULL)) != -1) {
     switch (i) {
     case 'd': args.dir    = optarg; break;
     case 'f': args.fix    = 1;      break;
@@ -222,6 +247,7 @@ int main(int argc, char *argv[]) {
     case 'p': args.pipe   = 1;      break;
     case 'q': args.quiet  = 1;      break;
     case 's': args.single = 1;      break;
+    case 't': args.test   = 1;      break;
     case 'v': args.view   = 1;      break;
     }
   }
@@ -237,6 +263,7 @@ int main(int argc, char *argv[]) {
       "  -v   --version     print version / list cabinet\n"
       "  -h   --help        show this help page\n"
       "  -l   --list        list contents of cabinet\n"
+      "  -t   --test        test cabinet integrity\n"
       "  -q   --quiet       only print errors and warnings\n"
       "  -L   --lowercase   make filenames lowercase\n"
       "  -f   --fix         fix (some) corrupted cabinets\n");
@@ -245,9 +272,15 @@ int main(int argc, char *argv[]) {
       "  -s   --single      restrict search to cabs on the command line\n"
       "  -F   --filter      extract only files that match the given pattern\n"
       "  -d   --directory   extract all files to the given directory\n\n"
-      "cabextract %s (C) 2000-2004 Stuart Caie <kyzer@4u.net>\n"
+      "cabextract %s (C) 2000-2005 Stuart Caie <kyzer@4u.net>\n"
       "This is free software with ABSOLUTELY NO WARRANTY.\n",
       VERSION);
+    return EXIT_FAILURE;
+  }
+
+  if (args.test && args.view) {
+    fprintf(stderr, "%s: You cannot use --test and --list at the same time.\n"
+	    "Try '%s --help' for more information.\n", argv[0], argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -333,7 +366,7 @@ int main(int argc, char *argv[]) {
 static int process_cabinet(char *basename) {
   struct mscabd_cabinet *basecab, *cab, *cab2;
   struct mscabd_file *file;
-  int isunix, viewhdr = 0;
+  int isunix, fname_offset, viewhdr = 0;
   char *from, *name;
   int errors = 0;
 
@@ -376,9 +409,21 @@ static int process_cabinet(char *basename) {
 	printf("-----------+---------------------+-------------\n");
       }
       else {
-	if (!args.quiet) printf("Extracting cabinet: %s\n", basename);
+	if (!args.quiet) {
+	  printf("%s cabinet: %s\n", args.test ? "Testing" : "Extracting",
+		                     basename);
+	}
       }
       viewhdr = 1;
+    }
+
+    /* the full UNIX output filename includes the output
+     * directory. However, for filtering purposes, we don't want to 
+     * include that. So, we work out where the filename part of the 
+     * output name begins. This is the same for every extracted file.
+     */
+    if (args.filter) {
+      fname_offset = args.dir ? (strlen(args.dir) + 1) : 0;
     }
 
     /* process all files */
@@ -389,29 +434,59 @@ static int process_cabinet(char *basename) {
 	    args.lower, isunix, file->attribs & MSCAB_ATTRIB_UTF_NAME)))
       {
 	errors++;
-	break;
+	continue;
       }
 
       /* if filtering, do so now. skip if file doesn't match filter */
-      if (args.filter && fnmatch(args.filter, name, FNM_CASEFOLD)) {
+      if (args.filter &&
+	  fnmatch(args.filter, &name[fname_offset], FNM_CASEFOLD))
+      {
 	free(name);
 	continue;
       }
 
-      /* view or extract the file */
+      /* view, extract or test the file */
       if (args.view) {
 	printf("%10u | %02d.%02d.%04d %02d:%02d:%02d | %s\n",
 	       file->length, file->date_d, file->date_m, file->date_y,
 	       file->time_h, file->time_m, file->time_s, name);
       }
+      else if (args.test) {
+	if (cabd->extract(cabd, file, TEST_FNAME)) {
+	  /* file failed to extract */
+	  printf("  %s  failed (%s)\n", name, cab_error(cabd));
+	  errors++;
+	}
+	else {
+	  /* file extracted OK, print the MD5 checksum in md5_result. Print
+	   * the checksum right-aligned to 79 columns if that's possible,
+	   * otherwise just print it 2 spaces after the filename and "OK" */
+
+	  /* "  filename  OK  " is 8 chars + the length of filename,
+	   * the MD5 checksum itself is 32 chars. */
+	  int spaces = 79 - (strlen(name) + 8 + 32);
+	  printf("  %s  OK  ", name);
+	  while (spaces-- > 0) putchar(' ');
+	  printf("%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+		 md5_result[0], md5_result[1], md5_result[2], md5_result[3],
+		 md5_result[4], md5_result[5], md5_result[6], md5_result[7],
+		 md5_result[8], md5_result[9], md5_result[10],md5_result[11],
+		 md5_result[12],md5_result[13],md5_result[14],md5_result[15]);
+	}
+      }
       else {
+	/* extract the file */
 	if (args.pipe) {
-	  if (cabd->extract(cabd, file, NULL)) {
-	    fprintf(stderr, "stdout: %s: %s\n", name,cab_error(cabd));
+	  /* extracting to stdout */
+	  if (cabd->extract(cabd, file, STDOUT_FNAME)) {
+	    fprintf(stderr, "%s(%s): %s\n", STDOUT_FNAME, name,
+		                            cab_error(cabd));
 	    errors++;
 	  }
 	}
 	else {
+	  /* extracting to a regular file */
 	  if (!args.quiet) printf("  extracting %s\n", name);
 
 	  if (!ensure_filepath(name)) {
@@ -756,7 +831,7 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 
   /* search for "../" in cab filename part and change to "xx/".  This
    * prevents any unintended directory traversal. */
-  for (p = &name[dir ? strlen(dir)+1 : 0]; *p; p++) {
+  for (p = &name[dir ? strlen((char *) dir)+1 : 0]; *p; p++) {
     if ((p[0] == '.') && (p[1] == '.') && (p[2] == '/')) {
       p[0] = p[1] = 'x';
       p += 2;
@@ -927,7 +1002,7 @@ static char *cab_error(struct mscab_decompressor *cd) {
 
 struct mspack_file_p {
   FILE *fh;
-  char *name;
+  char *name, regular_file;
 };
 
 static struct mspack_file *cabx_open(struct mspack_system *this,
@@ -936,18 +1011,18 @@ static struct mspack_file *cabx_open(struct mspack_system *this,
   struct mspack_file_p *fh;
   char *fmode;
 
-  /* NULL filename for write means extract to stdout */
-  if (!filename && ((mode == MSPACK_SYS_OPEN_WRITE) ||
-		    (mode == MSPACK_SYS_OPEN_APPEND)))
-  {
-    if ((fh = malloc(sizeof(struct mspack_file_p)))) {
-      fh->name = NULL;
-      fh->fh = stdout;
-      return (struct mspack_file *) fh;
+  /* Use of the STDOUT_FNAME pointer for a filename means the file should
+   * actually be extracted to stdout. Use of the TEST_FNAME pointer for a
+   * filename means the file should only be MD5-summed.
+   */
+  if (filename == STDOUT_FNAME || filename == TEST_FNAME) {
+    /* only WRITE mode is valid for these special files */
+    if (mode != MSPACK_SYS_OPEN_WRITE) {
+      return NULL;
     }
-    return NULL;
   }
 
+  /* ensure that mode is one of READ, WRITE, UPDATE or APPEND */
   switch (mode) {
   case MSPACK_SYS_OPEN_READ:   fmode = "rb";  break;
   case MSPACK_SYS_OPEN_WRITE:  fmode = "wb";  break;
@@ -958,7 +1033,26 @@ static struct mspack_file *cabx_open(struct mspack_system *this,
 
   if ((fh = malloc(sizeof(struct mspack_file_p)))) {
     fh->name = filename;
-    if ((fh->fh = fopen(filename, fmode))) return (struct mspack_file *) fh;
+
+    if (filename == STDOUT_FNAME) {
+      fh->regular_file = 0;
+      fh->fh = stdout;
+      return (struct mspack_file *) fh;
+    }
+    else if (filename == TEST_FNAME) {
+      fh->regular_file = 0;
+      fh->fh = NULL;
+      md5_init_ctx(&md5_context);
+      return (struct mspack_file *) fh;
+    }
+    else {
+      /* regular file - simply attempt to open it */
+      fh->regular_file = 1;
+      if ((fh->fh = fopen(filename, fmode))) {
+	return (struct mspack_file *) fh;
+      }
+    }
+    /* error - free file handle and return NULL */
     free(fh);
   }
   return NULL;
@@ -967,14 +1061,19 @@ static struct mspack_file *cabx_open(struct mspack_system *this,
 static void cabx_close(struct mspack_file *file) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
   if (this) {
-    if (this->name) fclose(this->fh);
+    if (this->name == TEST_FNAME) {
+      md5_finish_ctx(&md5_context, (void *) &md5_result);
+    }
+    else if (this->regular_file) {
+      fclose(this->fh);
+    }
     free(this);
   }
 }
 
 static int cabx_read(struct mspack_file *file, void *buffer, int bytes) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this && this->name) {
+  if (this && this->regular_file) {
     size_t count = fread(buffer, 1, (size_t) bytes, this->fh);
     if (!ferror(this->fh)) return (int) count;
   }
@@ -984,15 +1083,22 @@ static int cabx_read(struct mspack_file *file, void *buffer, int bytes) {
 static int cabx_write(struct mspack_file *file, void *buffer, int bytes) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
   if (this) {
-    size_t count = fwrite(buffer, 1, (size_t) bytes, this->fh);
-    if (!ferror(this->fh)) return (int) count;
+    if (this->name == TEST_FNAME) {
+      md5_process_bytes(buffer, (size_t) bytes, &md5_context);
+      return bytes;
+    }
+    else {
+      /* regular files and the stdout writer */
+      size_t count = fwrite(buffer, 1, (size_t) bytes, this->fh);
+      if (!ferror(this->fh)) return (int) count;
+    }
   }
   return -1;
 }
 
 static int cabx_seek(struct mspack_file *file, off_t offset, int mode) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this && this->name) {
+  if (this && this->regular_file) {
     switch (mode) {
     case MSPACK_SYS_SEEK_START: mode = SEEK_SET; break;
     case MSPACK_SYS_SEEK_CUR:   mode = SEEK_CUR; break;
@@ -1011,17 +1117,16 @@ static int cabx_seek(struct mspack_file *file, off_t offset, int mode) {
 static off_t cabx_tell(struct mspack_file *file) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
 #if HAVE_FSEEKO
-  return (this && this->name) ? (off_t) ftello(this->fh) : 0;
+  return (this && this->regular_file) ? (off_t) ftello(this->fh) : 0;
 #else
-  return (this && this->name) ? (off_t) ftell(this->fh) : 0;
+  return (this && this->regular_file) ? (off_t) ftell(this->fh) : 0;
 #endif
 }
 
 static void cabx_msg(struct mspack_file *file, char *format, ...) {
   va_list ap;
   if (file) {
-    char *name = ((struct mspack_file_p *) file)->name;
-    fprintf(stderr, "%s: ", name ? name : "stdout");
+    fprintf(stderr, "%s: ", ((struct mspack_file_p *) file)->name);
   }
   va_start(ap, format);
   vfprintf(stderr, format, ap);

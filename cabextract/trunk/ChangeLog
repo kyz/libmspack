@@ -1,3 +1,32 @@
+2006-03-01  Stuart Caie   <kyzer@4u.net>
+
+	* process_cabinets(): on the advice of Mike Mohr, cabextract no
+	longer skips entire cabinets, when create_output_filename()
+	returns NULL, it only skips the affected files now.
+
+2005-10-30  Stuart Caie   <kyzer@4u.net>
+
+	* src/cabextract.c: added test mode to cabextract, wherein files
+	aren't extracted, only passed through an MD5 checksum generator.
+	cabextract then lists which files passed and which files failed.
+
+	* process_cabinets(): fixed the problem where filters don't match
+	when -d option is also used. The filters match on the full
+	output-file path, including the -d directory specified. We now
+	trim this off before matching.
+	
+2005-10-29  Stuart Caie   <kyzer@4u.net>
+
+	* fnmatch.c, getopt.c: finally resolved problems with all the GNU
+	replacement functions. Obtained new versions of fnmatch and
+	getopt, removing the need for alloca.c, coded out the requirement
+	for mempcpy in getopt.c (I don't think it was needed anyway, but
+	just to be sure I changed it to use just memcpy). Tested on Mac OS X
+	(both native and using fink), Solaris 8 and Cygwin as well as Debian.
+
+	* configure.ac: Removed the AC_FUNC_ALLOCA and
+	AC_REPLACE_FUNCS([mempcpy])
+	
 2005-07-05  Stuart Caie   <kyzer@4u.net>
 
 	* src/cabinfo.c: This can now search and print accurate output for
