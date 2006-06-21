@@ -716,7 +716,7 @@ static int unix_path_seperators(struct mscabd_file *files) {
  * @param lower  if non-zero, filename should be made lower-case.
  * @param isunix if zero, MS-DOS path seperators are used in the internal
  *               CAB filename. If non-zero, UNIX path seperators are used.
- * @param utf8   if non-zero, the internal CAB filename is encoded in UTF8.
+ * @param utf8   if non-zero, the internal CAB filename is encoded in UTF-8.
  * @return a freshly allocated and created filename, or NULL if there was
  *         not enough memory.
  * @see unix_path_seperators()
@@ -732,8 +732,8 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 
   /* length of filename */
   x = strlen((char *) fname);
-  /* UTF8 worst case scenario: tolower() expands all chars from 1 to 3 bytes */
-  if (utf8) x *= 3;
+  /* UTF-8 worst case scenario: tolower() expands all chars from 1 to 4 bytes */
+  if (utf8) x *= 4;
   /* length of output directory */
   if (dir) x += strlen((char *) dir);
   x += 2;
@@ -762,10 +762,11 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   fe = &fname[strlen((char *)fname)]; /* fe = end of input filename */
 
   if (utf8) {
-    /* UTF8 translates two-byte unicode characters into 1, 2 or 3 bytes.
-     * %000000000xxxxxxx -> %0xxxxxxx
-     * %00000xxxxxyyyyyy -> %110xxxxx %10yyyyyy
-     * %xxxxyyyyyyzzzzzz -> %1110xxxx %10yyyyyy %10zzzzzz
+    /* UTF-8 translates unicode characters into 1 to 4 bytes.
+     * %00000000000000sssssss -> %0sssssss
+     * %0000000000ssssstttttt -> %110sssss %10tttttt
+     * %00000ssssttttttuuuuuu -> %1110ssss %10tttttt %10uuuuuu
+     * %sssttttttuuuuuuvvvvvv -> %11110sss %10tttttt %10uuuuuu %10vvvvvv
      *
      * Therefore, the inverse is as follows:
      * First char:
@@ -773,7 +774,8 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
      *  0x80 - 0xBF = invalid
      *  0xC0 - 0xDF = 2 byte char (next char only 0x80-0xBF is valid)
      *  0xE0 - 0xEF = 3 byte char (next 2 chars only 0x80-0xBF is valid)
-     *  0xF0 - 0xFF = invalid
+     *  0xF0 - 0xF7 = 4 byte char (next 3 chars only 0x80-0xBF is valid)
+     *  0xF8 - 0xFF = invalid
      */
     do {
       if (fname > fe) {
@@ -782,15 +784,21 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 	return NULL;	
       }
 
-      /* get next UTF8 char */
+      /* get next UTF-8 character */
       if ((c = *fname++) < 0x80) x = c;
       else {
-	if ((c >= 0xC0) && (c < 0xE0)) {
+	if ((c >= 0xC0) && (c <= 0xDF)) {
 	  x = (c & 0x1F) << 6;
 	  x |= *fname++ & 0x3F;
 	}
-	else if ((c >= 0xE0) && (c < 0xF0)) {
+	else if ((c >= 0xE0) && (c <= 0xEF)) {
 	  x = (c & 0xF) << 12;
+	  x |= (*fname++ & 0x3F) << 6;
+	  x |= *fname++ & 0x3F;
+	}
+	else if ((c >= 0xF0) && (c <= 0xF7)) {
+          x = (c & 0x7) << 18;
+	  x |= (*fname++ & 0x3F) << 12;
 	  x |= (*fname++ & 0x3F) << 6;
 	  x |= *fname++ & 0x3F;
 	}
@@ -804,7 +812,7 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
       else if (x == slash) x = '\\';
       else if (lower)      x = (unsigned int) tolower((int) x);
 
-      /* integer back to UTF8 */
+      /* convert unicode character back to UTF-8 */
       if (x < 0x80) {
 	*p++ = (unsigned char) x;
       }
@@ -812,8 +820,14 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 	*p++ = 0xC0 | (x >> 6);   
 	*p++ = 0x80 | (x & 0x3F);
       }
-      else {
+      else if (x < 0x10000) {
 	*p++ = 0xE0 | (x >> 12);
+	*p++ = 0x80 | ((x >> 6) & 0x3F);
+	*p++ = 0x80 | (x & 0x3F);
+      }
+      else {
+        *p++ = 0xF0 | (x >> 18);
+	*p++ = 0x80 | ((x >> 12) & 0x3F);
 	*p++ = 0x80 | ((x >> 6) & 0x3F);
 	*p++ = 0x80 | (x & 0x3F);
       }

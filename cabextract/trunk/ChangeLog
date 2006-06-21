@@ -1,3 +1,7 @@
+2006-06-21  Stuart Caie   <kyzer@4u.net>
+
+	* create_output_name(): add UTF-8 support for 4-byte characters.
+
 2006-03-01  Stuart Caie   <kyzer@4u.net>
 
 	* process_cabinets(): on the advice of Mike Mohr, cabextract no
