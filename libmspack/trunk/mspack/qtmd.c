@@ -247,6 +247,14 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
   /* Quantum supports window sizes of 2^10 (1Kb) through 2^21 (2Mb) */
   if (window_bits < 10 || window_bits > 21) return NULL;
 
+  /* temporary fix: the decoder assumes that it can write at least
+   * QTM_FRAME_SIZE bytes. This is not true on window sizes smaller
+   * than 32Kb. This line prevents memory corruption and coredump,
+   * however the correct solution is to redo the control loops around
+   * the QTM decoder without using QTM_FRAME_SIZE.
+   */
+  if (window_bits < 15) return NULL;
+
   input_buffer_size = (input_buffer_size + 1) & -2;
   if (input_buffer_size < 2) return NULL;
 

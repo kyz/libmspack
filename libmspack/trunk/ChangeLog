@@ -3,6 +3,13 @@
 	* cabd_search(): fixed problems with searching files > 4GB for
 	cabinets.
 
+2005-06-23:  Stuart Caie   <kyzer@4u.net>
+
+	* qtmd_init(): The QTM decoder is broken for QTM streams with a
+	window size less than the frame size. Until this is fixed, fail
+	to initialise QTM window sizes less than 15. Thanks to Tomasz Kojm
+	for finding the bug.
+
 2005-03-22:  Stuart Caie   <kyzer@4u.net>
 
 	* system.h: now undefs "read", as the latest glibc defines read()
