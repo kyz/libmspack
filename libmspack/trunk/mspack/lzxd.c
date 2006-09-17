@@ -104,15 +104,22 @@
 
 #define ENSURE_BITS(nbits)                                              \
   while (bits_left < (nbits)) {                                         \
+    unsigned char b0;                                                   \
     if (i_ptr >= i_end) {                                               \
       if (lzxd_read_input(lzx)) return lzx->error;                      \
       i_ptr = lzx->i_ptr;                                               \
       i_end = lzx->i_end;                                               \
     }                                                                   \
-    bit_buffer |= ((i_ptr[1] << 8) | i_ptr[0])                          \
+    b0 = *i_ptr++;                                                      \
+    if (i_ptr >= i_end) {                                               \
+      if (lzxd_read_input(lzx)) return lzx->error;                      \
+      i_ptr = lzx->i_ptr;                                               \
+      i_end = lzx->i_end;                                               \
+    }                                                                   \
+    bit_buffer |= ((*i_ptr << 8) | b0)                                  \
                   << (BITBUF_WIDTH - 16 - bits_left);                   \
     bits_left  += 16;                                                   \
-    i_ptr      += 2;                                                    \
+    i_ptr      += 1;                                                    \
   }
 
 #define PEEK_BITS(nbits) (bit_buffer >> (BITBUF_WIDTH - (nbits)))
@@ -506,6 +513,9 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
       /* re-read the intel header and reset the huffman lengths */
       lzxd_reset_state(lzx);
+      R0 = lzx->R0;
+      R1 = lzx->R1;
+      R2 = lzx->R2;
     }
 
     /* read header if necessary */

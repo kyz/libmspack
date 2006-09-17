@@ -1,3 +1,13 @@
+2006-08-31:  Stuart Caie   <kyzer@4u.net>
+
+	* lzxd_decompress(): Two major bugs fixed. Firstly, the R0/R1/R2
+	local variables weren't set to 1 after lzxd_reset_state().
+	Secondly, the LZX decompression stream can sometimes become
+	odd-aligned (after an uncompressed block) and the next 16 bit
+	fetch needs to be split across two input buffers, ENSURE_BITS()
+	didn't cover this case. Many thanks to Igor Glucksmann for
+	discovering both these bugs.
+
 2005-06-30:  Stuart Caie   <kyzer@4u.net>
 
 	* cabd_search(): fixed problems with searching files > 4GB for
