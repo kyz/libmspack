@@ -26,7 +26,7 @@
 
 #ifdef DEBUG
 # include <stdio.h>
-# define D(x) do { printf("%s:%d (%s) ",__FILE__, __LINE__, __FUNCTION__); \
+# define D(x) do { printf("%s:%d ",__FILE__, __LINE__); \
                    printf x ; fputc('\n', stdout); fflush(stdout);} while (0);
 #else
 # define D(x)
