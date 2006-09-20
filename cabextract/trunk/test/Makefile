@@ -5,9 +5,9 @@ test: small.cab huge.cab huger.cab
 	../cabextract -l small.cab >cabextract_l_small.txt
 	../cabextract -l huge.cab  >cabextract_l_huge.txt
 	../cabextract -l huger.cab >cabextract_l_huger.txt
-	../cabextract    small.cab >cabextract_x_small.txt
-	../cabextract    huge.cab  >cabextract_x_huge.txt
-	../cabextract    huger.cab >cabextract_x_huger.txt
+	../cabextract -t small.cab >cabextract_t_small.txt
+	../cabextract -t huge.cab  >cabextract_t_huge.txt
+	../cabextract -t huger.cab >cabextract_t_huger.txt
 
 clean:
 	-rm -f small.cab huge.cab huger.cab cabinfo_*.txt cabextract_*.txt \
