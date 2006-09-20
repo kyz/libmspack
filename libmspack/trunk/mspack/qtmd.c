@@ -247,14 +247,6 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
   /* Quantum supports window sizes of 2^10 (1Kb) through 2^21 (2Mb) */
   if (window_bits < 10 || window_bits > 21) return NULL;
 
-  /* temporary fix: the decoder assumes that it can write at least
-   * QTM_FRAME_SIZE bytes. This is not true on window sizes smaller
-   * than 32Kb. This line prevents memory corruption and coredump,
-   * however the correct solution is to redo the control loops around
-   * the QTM decoder without using QTM_FRAME_SIZE.
-   */
-  if (window_bits < 15) return NULL;
-
   input_buffer_size = (input_buffer_size + 1) & -2;
   if (input_buffer_size < 2) return NULL;
 
@@ -283,7 +275,7 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
   qtm->inbuf_size  = input_buffer_size;
   qtm->window_size = window_size;
   qtm->window_posn = 0;
-  qtm->frame_start = 0;
+  qtm->frame_todo  = QTM_FRAME_SIZE;
   qtm->header_read = 0;
   qtm->error       = MSPACK_ERR_OK;
 
@@ -313,7 +305,7 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
 }
 
 int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
-  unsigned int frame_start, frame_end, window_posn, match_offset, range;
+  unsigned int frame_todo, frame_end, window_posn, match_offset, range;
   unsigned char *window, *i_ptr, *i_end, *runsrc, *rundest;
   int i, j, selector, extra, sym, match_length;
   unsigned short H, L, C, symf;
@@ -342,37 +334,43 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
   RESTORE_BITS;
   window = qtm->window;
   window_posn = qtm->window_posn;
-  frame_start = qtm->frame_start;
+  frame_todo = qtm->frame_todo;
   H = qtm->H;
   L = qtm->L;
   C = qtm->C;
 
   /* while we do not have enough decoded bytes in reserve: */
   while ((qtm->o_end - qtm->o_ptr) < out_bytes) {
-
     /* read header if necessary. Initialises H, L and C */
     if (!qtm->header_read) {
       H = 0xFFFF; L = 0; READ_BITS(C, 16);
       qtm->header_read = 1;
     }
 
-    /* decode more, at most up to to frame boundary */
+    /* decode more, up to the number of bytes needed, the frame boundary,
+     * or the window boundary, whichever comes first */
     frame_end = window_posn + (out_bytes - (qtm->o_end - qtm->o_ptr));
-    if ((frame_start + QTM_FRAME_SIZE) < frame_end) {
-      frame_end = frame_start + QTM_FRAME_SIZE;
+    if ((window_posn + frame_todo) < frame_end) {
+      frame_end = window_posn + frame_todo;
+    }
+    if (frame_end > qtm->window_size) {
+      frame_end = qtm->window_size;
     }
 
     while (window_posn < frame_end) {
       GET_SYMBOL(qtm->model7, selector);
       if (selector < 4) {
+	/* literal byte */
 	struct qtmd_model *mdl = (selector == 0) ? &qtm->model0 :
 	                        ((selector == 1) ? &qtm->model1 :
 				((selector == 2) ? &qtm->model2 :
                                                    &qtm->model3));
 	GET_SYMBOL((*mdl), sym);
 	window[window_posn++] = sym;
+	frame_todo--;
       }
       else {
+	/* match repeated string */
 	switch (selector) {
 	case 4: /* selector 4 = fixed length match (3 bytes) */
 	  GET_SYMBOL(qtm->model4, sym);
@@ -400,64 +398,107 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 
 	default:
 	  /* should be impossible, model7 can only return 0-6 */
+	  D(("got %d from selector", selector))
 	  return qtm->error = MSPACK_ERR_DECRUNCH;
 	}
 
 	rundest = &window[window_posn];
-	i = match_length;
-	/* does match offset wrap the window? */
-	if (match_offset > window_posn) {
-	  /* j = length from match offset to end of window */
-	  j = match_offset - window_posn;
-	  if (j > (int) qtm->window_size) {
-	    D(("match offset beyond window boundaries"))
+	frame_todo -= match_length;
+
+	/* does match destination wrap the window or frame end? */
+	if ((window_posn + match_length) > frame_end) {
+	  /* this situation is possible where the window size is less than the
+	   * 32k frame size, but matches must not go beyond a frame boundary */
+	  if ((window_posn + match_length) > qtm->window_size) {
+	    /* copy first part of match, before window end */
+	    i = qtm->window_size - window_posn;
+	    j = window_posn - match_offset;
+	    while (i--) *rundest++ = window[j++ & (qtm->window_size - 1)];
+
+	    /* flush currently stored data */
+	    i = (&window[qtm->window_size] - qtm->o_ptr);
+	    if (qtm->sys->write(qtm->output, qtm->o_ptr, i) != i) {
+	      return qtm->error = MSPACK_ERR_WRITE;
+	    }
+	    out_bytes -= i;
+	    qtm->o_ptr = &window[0];
+	    qtm->o_end = &window[0]; 
+
+	    /* copy second part of match, after window wrap */
+	    rundest = &window[0];
+	    i = match_length - (qtm->window_size - window_posn);
+	    while (i--) *rundest++ = window[j++ & (qtm->window_size - 1)];
+	    window_posn = window_posn + match_length - qtm->window_size;
+	  }
+	  else {
+	    D(("match beyond frame boundaries"))
 	    return qtm->error = MSPACK_ERR_DECRUNCH;
 	  }
-	  runsrc = &window[qtm->window_size - j];
-	  if (j < i) {
-	    /* if match goes over the window edge, do two copy runs */
-	    i -= j; while (j-- > 0) *rundest++ = *runsrc++;
-	    runsrc = window;
-	  }
-	  while (i-- > 0) *rundest++ = *runsrc++;
+          break; /* because "window_posn < frame_end" has now failed */
 	}
 	else {
-	  runsrc = rundest - match_offset;
-	  while (i-- > 0) *rundest++ = *runsrc++;
+          /* normal match - output won't wrap window or frame end */
+	  i = match_length;
+
+	  /* does match _offset_ wrap the window? */
+	  if (match_offset > window_posn) {
+	    /* j = length from match offset to end of window */
+	    j = match_offset - window_posn;
+	    if (j > (int) qtm->window_size) {
+	      D(("match offset beyond window boundaries"))
+	      return qtm->error = MSPACK_ERR_DECRUNCH;
+	    }
+	    runsrc = &window[qtm->window_size - j];
+	    if (j < i) {
+	      /* if match goes over the window edge, do two copy runs */
+	      i -= j; while (j-- > 0) *rundest++ = *runsrc++;
+	      runsrc = window;
+	    }
+	    while (i-- > 0) *rundest++ = *runsrc++;
+	  }
+	  else {
+	    runsrc = rundest - match_offset;
+	    while (i-- > 0) *rundest++ = *runsrc++;
+	  }
+	  window_posn += match_length;
 	}
-	window_posn += match_length;
-      }
+      } /* if (window_posn+match_length > frame_end) */
     } /* while (window_posn < frame_end) */
 
     qtm->o_end = &window[window_posn];
 
     /* another frame completed? */
-    if ((window_posn - frame_start) >= QTM_FRAME_SIZE) {
-      if ((window_posn - frame_start) != QTM_FRAME_SIZE) {
+    if (frame_todo <= 0) {
+      if (frame_todo < 0) {
 	D(("overshot frame alignment"))
 	return qtm->error = MSPACK_ERR_DECRUNCH;
       }
 
       /* re-align input */
       if (bits_left & 7) REMOVE_BITS(bits_left & 7);
+
+      /* special Quantum hack -- cabd.c injects a trailer byte to allow the
+       * decompressor to realign itself. CAB Quantum blocks, unlike LZX
+       * blocks, can have anything from 0 to 4 trailing null bytes. */
       do { READ_BITS(i, 8); } while (i != 0xFF);
+
       qtm->header_read = 0;
 
-      /* window wrap? */
-      if (window_posn == qtm->window_size) {
-	/* flush all currently stored data */
-	i = (qtm->o_end - qtm->o_ptr);
-	if (qtm->sys->write(qtm->output, qtm->o_ptr, i) != i) {
-	  return qtm->error = MSPACK_ERR_WRITE;
-	}
-	out_bytes -= i;
-	qtm->o_ptr = &window[0];
-	qtm->o_end = &window[0];
-	window_posn = 0;
-      }
-
-      frame_start = window_posn;
+      frame_todo = QTM_FRAME_SIZE;
     }
+
+    /* window wrap? */
+    if (window_posn == qtm->window_size) {
+      /* flush all currently stored data */
+      i = (qtm->o_end - qtm->o_ptr);
+      if (qtm->sys->write(qtm->output, qtm->o_ptr, i) != i) {
+	return qtm->error = MSPACK_ERR_WRITE;
+      }
+      out_bytes -= i;
+      qtm->o_ptr = &window[0];
+      qtm->o_end = &window[0]; 
+      window_posn = 0;
+   }
 
   } /* while (more bytes needed) */
 
@@ -470,9 +511,10 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
   }
 
   /* store local state */
+
   STORE_BITS;
   qtm->window_posn = window_posn;
-  qtm->frame_start = frame_start;
+  qtm->frame_todo = frame_todo;
   qtm->H = H;
   qtm->L = L;
   qtm->C = C;

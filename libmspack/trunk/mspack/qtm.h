@@ -34,7 +34,7 @@ struct qtmd_stream {
   unsigned char *window;          /* decoding window                         */
   unsigned int window_size;       /* window size                             */
   unsigned int window_posn;       /* decompression offset within window      */
-  unsigned int frame_start;       /* start of current frame within window    */
+  unsigned int frame_todo;        /* bytes remaining for current frame       */
 
   unsigned short H, L, C;         /* high/low/current: arith coding state    */
   unsigned char header_read;      /* have we started decoding a new frame?   */

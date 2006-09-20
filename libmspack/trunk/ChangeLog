@@ -1,3 +1,9 @@
+2006-09-20:  Stuart Caie   <kyzer@4u.net>
+
+	* qtmd_decompress(): Fixed a major bug in the QTM decoder, as
+	reported by Tomasz Kojm last year. Removed the restriction on
+	window sizes as a result. Correctly decodes the XLVIEW cabinets.
+
 2006-08-31:  Stuart Caie   <kyzer@4u.net>
 
 	* lzxd_decompress(): Two major bugs fixed. Firstly, the R0/R1/R2
