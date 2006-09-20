@@ -1,6 +1,8 @@
-# add "-DDEBUG" to enable debug output
 # add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system
-MSPACK_FLAGS =
+if DEBUG
+MSPACK_FLAGS = -DDEBUG
+endif
+
 
 EXTRA_DIST =		debian doc test/test_files
 dist-hook:

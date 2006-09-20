@@ -1,5 +1,14 @@
 2006-09-20:  Stuart Caie   <kyzer@4u.net>
 
+	* system.h: I had a choice of adding more to configure.ac to
+	test for __func__ and __FUNCTION__, or just removing __FUNCTION__
+	from the D() macro. I chose the latter.
+
+	* Makefile.am: Now the --enable-debug in configure will actually
+	apply -DDEBUG to the sources.
+
+2006-09-20:  Stuart Caie   <kyzer@4u.net>
+
 	* qtmd_decompress(): Fixed a major bug in the QTM decoder, as
 	reported by Tomasz Kojm last year. Removed the restriction on
 	window sizes as a result. Correctly decodes the XLVIEW cabinets.

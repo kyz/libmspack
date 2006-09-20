@@ -405,35 +405,30 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 	rundest = &window[window_posn];
 	frame_todo -= match_length;
 
-	/* does match destination wrap the window or frame end? */
-	if ((window_posn + match_length) > frame_end) {
-	  /* this situation is possible where the window size is less than the
-	   * 32k frame size, but matches must not go beyond a frame boundary */
-	  if ((window_posn + match_length) > qtm->window_size) {
-	    /* copy first part of match, before window end */
-	    i = qtm->window_size - window_posn;
-	    j = window_posn - match_offset;
-	    while (i--) *rundest++ = window[j++ & (qtm->window_size - 1)];
+	/* does match destination wrap the window? This situation is possible
+	 * where the window size is less than the 32k frame size, but matches
+	 * must not go beyond a frame boundary */
+	if ((window_posn + match_length) > qtm->window_size) {
+          /* copy first part of match, before window end */
+	  i = qtm->window_size - window_posn;
+	  j = window_posn - match_offset;
+	  while (i--) *rundest++ = window[j++ & (qtm->window_size - 1)];
 
-	    /* flush currently stored data */
-	    i = (&window[qtm->window_size] - qtm->o_ptr);
-	    if (qtm->sys->write(qtm->output, qtm->o_ptr, i) != i) {
-	      return qtm->error = MSPACK_ERR_WRITE;
-	    }
-	    out_bytes -= i;
-	    qtm->o_ptr = &window[0];
-	    qtm->o_end = &window[0]; 
+	  /* flush currently stored data */
+	  i = (&window[qtm->window_size] - qtm->o_ptr);
+	  if (qtm->sys->write(qtm->output, qtm->o_ptr, i) != i) {
+	    return qtm->error = MSPACK_ERR_WRITE;
+	  }
+	  out_bytes -= i;
+	  qtm->o_ptr = &window[0];
+	  qtm->o_end = &window[0]; 
 
-	    /* copy second part of match, after window wrap */
-	    rundest = &window[0];
-	    i = match_length - (qtm->window_size - window_posn);
-	    while (i--) *rundest++ = window[j++ & (qtm->window_size - 1)];
-	    window_posn = window_posn + match_length - qtm->window_size;
-	  }
-	  else {
-	    D(("match beyond frame boundaries"))
-	    return qtm->error = MSPACK_ERR_DECRUNCH;
-	  }
+	  /* copy second part of match, after window wrap */
+	  rundest = &window[0];
+	  i = match_length - (qtm->window_size - window_posn);
+	  while (i--) *rundest++ = window[j++ & (qtm->window_size - 1)];
+	  window_posn = window_posn + match_length - qtm->window_size;
+
           break; /* because "window_posn < frame_end" has now failed */
 	}
 	else {

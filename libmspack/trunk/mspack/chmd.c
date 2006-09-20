@@ -621,13 +621,11 @@ static int chmd_extract(struct mschm_decompressor *base,
     /* get to correct offset. */
     this->d->outfh = NULL;
     if ((bytes = file->offset - this->d->offset)) {
-      D(("skip to offset " LU " by decoding " LU " bytes", file->offset, bytes))
       this->error = lzxd_decompress(this->d->state, bytes);
     }
 
     /* if getting to the correct offset was error free, unpack file */
     if (!this->error) {
-      D(("decode " LU " bytes from offset " LU, file->length, file->offset))
       this->d->outfh = fh;
       this->error = lzxd_decompress(this->d->state, file->length);
     }
@@ -861,7 +859,6 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   length -= this->d->offset;
 
   /* initialise LZX stream */
-  D(("starting decode from " LU, this->d->offset))
   this->d->state = lzxd_init(&this->d->sys, this->d->infh,
 			     (struct mspack_file *) this, window_bits,
 			     reset_interval / LZX_FRAME_SIZE,
