@@ -60,7 +60,7 @@ The the best of my knowledge, libmspack does not infringe on any
 compression or decompression patents. However, this is not legal
 advice, and it is recommended that you perform your own patent search.
 
-In addition the provisions of the LGPL, you are permitted to use the
+In addition to the provisions of the LGPL, you are permitted to use the
 library directly as part of your build process provided you meet all of
 the following conditions:
 
@@ -70,10 +70,21 @@ the following conditions:
    defined in the public library interface, "mspack.h".
 
 
-EXAMPLE
+EXAMPLE CODE
 
 There are a number of useful programs in the test/ directory which
 exercise and demonstrate libmspack's features.
+
+cabd_md5       - Prints the MD5 checksums of all files within a CAB file/set.
+cabd_memory    - An mspack_system implementation that reads/writes to memory.
+cabd_test      - Regression tests for libmspack's CAB decompression.
+cabextract_md5 - cabextract 0.6 (pre-libmspack) with output like cabd_md5
+chmd_md5       - Prints the MD5 checksums of all files within a CHM file.
+chminfo        - Prints verbose information about CHM file structures.
+chmx           - Extracts all files in a CHM file to disk.
+multifh        - An mspack_system implementation that can simultaneously work
+                 on in-memory images, raw file descriptors, open file handles
+                 and regular disk files.
 
 Here is a simple example of usage, which will create a CAB decompressor,
 then use that to open an existing Microsoft CAB file called "example.cab",
