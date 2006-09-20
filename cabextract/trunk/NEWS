@@ -4,6 +4,7 @@ New in 1.2:
 * UTF-8 filenames are now decoded correctly.
 * Large files (>2GB) are now searched correctly for cabinets.
 * Problems with the GNU library code have been fixed.
+* Several bugs in the LZX and Quantum decompressors have been fixed.
 
 New in 1.1:
 * A security vulnerability has been fixed. If the files within a cabinet
