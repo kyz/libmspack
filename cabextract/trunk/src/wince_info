@@ -167,7 +167,7 @@ for my $hdrfile (@ARGV) {
 	my $data = substr $x, length($name) + 1;
 
 	printf "  k%02d: hive=%s\n", $id, $reghives[$hive];
-	printf "       name=«%s» unk=%d flags=0x%08x\n", $name, $unk, $flags;
+	printf "       name=«%s» subst=%d flags=0x%08x\n", $name, $unk, $flags;
 
 	if (($flags & 0x10001) == 0x10001) {
 	  $x = unpack 'V', $data; printf "       [DWORD] %08x (%d)\n", $x, $x;
