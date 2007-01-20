@@ -1,3 +1,10 @@
+2007-01-20  Stuart Caie   <kyzer@4u.net>
+
+	* doc/wince_cab_format.html, src/wince_info: The REGKEYS "unknown"
+	flag appears to be a boolean indicating whether variable
+	substitution should take place. Thanks to Dominique Gallot for
+	discovering it.
+
 2006-06-21  Stuart Caie   <kyzer@4u.net>
 
 	* create_output_name(): add UTF-8 support for 4-byte characters.

@@ -386,7 +386,7 @@ each entry is as follows:
 <ul>
 <li>2 bytes: An integer key ID.</li>
 <li>2 bytes: The hive ID of the hive to store this entry in.</li>
-<li>2 bytes: Unknown purpose, Usually 0 or 1.</li>
+<li>2 bytes: A Boolean value, either 1 if variable substitution should be performed or 0 if not. The entry data should have substrings such as <tt>%InstallDir%</tt> or one the <tt>%CEn%</tt> values.</li>
 <li>4 bytes: The type of entry data, and flags. <br />
 
 <table border="1">
