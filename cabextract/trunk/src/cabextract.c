@@ -732,8 +732,8 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 
   /* length of filename */
   x = strlen((char *) fname);
-  /* UTF-8 worst case scenario: tolower() expands all chars from 1 to 4 bytes */
-  if (utf8) x *= 4;
+  /* UTF-8 worst case scenario: tolower() expands all chars from 1 to 6 bytes */
+  if (utf8) x *= 6;
   /* length of output directory */
   if (dir) x += strlen((char *) dir);
   x += 2;
@@ -762,11 +762,20 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   fe = &fname[strlen((char *)fname)]; /* fe = end of input filename */
 
   if (utf8) {
-    /* UTF-8 translates unicode characters into 1 to 4 bytes.
-     * %00000000000000sssssss -> %0sssssss
-     * %0000000000ssssstttttt -> %110sssss %10tttttt
-     * %00000ssssttttttuuuuuu -> %1110ssss %10tttttt %10uuuuuu
-     * %sssttttttuuuuuuvvvvvv -> %11110sss %10tttttt %10uuuuuu %10vvvvvv
+    /* UTF-8 translates unicode characters into 1 to 6 bytes.
+     * In binary:
+     * 000000000000000000000000000000sssssss
+     * ->  0sssssss
+     * 00000000000000000000000000ssssstttttt
+     * ->  110sssss 10tttttt
+     * 000000000000000000000ssssttttttuuuuuu
+     * ->  1110ssss 10tttttt 10uuuuuu
+     * 0000000000000000sssttttttuuuuuuvvvvvv
+     * ->  11110sss 10tttttt 10uuuuuu 10vvvvvv
+     * 00000000000ssttttttuuuuuuvvvvvvwwwwww
+     * ->  111110ss 10tttttt 10uuuuuu 10vvvvvv 10wwwwww
+     * 000000sttttttuuuuuuvvvvvvwwwwwwxxxxxx
+     * ->  1111110s 10tttttt 10uuuuuu 10vvvvvv 10wwwwww 10xxxxxx
      *
      * Therefore, the inverse is as follows:
      * First char:
@@ -775,7 +784,9 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
      *  0xC0 - 0xDF = 2 byte char (next char only 0x80-0xBF is valid)
      *  0xE0 - 0xEF = 3 byte char (next 2 chars only 0x80-0xBF is valid)
      *  0xF0 - 0xF7 = 4 byte char (next 3 chars only 0x80-0xBF is valid)
-     *  0xF8 - 0xFF = invalid
+     *  0xF8 - 0xFB = 5 byte char (next 4 chars only 0x80-0xBF is valid)
+     *  0xFC - 0xFD = 6 byte char (next 5 chars only 0x80-0xBF is valid)
+     *  0xFE - 0xFF = invalid
      */
     do {
       if (fname > fe) {
@@ -792,16 +803,32 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 	  x |= *fname++ & 0x3F;
 	}
 	else if ((c >= 0xE0) && (c <= 0xEF)) {
-	  x = (c & 0xF) << 12;
+	  x = (c & 0x0F) << 12;
 	  x |= (*fname++ & 0x3F) << 6;
 	  x |= *fname++ & 0x3F;
 	}
 	else if ((c >= 0xF0) && (c <= 0xF7)) {
-          x = (c & 0x7) << 18;
+          x = (c & 0x07) << 18;
 	  x |= (*fname++ & 0x3F) << 12;
 	  x |= (*fname++ & 0x3F) << 6;
 	  x |= *fname++ & 0x3F;
 	}
+	else if ((c >= 0xF8) && (c <= 0xFB)) {
+          x = (c & 0x03) << 24;
+	  x |= (*fname++ & 0x3F) << 18;
+	  x |= (*fname++ & 0x3F) << 12;
+	  x |= (*fname++ & 0x3F) << 6;
+	  x |= *fname++ & 0x3F;
+	}
+	else if ((c >= 0xFC) && (c <= 0xFD)) {
+          x = (c & 0x01) << 30;
+	  x |= (*fname++ & 0x3F) << 24;
+	  x |= (*fname++ & 0x3F) << 18;
+	  x |= (*fname++ & 0x3F) << 12;
+	  x |= (*fname++ & 0x3F) << 6;
+	  x |= *fname++ & 0x3F;
+	}
+
 	else x = '?';
       }
 
@@ -825,8 +852,23 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 	*p++ = 0x80 | ((x >> 6) & 0x3F);
 	*p++ = 0x80 | (x & 0x3F);
       }
-      else {
+      else if (x < 0x) {
         *p++ = 0xF0 | (x >> 18);
+	*p++ = 0x80 | ((x >> 12) & 0x3F);
+	*p++ = 0x80 | ((x >> 6) & 0x3F);
+	*p++ = 0x80 | (x & 0x3F);
+      }
+      else if (x < 0x) {
+        *p++ = 0xF8 | (x >> 24);
+	*p++ = 0x80 | ((x >> 18) & 0x3F);
+	*p++ = 0x80 | ((x >> 12) & 0x3F);
+	*p++ = 0x80 | ((x >> 6) & 0x3F);
+	*p++ = 0x80 | (x & 0x3F);
+      }
+      else {
+        *p++ = 0xFC | (x >> 30);
+	*p++ = 0x80 | ((x >> 24) & 0x3F);
+	*p++ = 0x80 | ((x >> 18) & 0x3F);
 	*p++ = 0x80 | ((x >> 12) & 0x3F);
 	*p++ = 0x80 | ((x >> 6) & 0x3F);
 	*p++ = 0x80 | (x & 0x3F);

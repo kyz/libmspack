@@ -18,3 +18,6 @@ Allow an exacting list of files to be matched rather than a single pattern
 match. Allow more than one pattern match?
 
 cabextract should be localised.
+
+cabextract should not overwrite the source cabinet files when unpacking.
+cabextract should detect minGW's single argument mkdir() function
