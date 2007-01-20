@@ -4,7 +4,7 @@ EXTRA_DIST =		cabextract.spec \
 			doc/cabextract.1 doc/ja/cabextract.1 \
 			doc/magic doc/wince_cab_format.html \
 			fnmatch_.h fnmatch_loop.c getopt.h \
-			src/wince_info src/wince_rename
+			mspack/ChangeLog src/wince_info src/wince_rename
 
 man_MANS =		doc/cabextract.1
 
