@@ -1,5 +1,5 @@
 /* cabextract 1.2 - a program to extract Microsoft Cabinet files
- * (C) 2000-2006 Stuart Caie <kyzer@4u.net>
+ * (C) 2000-2007 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -197,11 +197,11 @@ unsigned char md5_result[16];
 static int process_cabinet(char *cabname);
 
 static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
-				   char *basename);
+                                   char *basename);
 static char *find_cabinet_file(char *origcab, char *cabname);
 static int unix_path_seperators(struct mscabd_file *files);
 static char *create_output_name(unsigned char *fname, unsigned char *dir,
-				int lower, int isunix, int unicode);
+                                int lower, int isunix, int unicode);
 static void set_date_and_perm(struct mscabd_file *file, char *filename);
 
 static void memorise_file(struct file_mem **fml, char *name, char *from);
@@ -211,7 +211,7 @@ static int ensure_filepath(char *path);
 static char *cab_error(struct mscab_decompressor *cd);
 
 static struct mspack_file *cabx_open(struct mspack_system *this,
-				     char *filename, int mode);
+                                     char *filename, int mode);
 static void cabx_close(struct mspack_file *file);
 static int cabx_read(struct mspack_file *file, void *buffer, int bytes);
 static int cabx_write(struct mspack_file *file, void *buffer, int bytes);
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
 
   if (args.test && args.view) {
     fprintf(stderr, "%s: You cannot use --test and --list at the same time.\n"
-	    "Try '%s --help' for more information.\n", argv[0], argv[0]);
+            "Try '%s --help' for more information.\n", argv[0], argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
     }
     else {
       fprintf(stderr, "%s: No cabinet files specified.\nTry '%s --help' "
-	      "for more information.\n", argv[0], argv[0]);
+              "for more information.\n", argv[0], argv[0]);
       return EXIT_FAILURE;
     }
   }
@@ -310,10 +310,10 @@ int main(int argc, char *argv[]) {
   if (err) {
     if (err == MSPACK_ERR_SEEK) {
       fprintf(stderr,
-	      "FATAL ERROR: libmspack is compiled for %d-bit file IO,\n"
-	      "             cabextract is compiled for %d-bit file IO.\n",
-	      (sizeof(off_t) == 4) ? 64 : 32,
-	      (sizeof(off_t) == 4) ? 32 : 64);
+              "FATAL ERROR: libmspack is compiled for %d-bit file IO,\n"
+              "             cabextract is compiled for %d-bit file IO.\n",
+              (sizeof(off_t) == 4) ? 64 : 32,
+              (sizeof(off_t) == 4) ? 32 : 64);
     }
     else {
       fprintf(stderr, "FATAL ERROR: libmspack self-test returned %d\n", err);
@@ -404,15 +404,15 @@ static int process_cabinet(char *basename) {
     /* print headers */
     if (!viewhdr) {
       if (args.view) {
-	if (!args.quiet) printf("Viewing cabinet: %s\n", basename);
-	printf(" File size | Date       Time     | Name\n");
-	printf("-----------+---------------------+-------------\n");
+        if (!args.quiet) printf("Viewing cabinet: %s\n", basename);
+        printf(" File size | Date       Time     | Name\n");
+        printf("-----------+---------------------+-------------\n");
       }
       else {
-	if (!args.quiet) {
-	  printf("%s cabinet: %s\n", args.test ? "Testing" : "Extracting",
-		                     basename);
-	}
+        if (!args.quiet) {
+          printf("%s cabinet: %s\n", args.test ? "Testing" : "Extracting",
+                                     basename);
+        }
       }
       viewhdr = 1;
     }
@@ -430,79 +430,79 @@ static int process_cabinet(char *basename) {
     for (file = cab->files; file; file = file->next) {
       /* create the full UNIX output filename */
       if (!(name = create_output_name(
-	    (unsigned char *) file->filename, (unsigned char *) args.dir,
-	    args.lower, isunix, file->attribs & MSCAB_ATTRIB_UTF_NAME)))
+            (unsigned char *) file->filename, (unsigned char *) args.dir,
+            args.lower, isunix, file->attribs & MSCAB_ATTRIB_UTF_NAME)))
       {
-	errors++;
-	continue;
+        errors++;
+        continue;
       }
 
       /* if filtering, do so now. skip if file doesn't match filter */
       if (args.filter &&
-	  fnmatch(args.filter, &name[fname_offset], FNM_CASEFOLD))
+          fnmatch(args.filter, &name[fname_offset], FNM_CASEFOLD))
       {
-	free(name);
-	continue;
+        free(name);
+        continue;
       }
 
       /* view, extract or test the file */
       if (args.view) {
-	printf("%10u | %02d.%02d.%04d %02d:%02d:%02d | %s\n",
-	       file->length, file->date_d, file->date_m, file->date_y,
-	       file->time_h, file->time_m, file->time_s, name);
+        printf("%10u | %02d.%02d.%04d %02d:%02d:%02d | %s\n",
+               file->length, file->date_d, file->date_m, file->date_y,
+               file->time_h, file->time_m, file->time_s, name);
       }
       else if (args.test) {
-	if (cabd->extract(cabd, file, TEST_FNAME)) {
-	  /* file failed to extract */
-	  printf("  %s  failed (%s)\n", name, cab_error(cabd));
-	  errors++;
-	}
-	else {
-	  /* file extracted OK, print the MD5 checksum in md5_result. Print
-	   * the checksum right-aligned to 79 columns if that's possible,
-	   * otherwise just print it 2 spaces after the filename and "OK" */
+        if (cabd->extract(cabd, file, TEST_FNAME)) {
+          /* file failed to extract */
+          printf("  %s  failed (%s)\n", name, cab_error(cabd));
+          errors++;
+        }
+        else {
+          /* file extracted OK, print the MD5 checksum in md5_result. Print
+           * the checksum right-aligned to 79 columns if that's possible,
+           * otherwise just print it 2 spaces after the filename and "OK" */
 
-	  /* "  filename  OK  " is 8 chars + the length of filename,
-	   * the MD5 checksum itself is 32 chars. */
-	  int spaces = 79 - (strlen(name) + 8 + 32);
-	  printf("  %s  OK  ", name);
-	  while (spaces-- > 0) putchar(' ');
-	  printf("%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x\n",
-		 md5_result[0], md5_result[1], md5_result[2], md5_result[3],
-		 md5_result[4], md5_result[5], md5_result[6], md5_result[7],
-		 md5_result[8], md5_result[9], md5_result[10],md5_result[11],
-		 md5_result[12],md5_result[13],md5_result[14],md5_result[15]);
-	}
+          /* "  filename  OK  " is 8 chars + the length of filename,
+           * the MD5 checksum itself is 32 chars. */
+          int spaces = 79 - (strlen(name) + 8 + 32);
+          printf("  %s  OK  ", name);
+          while (spaces-- > 0) putchar(' ');
+          printf("%02x%02x%02x%02x%02x%02x%02x%02x"
+                 "%02x%02x%02x%02x%02x%02x%02x%02x\n",
+                 md5_result[0], md5_result[1], md5_result[2], md5_result[3],
+                 md5_result[4], md5_result[5], md5_result[6], md5_result[7],
+                 md5_result[8], md5_result[9], md5_result[10],md5_result[11],
+                 md5_result[12],md5_result[13],md5_result[14],md5_result[15]);
+        }
       }
       else {
-	/* extract the file */
-	if (args.pipe) {
-	  /* extracting to stdout */
-	  if (cabd->extract(cabd, file, STDOUT_FNAME)) {
-	    fprintf(stderr, "%s(%s): %s\n", STDOUT_FNAME, name,
-		                            cab_error(cabd));
-	    errors++;
-	  }
-	}
-	else {
-	  /* extracting to a regular file */
-	  if (!args.quiet) printf("  extracting %s\n", name);
+        /* extract the file */
+        if (args.pipe) {
+          /* extracting to stdout */
+          if (cabd->extract(cabd, file, STDOUT_FNAME)) {
+            fprintf(stderr, "%s(%s): %s\n", STDOUT_FNAME, name,
+                                            cab_error(cabd));
+            errors++;
+          }
+        }
+        else {
+          /* extracting to a regular file */
+          if (!args.quiet) printf("  extracting %s\n", name);
 
-	  if (!ensure_filepath(name)) {
-	    fprintf(stderr, "%s: can't create file path\n", name);
-	    errors++;
-	  }
-	  else {
-	    if (cabd->extract(cabd, file, name)) {
-	      fprintf(stderr, "%s: %s\n", name, cab_error(cabd));
-	      errors++;
-	    }
-	    else {
-	      set_date_and_perm(file, name);
-	    }
-	  }
-	}
+          if (!ensure_filepath(name)) {
+            fprintf(stderr, "%s: can't create file path\n", name);
+            errors++;
+          }
+          else {
+            if (cabd->extract(cabd, file, name)) {
+              fprintf(stderr, "%s: %s\n", name, cab_error(cabd));
+              errors++;
+            }
+            else {
+              set_date_and_perm(file, name);
+            }
+          }
+        }
       }
       free(name);
     } /* for (all files in cab) */
@@ -527,7 +527,7 @@ static int process_cabinet(char *basename) {
  * @see find_cabinet_file()
  */
 static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
-				   char *basename)
+                                   char *basename)
 {
   struct mscabd_cabinet *cab, *cab2;
   char *name;
@@ -541,7 +541,7 @@ static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
     if (args.single && !recall_file(cab_args, name, NULL)) break;
     if (!args.quiet) {
       printf("%s: extends backwards to %s (%s)\n", basename,
-	     cab->prevname, cab->previnfo);
+             cab->prevname, cab->previnfo);
     }
     if (!(cab2 = cabd->open(cabd,name)) || cabd->prepend(cabd, cab, cab2)) {
       if (cab2) cabd->close(cabd, cab2);
@@ -560,7 +560,7 @@ static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
     if (args.single && !recall_file(cab_args, name, NULL)) break;
     if (!args.quiet) {
       printf("%s: extends to %s (%s)\n", basename,
-	     cab->nextname, cab->nextinfo);
+             cab->nextname, cab->nextinfo);
     }
     if (!(cab2 = cabd->open(cabd,name)) || cabd->append(cabd, cab, cab2)) {
       if (cab2) cabd->close(cabd, cab2);
@@ -614,11 +614,11 @@ static char *find_cabinet_file(char *origcab, char *cabname) {
     cab[len] = '\0';
     if ((dir = opendir(cab))) {
       while ((entry = readdir(dir))) {
-	if (strcasecmp(cabname, entry->d_name) == 0) {
-	  strcat(cab, entry->d_name);
-	  found = (stat(cab, &st_buf) == 0);
-	  break;
-	}
+        if (strcasecmp(cabname, entry->d_name) == 0) {
+          strcat(cab, entry->d_name);
+          found = (stat(cab, &st_buf) == 0);
+          break;
+        }
       }
       closedir(dir);
     }
@@ -697,7 +697,7 @@ static int unix_path_seperators(struct mscabd_file *files) {
 
     if (len && (len == oldlen)) {
       if (strncmp(name, oldname, (size_t) len) == 0)
-	return (name[len-1] == '\\') ? 0 : 1;
+        return (name[len-1] == '\\') ? 0 : 1;
     }
     oldname = name;
     oldlen = len;
@@ -722,7 +722,7 @@ static int unix_path_seperators(struct mscabd_file *files) {
  * @see unix_path_seperators()
  */
 static char *create_output_name(unsigned char *fname, unsigned char *dir,
-			 int lower, int isunix, int utf8)
+                         int lower, int isunix, int utf8)
 {
   unsigned char *p, *name, c, *fe, sep, slash;
   unsigned int x;
@@ -790,46 +790,46 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
      */
     do {
       if (fname > fe) {
-	fprintf(stderr, "error in UTF-8 decode\n");
-	free(name);
-	return NULL;	
+        fprintf(stderr, "error in UTF-8 decode\n");
+        free(name);
+        return NULL;    
       }
 
       /* get next UTF-8 character */
       if ((c = *fname++) < 0x80) x = c;
       else {
-	if ((c >= 0xC0) && (c <= 0xDF)) {
-	  x = (c & 0x1F) << 6;
-	  x |= *fname++ & 0x3F;
-	}
-	else if ((c >= 0xE0) && (c <= 0xEF)) {
-	  x = (c & 0x0F) << 12;
-	  x |= (*fname++ & 0x3F) << 6;
-	  x |= *fname++ & 0x3F;
-	}
-	else if ((c >= 0xF0) && (c <= 0xF7)) {
+        if ((c >= 0xC0) && (c <= 0xDF)) {
+          x = (c & 0x1F) << 6;
+          x |= *fname++ & 0x3F;
+        }
+        else if ((c >= 0xE0) && (c <= 0xEF)) {
+          x = (c & 0x0F) << 12;
+          x |= (*fname++ & 0x3F) << 6;
+          x |= *fname++ & 0x3F;
+        }
+        else if ((c >= 0xF0) && (c <= 0xF7)) {
           x = (c & 0x07) << 18;
-	  x |= (*fname++ & 0x3F) << 12;
-	  x |= (*fname++ & 0x3F) << 6;
-	  x |= *fname++ & 0x3F;
-	}
-	else if ((c >= 0xF8) && (c <= 0xFB)) {
+          x |= (*fname++ & 0x3F) << 12;
+          x |= (*fname++ & 0x3F) << 6;
+          x |= *fname++ & 0x3F;
+        }
+        else if ((c >= 0xF8) && (c <= 0xFB)) {
           x = (c & 0x03) << 24;
-	  x |= (*fname++ & 0x3F) << 18;
-	  x |= (*fname++ & 0x3F) << 12;
-	  x |= (*fname++ & 0x3F) << 6;
-	  x |= *fname++ & 0x3F;
-	}
-	else if ((c >= 0xFC) && (c <= 0xFD)) {
+          x |= (*fname++ & 0x3F) << 18;
+          x |= (*fname++ & 0x3F) << 12;
+          x |= (*fname++ & 0x3F) << 6;
+          x |= *fname++ & 0x3F;
+        }
+        else if ((c >= 0xFC) && (c <= 0xFD)) {
           x = (c & 0x01) << 30;
-	  x |= (*fname++ & 0x3F) << 24;
-	  x |= (*fname++ & 0x3F) << 18;
-	  x |= (*fname++ & 0x3F) << 12;
-	  x |= (*fname++ & 0x3F) << 6;
-	  x |= *fname++ & 0x3F;
-	}
+          x |= (*fname++ & 0x3F) << 24;
+          x |= (*fname++ & 0x3F) << 18;
+          x |= (*fname++ & 0x3F) << 12;
+          x |= (*fname++ & 0x3F) << 6;
+          x |= *fname++ & 0x3F;
+        }
 
-	else x = '?';
+        else x = '?';
       }
 
       /* whatever is the path seperator -> '/'
@@ -841,37 +841,37 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
 
       /* convert unicode character back to UTF-8 */
       if (x < 0x80) {
-	*p++ = (unsigned char) x;
+        *p++ = (unsigned char) x;
       }
       else if (x < 0x800) {
-	*p++ = 0xC0 | (x >> 6);   
-	*p++ = 0x80 | (x & 0x3F);
+        *p++ = 0xC0 | (x >> 6);   
+        *p++ = 0x80 | (x & 0x3F);
       }
       else if (x < 0x10000) {
-	*p++ = 0xE0 | (x >> 12);
-	*p++ = 0x80 | ((x >> 6) & 0x3F);
-	*p++ = 0x80 | (x & 0x3F);
+        *p++ = 0xE0 | (x >> 12);
+        *p++ = 0x80 | ((x >> 6) & 0x3F);
+        *p++ = 0x80 | (x & 0x3F);
       }
-      else if (x < 0x) {
+      else if (x < 0x200000) {
         *p++ = 0xF0 | (x >> 18);
-	*p++ = 0x80 | ((x >> 12) & 0x3F);
-	*p++ = 0x80 | ((x >> 6) & 0x3F);
-	*p++ = 0x80 | (x & 0x3F);
+        *p++ = 0x80 | ((x >> 12) & 0x3F);
+        *p++ = 0x80 | ((x >> 6) & 0x3F);
+        *p++ = 0x80 | (x & 0x3F);
       }
-      else if (x < 0x) {
+      else if (x < 0x4000000) {
         *p++ = 0xF8 | (x >> 24);
-	*p++ = 0x80 | ((x >> 18) & 0x3F);
-	*p++ = 0x80 | ((x >> 12) & 0x3F);
-	*p++ = 0x80 | ((x >> 6) & 0x3F);
-	*p++ = 0x80 | (x & 0x3F);
+        *p++ = 0x80 | ((x >> 18) & 0x3F);
+        *p++ = 0x80 | ((x >> 12) & 0x3F);
+        *p++ = 0x80 | ((x >> 6) & 0x3F);
+        *p++ = 0x80 | (x & 0x3F);
       }
       else {
         *p++ = 0xFC | (x >> 30);
-	*p++ = 0x80 | ((x >> 24) & 0x3F);
-	*p++ = 0x80 | ((x >> 18) & 0x3F);
-	*p++ = 0x80 | ((x >> 12) & 0x3F);
-	*p++ = 0x80 | ((x >> 6) & 0x3F);
-	*p++ = 0x80 | (x & 0x3F);
+        *p++ = 0x80 | ((x >> 24) & 0x3F);
+        *p++ = 0x80 | ((x >> 18) & 0x3F);
+        *p++ = 0x80 | ((x >> 12) & 0x3F);
+        *p++ = 0x80 | ((x >> 6) & 0x3F);
+        *p++ = 0x80 | (x & 0x3F);
       }
     } while (x);
   }
@@ -1062,7 +1062,7 @@ struct mspack_file_p {
 };
 
 static struct mspack_file *cabx_open(struct mspack_system *this,
-				    char *filename, int mode)
+                                    char *filename, int mode)
 {
   struct mspack_file_p *fh;
   char *fmode;
@@ -1105,7 +1105,7 @@ static struct mspack_file *cabx_open(struct mspack_system *this,
       /* regular file - simply attempt to open it */
       fh->regular_file = 1;
       if ((fh->fh = fopen(filename, fmode))) {
-	return (struct mspack_file *) fh;
+        return (struct mspack_file *) fh;
       }
     }
     /* error - free file handle and return NULL */
