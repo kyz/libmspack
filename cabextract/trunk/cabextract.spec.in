@@ -4,8 +4,8 @@ Version: @VERSION@
 Release: 1
 License: GPL
 Group: Applications/Archiving
-Source: http://www.kyz.uklinux.net/downloads/%{name}-%{version}.tar.gz
-URL: http://www.kyz.uklinux.net/cabextract.php
+Source: http://www.cabextract.org.uk/%{name}-%{version}.tar.gz
+URL: http://www.cabextract.org.uk/
 Vendor: Stuart Caie
 Packager: Stuart Caie <kyzer@4u.net>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root

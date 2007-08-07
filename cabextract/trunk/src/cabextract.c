@@ -17,7 +17,7 @@
  */
 
 /* cabextract uses libmspack to access cabinet files. libmspack is
- * available from http://www.kyz.uklinux.net/libmspack/
+ * available from http://www.cabextract.org.uk/libmspack/
  */
 
 #define _GNU_SOURCE 1
