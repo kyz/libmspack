@@ -6,7 +6,7 @@ Cabinet (.CAB) files are a form of archive, which Microsoft use to
 distribute their software, and things like Windows Font Packs. The
 cabextract program unpacks these files.
 
-For more information, see http://www.kyz.uklinux.net/cabextract.php
+For more information, see http://www.cabextract.org.uk/
 or run the command 'cabextract --help'.
 
 Microsoft cabinet files should not be confused with InstallShield cabinet

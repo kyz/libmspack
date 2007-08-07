@@ -1,7 +1,7 @@
 Principal author: Stuart Caie <kyzer@4u.net>
 
 cabextract uses a cut-down version of the libmspack library, available at
-http://www.kyz.uklinux.net/libmspack/
+http://www.cabextract.org.uk/libmspack/
 
 Japanese manual page by Katsumi Saito.
 Original manual page and Debian packaging by Eric Sharkey.

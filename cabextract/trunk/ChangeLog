@@ -1,4 +1,9 @@
-2006-01-20  Stuart Caie   <kyzer@4u.net>
+2007-08-07  Stuart Caie   <kyzer@4u.net>
+
+	* all: cabextract and libmspack have moved to the domain
+	www.cabextract.org.uk. Updated the documentation to reflect this.
+	
+2007-01-20  Stuart Caie   <kyzer@4u.net>
 
 	* create_output_name(): add UTF-8 support for 6-byte characters.
 	Apparently they go that far these days.
