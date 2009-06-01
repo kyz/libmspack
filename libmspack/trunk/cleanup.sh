@@ -1,9 +1,9 @@
 #!/bin/sh
 topdir=`pwd`
-for x in `find . -name .cvsignore`
+for x in . doc test
 do
-  cd `dirname $x`
-  chmod -R a+rwx `cat .cvsignore` 2>/dev/null
-  rm -vrf `cat .cvsignore`
+  cd $x
+  chmod -R a+rwx `svn pg svn:ignore .` 2>/dev/null
+  rm -vrf `svn pg svn:ignore .`
   cd $topdir
 done
