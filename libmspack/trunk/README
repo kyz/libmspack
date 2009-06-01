@@ -72,8 +72,9 @@ provided you meet ALL of the following conditions:
    distributed under the LGPL license.
 2. You MUST NOT use libmspack function calls, structures or definitions unless
    they are defined in the public library interface "mspack.h".
-3. You MUST make clear your code uses libmspack, and either include the full
-   libmspack distribution or provide access to it as per clause 4 of the LGPL.
+3. When distributing your code, you MUST make clear your code uses libmspack,
+   and either include the full libmspack distribution with your code, or
+   provide access to it as per clause 4 of the LGPL.
 
 EXAMPLE CODE
 
