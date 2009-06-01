@@ -24,7 +24,7 @@ DOCUMENTATION
 
 The API documentation is stored in the doc/ directory. It is generated
 automatically from mspack.h with doxygen. It is also available online at
-http://www.kyz.uklinux.net/libmspack/doc/
+http://www.cabextract.org.uk/libmspack/doc/
 
 
 BUILDING / INSTALLING
@@ -60,15 +60,20 @@ The the best of my knowledge, libmspack does not infringe on any
 compression or decompression patents. However, this is not legal
 advice, and it is recommended that you perform your own patent search.
 
-In addition to the provisions of the LGPL, you are permitted to use the
-library directly as part of your build process provided you meet all of
-the following conditions:
+libmspack is licensed under the LGPL - see COPYING.LIB in this directory.
 
-1. Any modifications to the existing libmspack source code are ALL
-   published and distributed under the LGPL license.
-2. You MUST NOT use function calls, structures or definitions unless they are
-   defined in the public library interface, "mspack.h".
+The LGPL requires you to build libmspack as a stand alone library then link
+your code to it using a linker. I personally grant you some extra rights:
+you can incorporate libmspack's source code wholly or partially in your own
+code, without having to build and link libmspack as an independent library,
+provided you meet ALL of the following conditions:
 
+1. ANY modifications to the existing libmspack source code are published and
+   distributed under the LGPL license.
+2. You MUST NOT use libmspack function calls, structures or definitions unless
+   they are defined in the public library interface "mspack.h".
+3. You MUST make clear your code uses libmspack, and either include the full
+   libmspack distribution or provide access to it as per clause 4 of the LGPL.
 
 EXAMPLE CODE
 

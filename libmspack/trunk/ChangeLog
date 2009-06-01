@@ -1,3 +1,10 @@
+2009-06-01:  Stuart Caie   <kyzer@4u.net>
+
+	* README: clarify the extended license terms
+
+	* doc, Makefile.am: make the doxygen makefile work when using
+	an alternate build directory
+
 2006-09-20:  Stuart Caie   <kyzer@4u.net>
 
 	* system.h: I had a choice of adding more to configure.ac to

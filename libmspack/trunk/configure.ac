@@ -39,4 +39,6 @@ AC_FUNC_FSEEKO
 
 # Checks for library functions.
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([doc/Doxyfile])
+AC_CONFIG_FILES([doc/Makefile])
 AC_OUTPUT
