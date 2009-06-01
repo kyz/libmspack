@@ -3,5 +3,5 @@ all: index.html
 clean:
 	-rm -f *.html doxygen.*
 
-index.html: ../mspack/mspack.h Doxyfile
+index.html: @top_srcdir@/mspack/mspack.h Doxyfile
 	doxygen

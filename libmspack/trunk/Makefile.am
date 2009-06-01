@@ -4,9 +4,8 @@ MSPACK_FLAGS = -DDEBUG
 endif
 
 
-EXTRA_DIST =		debian doc test/test_files
+EXTRA_DIST =		debian doc/Doxyfile.in doc/Makefile.in test/test_files
 dist-hook:
-	-rm -rf `find $(distdir) -name CVS`
 	-rm -f $(distdir)/*.la
 
 AM_CFLAGS =		-std=c99 -Wall -Wsign-compare -Wconversion -pedantic \
