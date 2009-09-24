@@ -139,7 +139,7 @@ for my $hdrfile (@ARGV) {
 	my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv', $x;
 	read FH, $x, $len; chop $x;
 	$files[$id] = join '\\', ($dirs[$dirid], $x);
-	printf "  f%02d: %s", $id, $files[$id];
+	printf "  f%02d: %s\n", $id, $files[$id];
 	printf "       unknown=%d flags=0x%08x\n", $unk, $flags;
       }
 
