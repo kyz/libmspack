@@ -67,12 +67,12 @@ if (open FH, "<$hdrfile") {
     for (1 .. $hdr[14]) {
       # read a FILES entry
       read FH, $x, 12;
-      my ($id, $dirid, $realid, $flags, $len) = unpack 'vvvVv',$x;
+      my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv',$x;
       read FH, $x, $len; chop $x;
 
       # get file with decimal extension, rename it to filename given in
       # FILES entry
-      rename_file(get_fname($realid), $x);
+      rename_file(get_fname($id), $x);
     }
 
     # CREATE REGISTRY KEYS LIST

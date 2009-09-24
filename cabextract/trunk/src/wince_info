@@ -136,11 +136,11 @@ for my $hdrfile (@ARGV) {
       seek FH, $hdr[20], 0;
       for (1 .. $hdr[14]) {
 	read FH, $x, 12;
-	my ($id, $dirid, $realid, $flags, $len) = unpack 'vvvVv', $x;
+	my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv', $x;
 	read FH, $x, $len; chop $x;
 	$files[$id] = join '\\', ($dirs[$dirid], $x);
-	printf "  f%02d: %s\n", $id, $files[$id];
-	printf "       realname=*.%03d flags=0x%08x\n", $realid, $flags;
+	printf "  f%02d: %s", $id, $files[$id];
+	printf "       unknown=%d flags=0x%08x\n", $unk, $flags;
       }
 
       # REGHIVES section

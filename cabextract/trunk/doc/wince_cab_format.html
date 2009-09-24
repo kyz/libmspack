@@ -310,11 +310,10 @@ follows:
 </p>
 
 <ul>
-<li>2 bytes: An integer file ID.</li>
+<li>2 bytes: An integer file ID. The file for installation is the file in
+the cabinet which has this integer as a three digit file extension.</li>
 <li>2 bytes: The directory ID for where this file should be installed.</li>
-<li>2 bytes: An integer for the real file number. The file for
-installation is the file in the cabinet which has this integer as a three
-digit file extension.</li>
+<li>2 bytes: Unknown purpose, usually the same as the file ID.</li>
 
 <li>4 bytes: File flags. A 32-bit integer. The following bits are known: <br />
 

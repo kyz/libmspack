@@ -1,3 +1,12 @@
+2009-09-24  Stuart Caie   <kyzer@4u.net>
+
+	*  doc/wince_cab_format.html, src/wince_info, src/wince_rename:
+	The files in Windows CE cabinets are numbered after the first
+	ID in the FILES section, rather than what I termed the "real ID".
+	Fixed the documentation and the wince tools to match. The purpose
+	of the field previously called "real ID" is now unknown. Thanks
+	to Marco Schindler for discovering this.
+
 2007-08-07  Stuart Caie   <kyzer@4u.net>
 
 	* all: cabextract and libmspack have moved to the domain
