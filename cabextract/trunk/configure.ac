@@ -31,6 +31,7 @@ AC_SYS_LARGEFILE
 # Checks for library functions.
 AC_FUNC_FNMATCH
 AC_FUNC_FSEEKO
+AX_FUNC_MKDIR
 AC_FUNC_MKTIME
 AC_CHECK_FUNCS([memcpy strcasecmp strchr utime utimes])
 AC_CHECK_FUNCS([getopt_long],,[AC_CHECK_LIB([gnugetopt], [getopt_long],
