@@ -114,6 +114,18 @@
 # endif
 #endif
 
+#if HAVE_MKDIR
+# if MKDIR_TAKES_ONE_ARG
+#  define mkdir(a, b) mkdir(a)
+# endif
+#else
+# if HAVE__MKDIR
+#  define mkdir(a, b) _mkdir(a)
+# else
+#  error "Don't know how to create a directory on this system."
+# endif
+#endif
+
 #ifndef HAVE_MKTIME
 extern time_t mktime(struct tm *tp);
 #endif

@@ -1,3 +1,9 @@
+2010-05-06  Stuart Caie  <kyzer@4u.net>
+
+	* configure.ac, cabextract.c: added support for the one-arg mkdir()
+	found in the MinGW32 environment. Thanks to Kevin O'Rourke for
+	reporting this.
+	
 2009-09-24  Stuart Caie   <kyzer@4u.net>
 
 	*  doc/wince_cab_format.html, src/wince_info, src/wince_rename:
