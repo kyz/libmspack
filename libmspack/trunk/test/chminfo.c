@@ -77,7 +77,11 @@ void print_dir(struct mschmd_header *chm, char *filename) {
   if (!(chunk = malloc(chm->chunk_size))) return;
   
   if ((fh = fopen(filename, "rb"))) {
+#ifdef HAVE_FSEEKO
     fseeko(fh, chm->dir_offset - 84, SEEK_SET);
+#else
+    fseek(fh, chm->dir_offset - 84, SEEK_SET);
+#endif
     fread(&dir[0], 84, 1, fh);
     printf("  chmhs1_Signature  = %4.4s\n", &dir[0]);
     printf("  chmhs1_Version    = %d\n", EndGetI32(&dir[4]));

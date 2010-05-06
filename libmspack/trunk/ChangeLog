@@ -1,3 +1,7 @@
+2010-05-06:  Stuart Caie  <kyzer@4u.net>
+
+	* test/cabrip.c, test/chminfo.c: add fseeko() support
+	
 2009-06-01:  Stuart Caie   <kyzer@4u.net>
 
 	* README: clarify the extended license terms
