@@ -90,7 +90,7 @@
 
 static int qtmd_read_input(struct qtmd_stream *qtm) {
   int read = qtm->sys->read(qtm->input, &qtm->inbuf[0], (int)qtm->inbuf_size);
-  if (read < 0) return qtm->error = MSPACK_ERR_READ;
+  if (read <= 0) return qtm->error = MSPACK_ERR_READ;
 
   qtm->i_ptr = &qtm->inbuf[0];
   qtm->i_end = &qtm->inbuf[read];

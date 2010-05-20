@@ -1,5 +1,16 @@
 2010-05-20:  Stuart Caie  <kyzer@4u.net>
 
+	* qtmd_read_input(), zipd_read_input(): Both these functions are
+	essentially copies of lzxd_read_input(), but that has a feature
+	they don't have - an extra EOF flag. So if EOF is
+	encountered (sys->read() returns 0 bytes), these don't pass on the
+	error. Their respective bit-reading functions that called them
+	then go on to access at least one byte of the input buffer, which
+	doesn't exist as sys->read() returned 0. Thanks to Michael
+	Vidrevich for spotting this and providing a test case.
+	
+2010-05-20:  Stuart Caie  <kyzer@4u.net>
+
 	* system.h: It turns out no configure.ac tests are needed to
 	decide between __func__ and __FUNCTION__, so I put the standard
 	one (__func__) back into the D() macro, along with some
