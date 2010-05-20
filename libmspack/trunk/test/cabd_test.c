@@ -145,8 +145,9 @@ void cabd_open_test_04() {
 }
 
 /* cabs which have been cut short
- * result should always be MSPACK_ERR_READ, except when merely the data
- * blocks are missing, cab should still open()
+ * result should be MSPACK_ERR_READ for missing headers or
+ * MSPACK_ERR_DATAFORMAT for missing/partial strings.
+ * If only data blocks are missing, the cab should open()
  */
 void cabd_open_test_05() {
   struct mscab_decompressor *cabd;
@@ -155,6 +156,13 @@ void cabd_open_test_05() {
   char *files[] = {
     "test_files/cabd/partial_shortheader.cab",
     "test_files/cabd/partial_shortextheader.cab",
+    "test_files/cabd/partial_nofolder.cab",
+    "test_files/cabd/partial_shortfolder.cab",
+    "test_files/cabd/partial_nofiles.cab",
+    "test_files/cabd/partial_shortfile1.cab",
+    "test_files/cabd/partial_shortfile2.cab"
+  };
+  char *str_files[] = {
     "test_files/cabd/partial_str_nopname.cab",
     "test_files/cabd/partial_str_shortpname.cab",
     "test_files/cabd/partial_str_nopinfo.cab",
@@ -163,13 +171,8 @@ void cabd_open_test_05() {
     "test_files/cabd/partial_str_shortnname.cab",
     "test_files/cabd/partial_str_noninfo.cab",
     "test_files/cabd/partial_str_shortninfo.cab",
-    "test_files/cabd/partial_nofolder.cab",
-    "test_files/cabd/partial_shortfolder.cab",
-    "test_files/cabd/partial_nofiles.cab",
-    "test_files/cabd/partial_shortfile1.cab",
     "test_files/cabd/partial_str_nofname.cab",
     "test_files/cabd/partial_str_shortfname.cab",
-    "test_files/cabd/partial_shortfile2.cab"
   };
 
   cabd = mspack_create_cab_decompressor(NULL);
@@ -179,6 +182,12 @@ void cabd_open_test_05() {
     cab = cabd->open(cabd, files[i]);
     TEST(cab == NULL);
     TEST(cabd->last_error(cabd) == MSPACK_ERR_READ);
+  }
+
+  for (i = 0; i < (sizeof(str_files)/sizeof(char *)); i++) {
+    cab = cabd->open(cabd, str_files[i]);
+    TEST(cab == NULL);
+    TEST(cabd->last_error(cabd) == MSPACK_ERR_DATAFORMAT);
   }
 
   /* lack of data blocks should NOT be a problem for merely reading */
