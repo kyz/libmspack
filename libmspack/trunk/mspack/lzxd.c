@@ -352,25 +352,25 @@ static int lzxd_read_lens(struct lzxd_stream *lzx, unsigned char *lens,
  * position_base[] is an index to the position slot bases
  *
  * extra_bits[] states how many bits of offset-from-base data is needed.
+ *
+ * They are generated like so:
+ * for (i = 0;        i < 4;  i++)  extra_bits[i] = 0;
+ * for (i = 4, j = 0; i < 36; i+=2) extra_bits[i] = extra_bits[i+1] = j++;
+ * for (i = 36;       i < 51; i++)  extra_bits[i] = 17;
+ * for (i = 0, j = 0; i < 51; j += 1 << extra_bits[i++]) position_base[i] = j;
  */
-static unsigned int  position_base[51];
-static unsigned char extra_bits[51];
-
-static void lzxd_static_init() {
-  int i, j;
-
-  for (i = 0, j = 0; i < 50; i += 2) {
-    extra_bits[i]   = j; /* 0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7... */
-    extra_bits[i+1] = j;
-    if ((i != 0) && (j < 17)) j++; /* 0,0,1,2,3,4...15,16,17,17,17,17... */
-  }
-  extra_bits[50] = 17;
-
-  for (i = 0, j = 0; i < 51; i++) {
-    position_base[i] = j; /* 0,1,2,3,4,6,8,12,16,24,32,... */
-    j += 1 << extra_bits[i]; /* 1,1,1,1,2,2,4,4,8,8,16,16,32,32,... */
-  }
-}
+static const unsigned int position_base[51] = {
+  0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256,
+  384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288,
+  16384, 24576, 32768, 49152, 65536, 98304, 131072, 196608, 262144,
+  393216, 524288, 655360, 786432, 917504, 1048576, 1179648, 1310720,
+  1441792, 1572864, 1703936, 1835008, 1966080, 2097152
+};
+static const unsigned char extra_bits[51] = {
+  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
+  9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16,
+  17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17
+};
 
 static void lzxd_reset_state(struct lzxd_stream *lzx) {
   int i;
@@ -407,9 +407,6 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
 
   input_buffer_size = (input_buffer_size + 1) & -2;
   if (!input_buffer_size) return NULL;
-
-  /* initialise static data */
-  lzxd_static_init();
 
   /* allocate decompression state */
   if (!(lzx = system->alloc(system, sizeof(struct lzxd_stream)))) {

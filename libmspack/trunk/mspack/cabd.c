@@ -40,6 +40,8 @@ static char *largefile_msg =
 #define LD "lld"
 #endif
 
+#include <assert.h>
+
 /* Notes on compliance with cabinet specification:
  *
  * One of the main changes between cabextract 0.6 and libmspack's cab
@@ -1086,9 +1088,7 @@ static int cabd_init_decomp(struct mscab_decompressor_p *this, unsigned int ct)
 {
   struct mspack_file *fh = (struct mspack_file *) this;
 
-  if (!this || !this->d) {
-    return this->error = MSPACK_ERR_ARGS;
-  }
+  assert(this && this->d);
 
   /* free any existing decompressor */
   cabd_free_decomp(this);
