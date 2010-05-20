@@ -1,3 +1,24 @@
+2010-05-20:  Stuart Caie  <kyzer@4u.net>
+
+	* system.h: It turns out no configure.ac tests are needed to
+	decide between __func__ and __FUNCTION__, so I put the standard
+	one (__func__) back into the D() macro, along with some
+	special-case ifdefs for old versions of GCC.
+
+	* lzxd_static_init(): Removed function in favour of static const
+	tables.  Jorge Lodos thinks it causes multithreading problems, I
+	disagree. However, there are speed benefits to declaring the
+	tables as static const.
+
+	* cabd_init_decomp(): Fixed code which never runs but would write
+	to a null pointer if it could. Changed it to an assert() as it
+	will only trip if someone rewrites the internals of cabd.c. Thanks
+	to Jorge Lodos for finding it.
+
+	* inflate(): Fixed an off-by-one error: if the LITERAL table
+	emitted code 286, this would read one byte past the end of
+	lit_extrabits[]. Thanks to Jorge Lodos for finding it.
+	
 2010-05-06:  Stuart Caie  <kyzer@4u.net>
 
 	* test/cabrip.c, test/chminfo.c: add fseeko() support

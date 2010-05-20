@@ -423,8 +423,8 @@ static int inflate(struct mszipd_stream *zip) {
 	  break;
 	}
 	else {
-	  code -= 257;
-	  if (code > 29) return INF_ERR_LITCODE;
+	  code -= 257; /* codes 257-285 are matches */
+	  if (code >= 29) return INF_ERR_LITCODE; /* codes 286-287 are illegal */
 	  READ_BITS_T(length, lit_extrabits[code]);
 	  length += lit_lengths[code];
 
