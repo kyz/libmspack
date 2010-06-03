@@ -1,3 +1,9 @@
+2010-06-03:  Stuart Caie  <kyzer@4u.net>
+
+	* test/cabd_md5.c: updated this so it has better output and
+	doesn't need to be in the same directory as the files for multi-
+	part sets.
+
 2010-05-20:  Stuart Caie  <kyzer@4u.net>
 
 	* qtmd_read_input(), zipd_read_input(): Both these functions are
@@ -8,7 +14,7 @@
 	then go on to access at least one byte of the input buffer, which
 	doesn't exist as sys->read() returned 0. Thanks to Michael
 	Vidrevich for spotting this and providing a test case.
-	
+
 2010-05-20:  Stuart Caie  <kyzer@4u.net>
 
 	* system.h: It turns out no configure.ac tests are needed to
@@ -29,11 +35,11 @@
 	* inflate(): Fixed an off-by-one error: if the LITERAL table
 	emitted code 286, this would read one byte past the end of
 	lit_extrabits[]. Thanks to Jorge Lodos for finding it.
-	
+
 2010-05-06:  Stuart Caie  <kyzer@4u.net>
 
 	* test/cabrip.c, test/chminfo.c: add fseeko() support
-	
+
 2009-06-01:  Stuart Caie   <kyzer@4u.net>
 
 	* README: clarify the extended license terms
