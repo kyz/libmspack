@@ -110,26 +110,38 @@ static int qtmd_read_input(struct qtmd_stream *qtm) {
  * length_base[] and length_extra[] are equivalent in function, but are
  * used for encoding selector 6 (variable length match) match lengths,
  * instead of match offsets.
+ *
+ * They are generated with the following code:
+ *   unsigned int i, offset;
+ *   for (i = 0, offset = 0; i < 42; i++) {
+ *     position_base[i] = offset;
+ *     extra_bits[i] = ((i < 2) ? 0 : (i - 2)) >> 1;
+ *     offset += 1 << extra_bits[i];
+ *   }
+ *   for (i = 0, offset = 0; i < 26; i++) {
+ *     length_base[i] = offset;
+ *     length_extra[i] = (i < 2 ? 0 : i - 2) >> 2;
+ *     offset += 1 << length_extra[i];
+ *   }
+ *   length_base[26] = 254; length_extra[26] = 0;
  */
-static unsigned int  position_base[42];
-static unsigned char extra_bits[42], length_base[27], length_extra[27];
-
-static void qtmd_static_init() {
-  unsigned int i, offset;
-
-  for (i = 0, offset = 0; i < 42; i++) {
-    position_base[i] = offset;
-    extra_bits[i] = ((i < 2) ? 0 : (i - 2)) >> 1;
-    offset += 1 << extra_bits[i];
-  }
-
-  for (i = 0, offset = 0; i < 26; i++) {
-    length_base[i] = offset;
-    length_extra[i] = (i < 2 ? 0 : i - 2) >> 2;
-    offset += 1 << length_extra[i];
-  }
-  length_base[26] = 254; length_extra[26] = 0;
-}
+static const unsigned int position_base[42] = {
+  0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768,
+  1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152,
+  65536, 98304, 131072, 196608, 262144, 393216, 524288, 786432, 1048576, 1572864
+};
+static const unsigned char extra_bits[42] = {
+  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10,
+  11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19
+};
+static const unsigned char length_base[27] = {
+  0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 14, 18, 22, 26,
+  30, 38, 46, 54, 62, 78, 94, 110, 126, 158, 190, 222, 254
+};
+static const unsigned char length_extra[27] = {
+  0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+  3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
+};
 
 
 /* Arithmetic decoder:
@@ -249,9 +261,6 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
 
   input_buffer_size = (input_buffer_size + 1) & -2;
   if (input_buffer_size < 2) return NULL;
-
-  /* initialise static data */
-  qtmd_static_init();
 
   /* allocate decompression state */
   if (!(qtm = system->alloc(system, sizeof(struct qtmd_stream)))) {
