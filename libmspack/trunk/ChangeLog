@@ -1,3 +1,8 @@
+2010-06-11:  Stuart Caie <kyzer@4u.net>
+
+	* qtmd_static_init(): Removed function in favour of static const
+	tables, same rationale as for lzxd_static_init().
+
 2010-06-03:  Stuart Caie  <kyzer@4u.net>
 
 	* test/cabd_md5.c: updated this so it has better output and
