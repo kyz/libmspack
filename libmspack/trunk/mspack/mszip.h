@@ -51,7 +51,7 @@ struct mszipd_stream {
   int error, repair_mode, bytes_output;
 
   /* I/O buffering */
-  unsigned char *inbuf, *i_ptr, *i_end, *o_ptr, *o_end;
+  unsigned char *inbuf, *i_ptr, *i_end, *o_ptr, *o_end, input_end;
   unsigned int bit_buffer, bits_left, inbuf_size;
 
 

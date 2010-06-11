@@ -90,7 +90,21 @@
 
 static int qtmd_read_input(struct qtmd_stream *qtm) {
   int read = qtm->sys->read(qtm->input, &qtm->inbuf[0], (int)qtm->inbuf_size);
-  if (read <= 0) return qtm->error = MSPACK_ERR_READ;
+  if (read < 0) return qtm->error = MSPACK_ERR_READ;
+
+  /* symbol decode might overrun the input stream, even
+   * if those bits aren't used, so fake 2 more bytes */
+  if (read == 0) {
+    if (qtm->input_end) {
+      D(("out of input bytes"))
+      return qtm->error = MSPACK_ERR_READ;
+    }
+    else {
+      read = 2;
+      qtm->inbuf[0] = qtm->inbuf[1] = 0;
+      qtm->input_end = 1;
+    }
+  }
 
   qtm->i_ptr = &qtm->inbuf[0];
   qtm->i_end = &qtm->inbuf[read];
@@ -290,6 +304,7 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
 
   qtm->i_ptr = qtm->i_end = &qtm->inbuf[0];
   qtm->o_ptr = qtm->o_end = &qtm->window[0];
+  qtm->input_end = 0;
   qtm->bits_left = 0;
   qtm->bit_buffer = 0;
 

@@ -44,7 +44,7 @@ struct qtmd_stream {
   /* I/O buffers */
   unsigned char *inbuf, *i_ptr, *i_end, *o_ptr, *o_end;
   unsigned int  bit_buffer, inbuf_size;
-  unsigned char bits_left;
+  unsigned char bits_left, input_end;
 
   /* four literal models, each representing 64 symbols
    * model0 for literals from   0 to  63 (selector = 0)

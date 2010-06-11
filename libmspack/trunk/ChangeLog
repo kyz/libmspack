@@ -3,6 +3,12 @@
 	* qtmd_static_init(): Removed function in favour of static const
 	tables, same rationale as for lzxd_static_init().
 
+	* qtmd_read_input(), zipd_read_input(): After testing against my
+	set of CABs from the wild, I've found both these functions _need_
+	an extra EOF flag, like lzxd_read_input() has. So I've added
+	it. This means CABs get decoded properly AND there's no reading
+	fictional bytes.
+
 2010-06-03:  Stuart Caie  <kyzer@4u.net>
 
 	* test/cabd_md5.c: updated this so it has better output and
