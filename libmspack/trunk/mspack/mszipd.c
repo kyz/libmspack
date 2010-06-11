@@ -67,7 +67,7 @@ static const unsigned short bit_mask[17] = {
 #define ENSURE_BITS(nbits) do {                                         \
   while (bits_left < (nbits)) {                                         \
     if (i_ptr >= i_end) {                                               \
-      if (zipd_read_input(zip)) return zip->error;                      \
+      if (zipd_read_input(zip)) return zip->error;			\
       i_ptr = zip->i_ptr;                                               \
       i_end = zip->i_end;                                               \
     }                                                                   \
@@ -90,7 +90,23 @@ static const unsigned short bit_mask[17] = {
 
 static int zipd_read_input(struct mszipd_stream *zip) {
   int read = zip->sys->read(zip->input, &zip->inbuf[0], (int)zip->inbuf_size);
-  if (read <= 0) return zip->error = MSPACK_ERR_READ;
+  if (read < 0) return zip->error = MSPACK_ERR_READ;
+
+  /* huff decode's ENSURE_BYTES(16) might overrun the input stream, even
+   * if those bits aren't used, so fake 2 more bytes */
+  if (read == 0) {
+    if (zip->input_end) {
+      D(("out of input bytes"))
+      return zip->error = MSPACK_ERR_READ;
+    }
+    else {
+      read = 2;
+      zip->inbuf[0] = zip->inbuf[1] = 0;
+      zip->input_end = 1;
+    }
+  }
+
+
   zip->i_ptr = &zip->inbuf[0];
   zip->i_end = &zip->inbuf[read];
 
@@ -546,6 +562,7 @@ struct mszipd_stream *mszipd_init(struct mspack_system *system,
   zip->input           = input;
   zip->output          = output;
   zip->inbuf_size      = input_buffer_size;
+  zip->input_end       = 0;
   zip->error           = MSPACK_ERR_OK;
   zip->repair_mode     = repair_mode;
   zip->flush_window    = &mszipd_flush_window;
