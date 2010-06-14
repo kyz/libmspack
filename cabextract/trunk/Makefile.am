@@ -15,7 +15,8 @@ libmspack_a_SOURCES =	mspack/mspack.h \
 			mspack/cab.h mspack/cabd.c \
 			mspack/lzx.h mspack/lzxd.c \
 			mspack/mszip.h mspack/mszipd.c \
-			mspack/qtm.h mspack/qtmd.c
+			mspack/qtm.h mspack/qtmd.c \
+			mspack/readbits.h mspack/readhuff.h
 
 bin_PROGRAMS =		cabextract
 noinst_PROGRAMS =	src/cabinfo
