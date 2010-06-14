@@ -3,7 +3,6 @@ if DEBUG
 MSPACK_FLAGS = -DDEBUG
 endif
 
-
 EXTRA_DIST =		debian doc/Doxyfile.in doc/Makefile.in test/test_files
 dist-hook:
 	-rm -f $(distdir)/*.la
@@ -30,6 +29,7 @@ libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/lzx.h mspack/lzxc.c mspack/lzxd.c \
 			mspack/mszip.h mspack/mszipc.c mspack/mszipd.c \
 			mspack/qtm.h mspack/qtmd.c \
+			mspack/readbits.h mspack/readhuff.h \
 			mspack/lzss.h mspack/des.h mspack/sha.h
 libmspack_la_LDFLAGS =	-export-symbols-regex '^mspack_' -version-info 1:0:1
 
@@ -38,13 +38,15 @@ libmscabd_la_SOURCES =	mspack/mspack.h \
 			mspack/cab.h mspack/cabd.c \
 			mspack/lzx.h mspack/lzxd.c \
 			mspack/mszip.h mspack/mszipd.c \
-			mspack/qtm.h mspack/qtmd.c
+			mspack/qtm.h mspack/qtmd.c \
+			mspack/readbits.h mspack/readhuff.h
 libmscabd_la_LDFLAGS =	-export-symbols-regex '^mspack_'
 
 libmschmd_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
 			mspack/chm.h mspack/chmd.c \
-			mspack/lzx.h mspack/lzxd.c
+			mspack/lzx.h mspack/lzxd.c \
+			mspack/readbits.h mspack/readhuff.h
 libmschmd_la_LDFLAGS =	-export-symbols-regex '^mspack_'
 
 test_chmx_SOURCES =	test/chmx.c libmschmd.la
