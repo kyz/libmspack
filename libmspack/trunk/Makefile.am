@@ -15,8 +15,8 @@ include_HEADERS =	mspack/mspack.h
 
 noinst_LTLIBRARIES =	libmscabd.la libmschmd.la
 noinst_PROGRAMS =	test/cabd_md5 test/cabd_memory test/cabd_test \
-			test/cabextract_md5 test/cabrip test/chmd_md5 \
-			test/chmx test/chminfo test/multifh
+			test/cabrip test/chmd_md5 test/chmx test/chminfo \
+			test/multifh
 
 libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
