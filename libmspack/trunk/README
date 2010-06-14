@@ -84,7 +84,6 @@ exercise and demonstrate libmspack's features.
 cabd_md5       - Prints the MD5 checksums of all files within a CAB file/set.
 cabd_memory    - An mspack_system implementation that reads/writes to memory.
 cabd_test      - Regression tests for libmspack's CAB decompression.
-cabextract_md5 - cabextract 0.6 (pre-libmspack) with output like cabd_md5
 chmd_md5       - Prints the MD5 checksums of all files within a CHM file.
 chminfo        - Prints verbose information about CHM file structures.
 chmx           - Extracts all files in a CHM file to disk.
