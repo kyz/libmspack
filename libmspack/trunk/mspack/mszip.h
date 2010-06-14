@@ -16,7 +16,6 @@
 /* MSZIP (deflate) compression / (inflate) decompression definitions */
 
 #define MSZIP_FRAME_SIZE          (32768) /* size of LZ history window */
-#define MSZIP_MAX_HUFFBITS        (16)    /* maximum huffman code length */
 #define MSZIP_LITERAL_MAXSYMBOLS  (288)   /* literal/length huffman tree */
 #define MSZIP_LITERAL_TABLEBITS   (9)
 #define MSZIP_DISTANCE_MAXSYMBOLS (32)    /* distance huffman tree */

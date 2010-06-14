@@ -23,93 +23,17 @@
 #include <system.h>
 #include <qtm.h>
 
-/* Quantum decompressor bitstream reading macros
- *
- * STORE_BITS        stores bitstream state in qtmd_stream structure
- * RESTORE_BITS      restores bitstream state from qtmd_stream structure
- * READ_BITS(var,n)  takes N bits from the buffer and puts them in var
- * FILL_BUFFER       if there is room for another 16 bits, reads another
- *                   16 bits from the input stream.
- * PEEK_BITS(n)      extracts without removing N bits from the bit buffer
- * REMOVE_BITS(n)    removes N bits from the bit buffer
- *
- * These bit access routines work by using the area beyond the MSB and the
- * LSB as a free source of zeroes. This avoids having to mask any bits.
- * So we have to know the bit width of the bitbuffer variable.
- */
-
-#ifdef HAVE_LIMITS_H
-# include <limits.h>
-#endif
-#ifndef CHAR_BIT
-# define CHAR_BIT (8)
-#endif
-#define BITBUF_WIDTH (sizeof(unsigned int) * CHAR_BIT)
-
-#define STORE_BITS do {                                                 \
-  qtm->i_ptr      = i_ptr;                                              \
-  qtm->i_end      = i_end;                                              \
-  qtm->bit_buffer = bit_buffer;                                         \
-  qtm->bits_left  = bits_left;                                          \
+/* import bit-reading macros and code */
+#define BITS_TYPE struct qtmd_stream
+#define BITS_VAR qtm
+#define BITS_ORDER_MSB
+#define READ_BYTES do {			\
+    unsigned char b0, b1;		\
+    READ_IF_NEEDED; b0 = *i_ptr++;	\
+    READ_IF_NEEDED; b1 = *i_ptr++;	\
+    INJECT_BITS((b0 << 8) | b1, 16);	\
 } while (0)
-
-#define RESTORE_BITS do {                                               \
-  i_ptr      = qtm->i_ptr;                                              \
-  i_end      = qtm->i_end;                                              \
-  bit_buffer = qtm->bit_buffer;                                         \
-  bits_left  = qtm->bits_left;                                          \
-} while (0)
-
-/* adds 16 bits to bit buffer, if there's space for the new bits */
-#define FILL_BUFFER do {                                                \
-  if (bits_left <= (BITBUF_WIDTH - 16)) {                               \
-    if (i_ptr >= i_end) {                                               \
-      if (qtmd_read_input(qtm)) return qtm->error;                      \
-      i_ptr = qtm->i_ptr;                                               \
-      i_end = qtm->i_end;                                               \
-    }                                                                   \
-    bit_buffer |= ((i_ptr[0] << 8) | i_ptr[1])                          \
-                  << (BITBUF_WIDTH - 16 - bits_left);                   \
-    bits_left  += 16;                                                   \
-    i_ptr      += 2;                                                    \
-  }                                                                     \
-} while (0)
-
-#define PEEK_BITS(n)   (bit_buffer >> (BITBUF_WIDTH - (n)))
-#define REMOVE_BITS(n) ((bit_buffer <<= (n)), (bits_left -= (n)))
-
-#define READ_BITS(val, bits) do {                                       \
-  (val) = 0;                                                            \
-  for (bits_needed = (bits); bits_needed > 0; bits_needed -= bit_run) { \
-    FILL_BUFFER;                                                        \
-    bit_run = (bits_left < bits_needed) ? bits_left : bits_needed;      \
-    (val) = ((val) << bit_run) | PEEK_BITS(bit_run);                    \
-    REMOVE_BITS(bit_run);                                               \
-  }                                                                     \
-} while (0)
-
-static int qtmd_read_input(struct qtmd_stream *qtm) {
-  int read = qtm->sys->read(qtm->input, &qtm->inbuf[0], (int)qtm->inbuf_size);
-  if (read < 0) return qtm->error = MSPACK_ERR_READ;
-
-  /* symbol decode might overrun the input stream, even
-   * if those bits aren't used, so fake 2 more bytes */
-  if (read == 0) {
-    if (qtm->input_end) {
-      D(("out of input bytes"))
-      return qtm->error = MSPACK_ERR_READ;
-    }
-    else {
-      read = 2;
-      qtm->inbuf[0] = qtm->inbuf[1] = 0;
-      qtm->input_end = 1;
-    }
-  }
-
-  qtm->i_ptr = &qtm->inbuf[0];
-  qtm->i_end = &qtm->inbuf[read];
-  return MSPACK_ERR_OK;
-}
+#include <readbits.h>
 
 /* Quantum static data tables:
  *
@@ -191,7 +115,7 @@ static const unsigned char length_extra[27] = {
       else break;                                                       \
     }                                                                   \
     L <<= 1; H = (H << 1) | 1;                                          \
-    FILL_BUFFER;                                                        \
+    ENSURE_BITS(1);							\
     C  = (C << 1) | PEEK_BITS(1);                                       \
     REMOVE_BITS(1);                                                     \
   }                                                                     \
@@ -336,7 +260,6 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 
   register unsigned int bit_buffer;
   register unsigned char bits_left;
-  unsigned char bits_needed, bit_run;
 
   /* easy answers */
   if (!qtm || (out_bytes < 0)) return MSPACK_ERR_ARGS;
@@ -398,25 +321,25 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 	switch (selector) {
 	case 4: /* selector 4 = fixed length match (3 bytes) */
 	  GET_SYMBOL(qtm->model4, sym);
-	  READ_BITS(extra, extra_bits[sym]);
+	  READ_MANY_BITS(extra, extra_bits[sym]);
 	  match_offset = position_base[sym] + extra + 1;
 	  match_length = 3;
 	  break;
 
 	case 5: /* selector 5 = fixed length match (4 bytes) */
 	  GET_SYMBOL(qtm->model5, sym);
-	  READ_BITS(extra, extra_bits[sym]);
+	  READ_MANY_BITS(extra, extra_bits[sym]);
 	  match_offset = position_base[sym] + extra + 1;
 	  match_length = 4;
 	  break;
 
 	case 6: /* selector 6 = variable length match */
 	  GET_SYMBOL(qtm->model6len, sym);
-	  READ_BITS(extra, length_extra[sym]);
+	  READ_MANY_BITS(extra, length_extra[sym]);
 	  match_length = length_base[sym] + extra + 5;
 
 	  GET_SYMBOL(qtm->model6, sym);
-	  READ_BITS(extra, extra_bits[sym]);
+	  READ_MANY_BITS(extra, extra_bits[sym]);
 	  match_offset = position_base[sym] + extra + 1;
 	  break;
 

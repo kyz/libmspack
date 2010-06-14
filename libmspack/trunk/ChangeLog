@@ -1,3 +1,9 @@
+2010-06-14:  Stuart Caie <kyzer@4u.net>
+
+	* qtmd.c, lzxd.c, mszipd.c: created new headers, readbits.h and
+	readhuff.h, which bundle up the bit-reading and huffman-reading
+	code found in the MSZIP, LZX and Quantum decoders.
+
 2010-06-11:  Stuart Caie <kyzer@4u.net>
 
 	* qtmd_static_init(): Removed function in favour of static const
