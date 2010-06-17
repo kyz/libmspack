@@ -4,6 +4,9 @@ MSPACK_FLAGS = -DDEBUG
 endif
 
 EXTRA_DIST =		debian doc/Doxyfile.in doc/Makefile.in test/test_files
+pkgconfigdir =		$(libdir)/pkgconfig
+pkgconfig_DATA = 	libmspack.pc
+
 dist-hook:
 	-rm -f $(distdir)/*.la
 

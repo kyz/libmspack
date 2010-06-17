@@ -1,3 +1,10 @@
+2010-06-17  Stuart Caie  <kyzer@4u.net>
+
+	* configure.ac: Added --external-libmspack option, which allows
+	you to use the libmspack library installed on your system rather
+	than the copy bundled with cabextract. Thanks to Patrice Dumas
+	for the patch.
+
 2010-06-10  Stuart Caie  <kyzer@4u.net>
 
 	* mspack: bugs in MS-ZIP and Quantum decoders have been fixed. See
