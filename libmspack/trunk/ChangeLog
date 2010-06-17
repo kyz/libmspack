@@ -1,3 +1,9 @@
+2010-06-18:  Stuart Caie  <kyzer@4u.net>
+
+	* system.h: expanded the test for 64-bit largefile support so
+	it also works on 64-bit native operating systems where you
+	don't have to define _FILE_OFFSET_BITS.
+
 2010-06-17:  Stuart Caie <kyzer@4u.net>
 
 	* libmspack.pc.in: Added pkg-config support. Thanks to

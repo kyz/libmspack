@@ -42,6 +42,29 @@
 # define D(x)
 #endif
 
+/* CAB supports searching through files over 4GB in size, and the CHM file
+ * format actively uses 64-bit offsets. These can only be fully supported
+ * if the system the code runs on supports large files. If not, the library
+ * will work as normal using only 32-bit arithmetic, but if an offset
+ * greater than 2GB is detected, an error message indicating the library
+ * can't support the file should be printed.
+ */
+#ifdef HAVE_LIMITS_H
+# include <limits.h>
+#endif
+
+#if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
+     (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
+     defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE))
+# define LARGEFILE_SUPPORT
+# define LD "lld"
+# define LU "llu"
+#else
+extern const char *largefile_msg;
+# define LD "ld"
+# define LU "lu"
+#endif
+
 /* endian-neutral reading of little-endian data */
 #define __egi32(a,n) ( ((((unsigned char *) a)[n+3]) << 24) | \
 		       ((((unsigned char *) a)[n+2]) << 16) | \
