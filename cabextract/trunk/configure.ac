@@ -1,7 +1,7 @@
 # -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
-AC_INIT(cabextract, 1.2, kyzer@4u.net)
+AC_INIT(cabextract, 1.3, kyzer@4u.net)
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/cabextract.c])
 AC_CONFIG_HEADER([config.h])
@@ -37,6 +37,24 @@ AC_CHECK_FUNCS([memcpy strcasecmp strchr utime utimes])
 AC_CHECK_FUNCS([getopt_long],,[AC_CHECK_LIB([gnugetopt], [getopt_long],
   [AC_DEFINE([HAVE_GETOPT_LONG])],[AC_LIBOBJ(getopt) AC_LIBOBJ(getopt1)])])
 AC_REPLACE_FNMATCH
+
+# use an external libmspack if requested
+cabextract_external_libmspack=no
+AC_ARG_WITH([external-libmspack],
+ [AS_HELP_STRING([--with-external-libmspack],[use external libmspack (default no)])],
+ [cabextract_external_libmspack=$withval])
+
+if test "z$cabextract_external_libmspack" != 'zno'; then
+ AC_CHECK_HEADER([mspack.h], ,[AC_MSG_ERROR([Cannot find libmspack header])])
+fi
+
+if test "z$cabextract_external_libmspack" != 'zno'; then
+ AC_CHECK_LIB([mspack],[mspack_create_cab_compressor], 
+  [LIBMSPACK_LIBS=-lmspack],
+  [AC_MSG_ERROR([Cannot find libmspack library])])
+fi
+AC_SUBST([LIBMSPACK_LIBS])
+AM_CONDITIONAL([EXTERNAL_LIBMSPACK], [test "z$cabextract_external_libmspack" != 'zno'])
 
 AC_CONFIG_FILES([Makefile cabextract.spec])
 AC_OUTPUT

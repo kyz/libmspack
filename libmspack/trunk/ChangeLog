@@ -1,3 +1,8 @@
+2010-06-17:  Stuart Caie <kyzer@4u.net>
+
+	* libmspack.pc.in: Added pkg-config support. Thanks to
+	Patrice Dumas for the patch.
+
 2010-06-14:  Stuart Caie <kyzer@4u.net>
 
 	* qtmd.c, lzxd.c, mszipd.c: created new headers, readbits.h and

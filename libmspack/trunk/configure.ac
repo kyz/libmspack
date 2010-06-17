@@ -1,7 +1,7 @@
 # -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
-AC_INIT([libmspack],[0.0.20060920alpha],[kyzer@4u.net])
+AC_INIT([libmspack],[0.0.20100617alpha],[kyzer@4u.net])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([mspack/mspack.h])
 AC_CONFIG_HEADER([config.h])
@@ -38,7 +38,5 @@ AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
 # Checks for library functions.
-AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([doc/Doxyfile])
-AC_CONFIG_FILES([doc/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile doc/Doxyfile libmspack.pc])
 AC_OUTPUT
