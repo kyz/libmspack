@@ -13,6 +13,11 @@
 
 #include <mspack.h>
 
+#ifndef LARGEFILE_SUPPORT
+const char *largefile_msg = "library not compiled to support large files.";
+#endif
+
+
 int mspack_version(int entity) {
   switch (entity) {
   case MSPACK_VER_LIBRARY:

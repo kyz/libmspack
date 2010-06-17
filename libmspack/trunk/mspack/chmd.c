@@ -38,23 +38,6 @@ static unsigned char *read_sys_file(
 static int chmd_error(
   struct mschm_decompressor *base);
 
-/* CHM uses 64-bit offsets in its files. These can only be completely
- * supported if the library is compiled to support large files (off_t >=
- * 64 bits). If not, the library will work as normal using only 32-bit
- * arithmetic, but if an offset greater than 2Gb is detected, an error
- * message indicating the library can't support the file will be returned.
- */
-#ifndef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 32
-#endif
-#if (_FILE_OFFSET_BITS < 64)
-static char *largefile_msg =
-  "library not compiled to support large files.";
-#define LU "%lu"
-#else
-#define LU "%llu"
-#endif
-
 /* filenames of the three essential system files needed for decompression */
 static char *content_name = "::DataSpace/Storage/MSCompressed/Content";
 static char *control_name = "::DataSpace/Storage/MSCompressed/ControlData";
@@ -278,7 +261,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   /* chmhst3_OffsetCS0 does not exist in version 1 or 2 CHM files.
    * The offset will be corrected later, once HS1 is read.
    */
-#if (_FILE_OFFSET_BITS >= 64)
+#ifdef LARGEFILE_SUPPORT
   offset           = EndGetI64(&buf[chmhst_OffsetHS0]);
   chm->dir_offset  = EndGetI64(&buf[chmhst_OffsetHS1]);
   chm->sec0.offset = EndGetI64(&buf[chmhst3_OffsetCS0]);
@@ -309,7 +292,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     return MSPACK_ERR_READ;
   }
 
-#if (_FILE_OFFSET_BITS >= 64)
+#ifdef LARGEFILE_SUPPORT
   chm->length = EndGetI64(&buf[chmhs0_FileLen]);
 #else
   chm->length = EndGetI32(&buf[chmhs0_FileLen]);
@@ -792,7 +775,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   }
 
   /* get the uncompressed length of the LZX stream */
-#if (_FILE_OFFSET_BITS >= 64)
+#ifdef LARGEFILE_SUPPORT
   length = EndGetI64(&data[lzxrt_UncompLen]);
 #else
   length = EndGetI32(&data[lzxrt_UncompLen]);
@@ -838,7 +821,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
     this->d->inoffset += EndGetI32(&data[tablepos]);
     break;
   case 8:
-#if (_FILE_OFFSET_BITS >= 64)
+#ifdef LARGEFILE_SUPPORT
     this->d->inoffset += EndGetI64(&data[tablepos]);
 #else
     this->d->inoffset += EndGetI32(&data[tablepos]);

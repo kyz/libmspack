@@ -28,18 +28,6 @@
 
 #include <system.h>
 #include <cab.h>
-
-#ifndef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 32
-#endif
-#if (_FILE_OFFSET_BITS < 64)
-static char *largefile_msg =
-  "library not compiled to support large files.";
-#define LD "ld"
-#else
-#define LD "lld"
-#endif
-
 #include <assert.h>
 
 /* Notes on compliance with cabinet specification:
@@ -705,7 +693,7 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
 	/* if off_t is only 32-bits signed, there will be overflow problems
 	 * with cabinets reaching past the 2GB barrier (or just claiming to)
 	 */
-#if _FILE_OFFSET_BITS < 64
+#ifndef LARGEFILE_SUPPORT
 	if (cablen_u32 & ~0x7FFFFFFF) {
 	  sys->message(fh, largefile_msg);
 	  cablen_u32 = 0x7FFFFFFF;
