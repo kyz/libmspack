@@ -1,3 +1,7 @@
+2010-07-06:  Stuart Caie <kyzer@4u.net>
+
+	* many files: added SZDD and KWAJ decompression support.
+
 2010-06-18:  Stuart Caie  <kyzer@4u.net>
 
 	* system.h: expanded the test for 64-bit largefile support so
