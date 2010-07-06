@@ -12,14 +12,8 @@
 
 #include <lzss.h>
 
-/* generic SZDD definitions */
-#define szddhead_Signature  (0x00)
-#define szddhead_CompType   (0x08)
-#define szddhead_FileChar   (0x09)
-#define szddhead_FileLength (0x0A)
-#define szddhead_SIZEOF     (0x0E)
-
-#define SZDD_COMPTYPE_A     (0x41)
+/* input buffer size during decompression - not worth parameterising IMHO */
+#define SZDD_INPUT_SIZE (2048)
 
 /* SZDD compression definitions */
 
