@@ -8,26 +8,9 @@
 #include <string.h>
 #include <mspack.h>
 #include "md5.h"
+#include "error.h"
 
 #define FILENAME ".test.chmd"
-
-char *error_msg(int error) {
-  switch (error) {
-  case MSPACK_ERR_OK:         return "no error";
-  case MSPACK_ERR_ARGS:       return "bad arguments to library function";
-  case MSPACK_ERR_OPEN:       return "error opening file";
-  case MSPACK_ERR_READ:       return "read error";
-  case MSPACK_ERR_WRITE:      return "write error";
-  case MSPACK_ERR_SEEK:       return "seek error";
-  case MSPACK_ERR_NOMEMORY:   return "out of memory";
-  case MSPACK_ERR_SIGNATURE:  return "bad signature";
-  case MSPACK_ERR_DATAFORMAT: return "error in data format";
-  case MSPACK_ERR_CHECKSUM:   return "checksum error";
-  case MSPACK_ERR_CRUNCH:     return "compression error";
-  case MSPACK_ERR_DECRUNCH:   return "decompression error";
-  }
-  return "unknown error";
-}
 
 static int sortfunc(const void *a, const void *b) {
   off_t diff = 
@@ -58,7 +41,7 @@ int main(int argc, char *argv[]) {
 	for (file=chm->files; file; file = file->next) {
 	  if (chmd->extract(chmd, file, FILENAME)) {
 	    printf("%s: extract error on \"%s\": %s\n",
-		   *argv, file->filename, error_msg(chmd->last_error(chmd)));
+		   *argv, file->filename, ERROR(chmd));
 	    exit(1);
 	  }
 	  if ((fh = fopen(FILENAME, "rb"))) {
@@ -82,7 +65,7 @@ int main(int argc, char *argv[]) {
 	  for (i = 0; i < numf; i++) {
 	    if (chmd->extract(chmd, f[i], ".test")) {
 	      printf("%s: extract error on \"%s\": %s\n",
-		     *argv, f[i]->filename, error_msg(chmd->last_error(chmd)));
+		     *argv, f[i]->filename, ERROR(chmd));
 	      exit(1);
 	    }
 	  }
@@ -92,8 +75,7 @@ int main(int argc, char *argv[]) {
 	chmd->close(chmd, chm);
       }
       else {
-	printf("%s: can't open -- %s\n",
-	       *argv, error_msg(chmd->last_error(chmd)));
+	printf("%s: can't open -- %s\n", *argv, ERROR(chmd));
       }
     }
     mspack_destroy_chm_decompressor(chmd);

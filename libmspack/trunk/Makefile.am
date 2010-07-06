@@ -19,7 +19,7 @@ include_HEADERS =	mspack/mspack.h
 noinst_LTLIBRARIES =	libmscabd.la libmschmd.la
 noinst_PROGRAMS =	test/cabd_md5 test/cabd_memory test/cabd_test \
 			test/cabrip test/chmd_md5 test/chmx test/chminfo \
-			test/multifh
+			test/multifh test/expand
 
 libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
@@ -33,7 +33,8 @@ libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/mszip.h mspack/mszipc.c mspack/mszipd.c \
 			mspack/qtm.h mspack/qtmd.c \
 			mspack/readbits.h mspack/readhuff.h \
-			mspack/lzss.h mspack/des.h mspack/sha.h
+			mspack/lzss.h mspack/lzssd.c \
+			mspack/des.h mspack/sha.h
 libmspack_la_LDFLAGS =	-export-symbols-regex '^mspack_' -version-info 1:0:1
 
 libmscabd_la_SOURCES =	mspack/mspack.h \
@@ -77,3 +78,6 @@ test_chminfo_LDADD   = libmschmd.la
 
 test_multifh_SOURCES = test/multifh.c libmscabd.la
 test_multifh_LDADD =  libmscabd.la
+
+test_expand_SOURCES = test/expand.c libmspack.la
+test_expand_LDADD = libmspack.la

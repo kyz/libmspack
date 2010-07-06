@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include "md5.h"
+#include "error.h"
 
 mode_t user_umask;
 
@@ -161,24 +162,6 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   return (char *) name;
 }
 
-char *error_msg(int error) {
-  switch (error) {
-  case MSPACK_ERR_OK:         return "no error";
-  case MSPACK_ERR_ARGS:       return "bad arguments to library function";
-  case MSPACK_ERR_OPEN:       return "error opening file";
-  case MSPACK_ERR_READ:       return "read error";
-  case MSPACK_ERR_WRITE:      return "write error";
-  case MSPACK_ERR_SEEK:       return "seek error";
-  case MSPACK_ERR_NOMEMORY:   return "out of memory";
-  case MSPACK_ERR_SIGNATURE:  return "bad signature";
-  case MSPACK_ERR_DATAFORMAT: return "error in data format";
-  case MSPACK_ERR_CHECKSUM:   return "checksum error";
-  case MSPACK_ERR_CRUNCH:     return "compression error";
-  case MSPACK_ERR_DECRUNCH:   return "decompression error";
-  }
-  return "unknown error";
-}
-
 static int sortfunc(const void *a, const void *b) {
   off_t diff = 
     ((* ((struct mschmd_file **) a))->offset) -
@@ -211,7 +194,7 @@ int main(int argc, char *argv[]) {
 	  ensure_filepath(outname);
 	  if (chmd->extract(chmd, file, outname)) {
 	    printf("%s: extract error on \"%s\": %s\n",
-		   *argv, file->filename, error_msg(chmd->last_error(chmd)));
+		   *argv, file->filename, ERROR(chmd));
 	  }
 	  free(outname);
 	}
@@ -227,7 +210,7 @@ int main(int argc, char *argv[]) {
 	    ensure_filepath(outname);
 	    if (chmd->extract(chmd, f[i], outname)) {
 	      printf("%s: extract error on \"%s\": %s\n",
-		     *argv, f[i]->filename, error_msg(chmd->last_error(chmd)));
+		     *argv, f[i]->filename, ERROR(chmd));
 	    }
 	    free(outname);
 	  }
@@ -236,8 +219,7 @@ int main(int argc, char *argv[]) {
 	chmd->close(chmd, chm);
       }
       else {
-	printf("%s: can't open -- %s\n",
-	       *argv, error_msg(chmd->last_error(chmd)));
+	printf("%s: can't open -- %s\n", *argv, ERROR(chmd));
       }
     }
     mspack_destroy_chm_decompressor(chmd);

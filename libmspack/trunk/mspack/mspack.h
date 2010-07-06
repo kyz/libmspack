@@ -1,5 +1,5 @@
 /* libmspack -- a library for working with Microsoft compression formats.
- * (C) 2003-2004 Stuart Caie <kyzer@4u.net>
+ * (C) 2003-2010 Stuart Caie <kyzer@4u.net>
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -1551,7 +1551,7 @@ struct mschm_decompressor {
    * @param  self     a self-referential pointer to the mschm_decompressor
    *                  instance being called
    * @return the most recent error code
-   * @see open(), search()
+   * @see open(), extract()
    */
   int (*last_error)(struct mschm_decompressor *self);
 
@@ -1656,12 +1656,21 @@ struct mshlp_decompressor {
 /** msszdd_compressor::set_param() parameter: the missing character */
 #define MSSZDDC_PARAM_MISSINGCHAR (0)
 
+/** msszddd_header::format value - a regular SZDD file */
+#define MSSZDD_FMT_NORMAL (0)
+
+/** msszddd_header::format value - a special QBasic SZDD file */
+#define MSSZDD_FMT_QBASIC (1)
+
 /**
  * A structure which represents an SZDD compressed file.
  *
  * All fields are READ ONLY.
  */
 struct msszddd_header {
+  /** The file format; either #MSSZDD_FMT_NORMAL or #MSSZDD_FMT_QBASIC */
+  int format;
+
   /** The amount of data in the SZDD file once uncompressed. */
   off_t length;
 
@@ -1742,7 +1751,7 @@ struct msszdd_compressor {
    * @param  value    the value to set the parameter to
    * @return MSPACK_ERR_OK if all is OK, or MSPACK_ERR_ARGS if there
    *         is a problem with either parameter or value.
-   * @see generate()
+   * @see compress()
    */
   int (*set_param)(struct msszdd_compressor *self,
 		   int param,
@@ -1795,9 +1804,7 @@ struct msszdd_decompressor {
    * This closes a SZDD file and frees the msszddd_header associated with
    * it.
    *
-   * The SZDD header pointer is now invalid and cannot be used again. All
-   * msszddd_file pointers referencing that SZDD are also now invalid, and
-   * cannot be used again.
+   * The SZDD header pointer is now invalid and cannot be used again.
    *
    * @param  self     a self-referential pointer to the msszdd_decompressor
    *                  instance being called
@@ -1854,21 +1861,286 @@ struct msszdd_decompressor {
    * @param  self     a self-referential pointer to the msszdd_decompressor
    *                  instance being called
    * @return the most recent error code
-   * @see open(), search()
+   * @see open(), extract(), decompress()
    */
   int (*last_error)(struct msszdd_decompressor *self);
 };
 
 /* --- support for KWAJ file format ---------------------------------------- */
 
-/** TODO */
-struct mskwaj_compressor {
-  int dummy; 
+/** mskwaj_compressor::set_param() parameter: compression type */
+#define MSKWAJC_PARAM_COMP_TYPE  (0)
+
+/** mskwaj_compressor::set_param() parameter: include the length of the
+ * uncompressed file in the header?
+ */
+#define MSKWAJC_PARAM_INCLUDE_LENGTH (1)
+
+/** KWAJ compression type: no compression. */
+#define MSKWAJ_COMP_NONE (0)
+/** KWAJ compression type: no compression, 0xFF XOR "encryption". */
+#define MSKWAJ_COMP_XOR (1)
+/** KWAJ compression type: LZSS (same method as SZDD) */
+#define MSKWAJ_COMP_SZDD (2)
+/** KWAJ compression type: LZ+Huffman compression */
+#define MSKWAJ_COMP_LZH (3)
+
+/** KWAJ optional header flag: decompressed file length is included */
+#define MSKWAJ_HDR_HASLENGTH (0x01)
+
+/** KWAJ optional header flag: unknown 2-byte structure is included */
+#define MSKWAJ_HDR_HASUNKNOWN1 (0x02)
+
+/** KWAJ optional header flag: unknown multi-sized structure is included */
+#define MSKWAJ_HDR_HASUNKNOWN2 (0x04)
+
+/** KWAJ optional header flag: file name (no extension) is included */
+#define MSKWAJ_HDR_HASFILENAME (0x08)
+
+/** KWAJ optional header flag: file extension is included */
+#define MSKWAJ_HDR_HASFILEEXT (0x10)
+
+/** KWAJ optional header flag: extra text is included */
+#define MSKWAJ_HDR_HASEXTRATEXT (0x20)
+
+/**
+ * A structure which represents an KWAJ compressed file.
+ *
+ * All fields are READ ONLY.
+ */
+struct mskwajd_header {
+  /** The compression type; should be one of #MSKWAJ_COMP_NONE,
+   * #MSKWAJ_COMP_XOR, #MSKWAJ_COMP_SZDD or #MSKWAJ_COMP_LZH
+   */
+  unsigned short comp_type;
+
+  /** The offset in the file where the compressed data stream begins */
+  off_t data_offset;
+
+  /** Flags indicating which optional headers were included. */
+  int headers;
+
+  /** The amount of uncompressed data in the file, or 0 if not present. */
+  off_t length;
+
+  /** output filename, or NULL if not present */
+  char *filename;
+
+  /** extra uncompressed data (usually text) in the header.
+   * This data can contain nulls so use extra_length to get the size.
+   */
+  char *extra;
+
+  /** length of extra uncompressed data in the header */
+  unsigned short extra_length;
 };
 
-/** TODO */
+/**
+ * A compressor for the KWAJ file format.
+ *
+ * All fields are READ ONLY.
+ *
+ * @see mspack_create_kwaj_compressor(), mspack_destroy_kwaj_compressor()
+ */
+struct mskwaj_compressor {
+  /**
+   * Reads an input file and creates a compressed output file in the
+   * KWAJ compressed file format. The KWAJ compression format is quick
+   * but gives poor compression. It is possible for the compressed output
+   * file to be larger than the input file.
+   *
+   * @param  self    a self-referential pointer to the mskwaj_compressor
+   *                 instance being called
+   * @param  input   the name of the file to compressed. This is passed
+   *                 passed directly to mspack_system::open()
+   * @param  output  the name of the file to write compressed data to.
+   *                 This is passed directly to mspack_system::open().
+   * @param  length  the length of the uncompressed file, or -1 to indicate
+   *                 that this should be determined automatically by using
+   *                 mspack_system::seek() on the input file.
+   * @return an error code, or MSPACK_ERR_OK if successful
+   * @see set_param()
+   */
+  int (*compress)(struct mskwaj_compressor *self,
+		  char *input,
+		  char *output,
+		  off_t length);
+
+  /**
+   * Sets an KWAJ compression engine parameter.
+   *
+   * The following parameters are defined:
+   *
+   * - #MSKWAJC_PARAM_COMP_TYPE: the compression method to use. Must
+   *   be one of #MSKWAJC_COMP_NONE, #MSKWAJC_COMP_XOR, #MSKWAJ_COMP_SZDD
+   *   or #MSKWAJ_COMP_LZH. The default is #MSKWAJ_COMP_LZH.
+   *
+   * - #MSKWAJC_PARAM_INCLUDE_LENGTH: a boolean; should the compressed
+   *   output file should include the uncompressed length of the input
+   *   file in the header? This adds 4 bytes to the size of the output
+   *   file. A value of zero says "no", non-zero says "yes". The default
+   *   is "no".
+   *
+   * @param  self     a self-referential pointer to the mskwaj_compressor
+   *                  instance being called
+   * @param  param    the parameter to set
+   * @param  value    the value to set the parameter to
+   * @return MSPACK_ERR_OK if all is OK, or MSPACK_ERR_ARGS if there
+   *         is a problem with either parameter or value.
+   * @see generate()
+   */
+  int (*set_param)(struct mskwaj_compressor *self,
+		   int param,
+		   unsigned int value);
+
+
+  /**
+   * Sets the original filename of the file before compression,
+   * which will be stored in the header of the output file.
+   *
+   * The filename should be a null-terminated string, it must be an
+   * MS-DOS "8.3" type filename (up to 8 bytes for the filename, then
+   * optionally a "." and up to 3 bytes for a filename extension).
+   *
+   * If NULL is passed as the filename, no filename is included in the
+   * header. This is the default.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_compressor
+   *                  instance being called
+   * @param  filename the original filename to use
+   * @return MSPACK_ERR_OK if all is OK, or MSPACK_ERR_ARGS if the
+   *         filename is too long
+   */
+  int (*set_filename)(struct mskwaj_compressor *self,
+		      char *filename);
+
+  /**
+   * Sets arbitrary data that will be stored in the header of the
+   * output file, uncompressed. It can be up to roughly 64 kilobytes,
+   * as the overall size of the header must not exceed 65535 bytes.
+   * The data can contain null bytes if desired.
+   *
+   * If NULL is passed as the data pointer, or zero is passed as the
+   * length, no extra data is included in the header. This is the
+   * default.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_compressor
+   *                  instance being called
+   * @param  data     a pointer to the data to be stored in the header
+   * @param  bytes    the length of the data in bytes
+   * @return MSPACK_ERR_OK if all is OK, or MSPACK_ERR_ARGS extra data
+   *         is too long
+   */
+  int (*set_extra_data)(struct mskwaj_compressor *self,
+			void *data,
+			size_t bytes);
+
+  /**
+   * Returns the error code set by the most recently called method.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_compressor
+   *                  instance being called
+   * @return the most recent error code
+   * @see compress()
+   */
+  int (*last_error)(struct mschm_decompressor *self);
+};
+
+/**
+ * A decompressor for KWAJ compressed files.
+ *
+ * All fields are READ ONLY.
+ *
+ * @see mspack_create_kwaj_decompressor(), mspack_destroy_kwaj_decompressor()
+ */
 struct mskwaj_decompressor {
-  int dummy; 
+  /**
+   * Opens a KWAJ file and reads the header.
+   *
+   * If the file opened is a valid KWAJ file, all headers will be read and
+   * a mskwajd_header structure will be returned.
+   *
+   * In the case of an error occuring, NULL is returned and the error code
+   * is available from last_error().
+   *
+   * The filename pointer should be considered "in use" until close() is
+   * called on the KWAJ file.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_decompressor
+   *                  instance being called
+   * @param  filename the filename of the KWAJ compressed file. This is
+   *                  passed directly to mspack_system::open().
+   * @return a pointer to a mskwajd_header structure, or NULL on failure
+   * @see close()
+   */
+  struct mskwajd_header *(*open)(struct mskwaj_decompressor *self,
+				 char *filename);
+
+  /**
+   * Closes a previously opened KWAJ file.
+   *
+   * This closes a KWAJ file and frees the mskwajd_header associated
+   * with it. The KWAJ header pointer is now invalid and cannot be
+   * used again.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_decompressor
+   *                  instance being called
+   * @param  kwaj     the KWAJ file to close
+   * @see open()
+   */
+  void (*close)(struct mskwaj_decompressor *self,
+		struct mskwajd_header *kwaj);
+
+  /**
+   * Extracts the compressed data from a KWAJ file.
+   *
+   * This decompresses the compressed KWAJ data stream and writes it to
+   * an output file.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_decompressor
+   *                  instance being called
+   * @param  kwaj     the KWAJ file to extract data from
+   * @param  filename the filename to write the decompressed data to. This
+   *                  is passed directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*extract)(struct mskwaj_decompressor *self,
+		 struct mskwajd_header *kwaj,
+		 char *filename);
+
+  /**
+   * Decompresses an KWAJ file to an output file in one step.
+   *
+   * This opens an KWAJ file as input, reads the header, then decompresses
+   * the compressed data immediately to an output file, finally closing
+   * both the input and output file. It is more convenient to use than
+   * open() then extract() then close(), if you do not need to know the
+   * KWAJ output size or output filename.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_decompressor
+   *                  instance being called
+   * @param  input    the filename of the input KWAJ file. This is passed
+   *                  directly to mspack_system::open().
+   * @param  output   the filename to write the decompressed data to. This
+   *                  is passed directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*decompress)(struct mskwaj_decompressor *self,
+		    char *input,
+		    char *output);
+
+  /**
+   * Returns the error code set by the most recently called method.
+   *
+   * This is useful for open() which does not return an
+   * error code directly.
+   *
+   * @param  self     a self-referential pointer to the mskwaj_decompressor
+   *                  instance being called
+   * @return the most recent error code
+   * @see open(), search()
+   */
+  int (*last_error)(struct mskwaj_decompressor *self);
 };
 
 #ifdef __cplusplus

@@ -10,31 +10,9 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include "md5.h"
+#include "error.h"
 
 #define FILENAME ".test.extract"
-
-char *error_msg(struct mscab_decompressor *cabd) {
-    static char buf[32];
-    int error = cabd->last_error(cabd);
-
-    switch (error) {
-    case MSPACK_ERR_OK:         return "no error";
-    case MSPACK_ERR_ARGS:       return "bad arguments to library function";
-    case MSPACK_ERR_OPEN:       return "error opening file";
-    case MSPACK_ERR_READ:       return "read error";
-    case MSPACK_ERR_WRITE:      return "write error";
-    case MSPACK_ERR_SEEK:       return "seek error";
-    case MSPACK_ERR_NOMEMORY:   return "out of memory";
-    case MSPACK_ERR_SIGNATURE:  return "bad signature";
-    case MSPACK_ERR_DATAFORMAT: return "error in data format";
-    case MSPACK_ERR_CHECKSUM:   return "checksum error";
-    case MSPACK_ERR_CRUNCH:     return "compression error";
-    case MSPACK_ERR_DECRUNCH:   return "decompression error";
-    }
-
-    snprintf(buf, sizeof(buf), "unknown error %d", error);
-    return buf;
-}
 
 /**
  * Matches a cabinet's filename case-insensitively in the filesystem and
@@ -123,7 +101,7 @@ int main(int argc, char *argv[]) {
 	printf("*** %s\n", cabname);
 
 	if (!(cab = cabd->open(cabd, cabname))) {
-	    fprintf(stderr, "cab open error: %s\n", error_msg(cabd));
+	    fprintf(stderr, "cab open error: %s\n", ERROR(cabd));
 	    continue;
 	}
 
@@ -136,12 +114,12 @@ int main(int argc, char *argv[]) {
 	    }
 	    if (!(c2 = cabd->open(cabd, newname))) {
 		fprintf(stderr, "%s: error opening \"%s\" for prepend: %s\n",
-			cabname, newname, error_msg(cabd));
+			cabname, newname, ERROR(cabd));
 		break;
 	    }
 	    if (cabd->prepend(cabd, c, c2) != MSPACK_ERR_OK) {
 		fprintf(stderr, "%s: error prepending \"%s\": %s\n",
-			cabname, newname, error_msg(cabd));
+			cabname, newname, ERROR(cabd));
 		break;
 	    }
 	}
@@ -155,12 +133,12 @@ int main(int argc, char *argv[]) {
 	    }
 	    if (!(c2 = cabd->open(cabd, newname))) {
 		fprintf(stderr, "%s: error opening \"%s\" for append: %s\n",
-			cabname, newname, error_msg(cabd));
+			cabname, newname, ERROR(cabd));
 		break;
 	    }
 	    if (cabd->append(cabd, c, c2) != MSPACK_ERR_OK) {
 		fprintf(stderr, "%s: error appending \"%s\": %s\n",
-			cabname, newname, error_msg(cabd));
+			cabname, newname, ERROR(cabd));
 		break;
 	    }
 	}
@@ -169,7 +147,7 @@ int main(int argc, char *argv[]) {
 	for (file = cab->files; file; file = file->next ) {
 	    if (cabd->extract(cabd, file, FILENAME) != MSPACK_ERR_OK) {
 		fprintf(stderr, "%s: error extracting \"%s\": %s\n",
-			cabname, file->filename, error_msg(cabd));
+			cabname, file->filename, ERROR(cabd));
 		continue;
 	    }
 	    if ((fh = fopen(FILENAME, "rb"))) {
