@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
 	/* EXTRACT OUT OF ORDER [alpha ordered returned by open()] */
 	for (file=chm->files; file; file = file->next) {
 	  if (chmd->extract(chmd, file, FILENAME)) {
-	    printf("%s: extract error on \"%s\": %s\n",
-		   *argv, file->filename, ERROR(chmd));
+	    fprintf(stderr, "%s: extract error on \"%s\": %s\n",
+		    *argv, file->filename, ERROR(chmd));
 	    exit(1);
 	  }
 	  if ((fh = fopen(FILENAME, "rb"))) {
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
 	  qsort(f, numf, sizeof(struct mschmd_file *), &sortfunc);
 	  for (i = 0; i < numf; i++) {
 	    if (chmd->extract(chmd, f[i], ".test")) {
-	      printf("%s: extract error on \"%s\": %s\n",
-		     *argv, f[i]->filename, ERROR(chmd));
+	      fprintf(stderr, "%s: extract error on \"%s\": %s\n",
+		      *argv, f[i]->filename, ERROR(chmd));
 	      exit(1);
 	    }
 	  }
@@ -75,10 +75,13 @@ int main(int argc, char *argv[]) {
 	chmd->close(chmd, chm);
       }
       else {
-	printf("%s: can't open -- %s\n", *argv, ERROR(chmd));
+	fprintf(stderr, "%s: can't open -- %s\n", *argv, ERROR(chmd));
       }
     }
     mspack_destroy_chm_decompressor(chmd);
+  }
+  else {
+    fprintf(stderr, "%s: can't make CHM decompressor\n", *argv);
   }
   return 0;
 }
