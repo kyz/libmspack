@@ -1,3 +1,7 @@
+2010-07-07:  Stuart Caie <kyzer@4u.net>
+
+        * doc/szdd_kwaj_format.html: explain SZDD/KWAJ file format.
+
 2010-07-06:  Stuart Caie <kyzer@4u.net>
 
 	* many files: added SZDD and KWAJ decompression support.
