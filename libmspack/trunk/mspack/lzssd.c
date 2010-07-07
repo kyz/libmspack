@@ -58,7 +58,7 @@ int lzss_decompress(struct mspack_system *system,
     /* initialise decompression */
     inbuf = &window[LZSS_WINDOW_SIZE];
     memset(window, LZSS_WINDOW_FILL, (size_t) LZSS_WINDOW_SIZE);
-    pos = LZSS_WINDOW_SIZE - (mode == LZSS_MODE_QBASIC) ? 18 : 16;
+    pos = LZSS_WINDOW_SIZE - ((mode == LZSS_MODE_QBASIC) ? 18 : 16);
     invert = (mode == LZSS_MODE_MSHELP) ? ~0 : 0;
     i_ptr = i_end = &inbuf[0];
 
@@ -67,22 +67,22 @@ int lzss_decompress(struct mspack_system *system,
 	ENSURE_BYTES; c = *i_ptr++ ^ invert;
 	for (i = 0x01; i & 0xFF; i <<= 1) {
 	    if (c & i) {
+		/* literal */
+		ENSURE_BYTES; window[pos] = *i_ptr++;
+		WRITE_BYTE;
+		pos++; pos &= LZSS_WINDOW_SIZE - 1;
+	    }
+	    else {
 		/* match */
 		ENSURE_BYTES; mpos = *i_ptr++;
-		ENSURE_BYTES; mpos |= (*i_ptr++ & 0xF0) << 4;
-		len = (*i_ptr & 0x0F) + 3;
+		ENSURE_BYTES; mpos |= (*i_ptr & 0xF0) << 4;
+		len = (*i_ptr++ & 0x0F) + 3;
 		while (len--) {
 		    window[pos] = window[mpos];
 		    WRITE_BYTE;
 		    pos++;  pos  &= LZSS_WINDOW_SIZE - 1;
 		    mpos++; mpos &= LZSS_WINDOW_SIZE - 1;
 		}
-	    }
-	    else {
-		/* literal */
-		ENSURE_BYTES; window[pos] = *i_ptr++;
-		WRITE_BYTE;
-		pos++; pos &= LZSS_WINDOW_SIZE - 1;
 	    }
 	}
     }

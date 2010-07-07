@@ -108,6 +108,10 @@ memset<span class="br0">&#40;</span>window<span class="sy0">,</span> <span class
     <span class="kw1">if</span> <span class="br0">&#40;</span>control <span class="sy0">==</span> EOF<span class="br0">&#41;</span> <span class="kw2">break</span><span class="sy0">;</span> <span class="coMULTI">/* exit if no more to read */</span>
     <span class="kw1">for</span> <span class="br0">&#40;</span><span class="kw4">int</span> cbit <span class="sy0">=</span> <span class="nu12">0x01</span><span class="sy0">;</span> cbit <span class="sy0">&amp;</span> <span class="nu12">0xFF</span><span class="sy0">;</span> cbit <span class="sy0">&lt;&lt;=</span> <span class="nu0">1</span><span class="br0">&#41;</span> <span class="br0">&#123;</span>
         <span class="kw1">if</span> <span class="br0">&#40;</span>control <span class="sy0">&amp;</span> cbit<span class="br0">&#41;</span> <span class="br0">&#123;</span>
+            <span class="coMULTI">/* literal */</span>
+            PUTBYTE<span class="br0">&#40;</span>window<span class="br0">&#91;</span>pos<span class="sy0">++</span><span class="br0">&#93;</span> <span class="sy0">=</span> GETBYTE<span class="br0">&#40;</span><span class="br0">&#41;</span><span class="br0">&#41;</span><span class="sy0">;</span>
+        <span class="br0">&#125;</span>
+        <span class="kw1">else</span> <span class="br0">&#123;</span>
             <span class="coMULTI">/* match */</span>
             <span class="kw4">int</span> matchpos <span class="sy0">=</span> GETBYTE<span class="br0">&#40;</span><span class="br0">&#41;</span><span class="sy0">;</span>
             <span class="kw4">int</span> matchlen <span class="sy0">=</span> GETBYTE<span class="br0">&#40;</span><span class="br0">&#41;</span><span class="sy0">;</span>
@@ -117,10 +121,6 @@ memset<span class="br0">&#40;</span>window<span class="sy0">,</span> <span class
                 PUTBYTE<span class="br0">&#40;</span>window<span class="br0">&#91;</span>pos<span class="sy0">++</span><span class="br0">&#93;</span> <span class="sy0">=</span> window<span class="br0">&#91;</span>matchpos<span class="sy0">++</span><span class="br0">&#93;</span><span class="br0">&#41;</span><span class="sy0">;</span>
                 pos <span class="sy0">&amp;=</span> <span class="nu0">4095</span><span class="sy0">;</span> matchpos <span class="sy0">&amp;=</span> <span class="nu0">4095</span><span class="sy0">;</span>
             <span class="br0">&#125;</span>
-        <span class="br0">&#125;</span>
-        <span class="kw1">else</span> <span class="br0">&#123;</span>
-            <span class="coMULTI">/* literal */</span>
-            PUTBYTE<span class="br0">&#40;</span>window<span class="br0">&#91;</span>pos<span class="sy0">++</span><span class="br0">&#93;</span> <span class="sy0">=</span> GETBYTE<span class="br0">&#40;</span><span class="br0">&#41;</span><span class="br0">&#41;</span><span class="sy0">;</span>
         <span class="br0">&#125;</span>
     <span class="br0">&#125;</span>
 <span class="br0">&#125;</span></pre></div></div>
