@@ -1,0 +1,16 @@
+#!/usr/bin/perl -w
+# put hh.exe, hhctrl.ocx and itss.dll into this directory
+# for this script to work
+
+use strict;
+use File::Temp qw(tempdir);
+
+die "Usage: $0 <file.chm>\n" unless @ARGV == 1;
+my $hh = $0; $hh =~ s{[^/]+$}{hh.exe};
+my $dir = tempdir("./.tempXXXX", CLEANUP => 1);
+
+$ENV{LANG} = 'C';
+$ENV{WINEDLLOVERRIDES}='hhctrl.ocx,itss=n';
+print "*** $ARGV[0]\n";
+system("wine $hh -decompile $dir $ARGV[0] 1>&2 && " .
+       "cd $dir && find * -type f -print0 | xargs -0 md5sum");
