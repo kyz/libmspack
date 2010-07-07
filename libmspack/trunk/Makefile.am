@@ -3,7 +3,8 @@ if DEBUG
 MSPACK_FLAGS = -DDEBUG
 endif
 
-EXTRA_DIST =		debian doc/Doxyfile.in doc/Makefile.in test/test_files
+EXTRA_DIST =		debian doc/Doxyfile.in doc/Makefile.in \
+			doc/szdd_kwaj_format.html test/test_files
 pkgconfigdir =		$(libdir)/pkgconfig
 pkgconfig_DATA = 	libmspack.pc
 
