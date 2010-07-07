@@ -4,6 +4,12 @@
 
 	* lzssd.c: fixed SZDD decompression bugs.
 
+	* test/chmd_compare: Add scripts for comparing chmd_md5 against
+	Microsoft's own code.
+
+	* test/chmd_md5.c: remove the need to decompress everything
+	twice, as this is already in chmx.c if needed.
+
 2010-07-06:  Stuart Caie <kyzer@4u.net>
 
 	* many files: added SZDD and KWAJ decompression support.
