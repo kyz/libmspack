@@ -1,6 +1,8 @@
 2010-07-07:  Stuart Caie <kyzer@4u.net>
 
-        * doc/szdd_kwaj_format.html: explain SZDD/KWAJ file format.
+	* doc/szdd_kwaj_format.html: explain SZDD/KWAJ file format.
+
+	* lzssd.c: fixed SZDD decompression bugs.
 
 2010-07-06:  Stuart Caie <kyzer@4u.net>
 
