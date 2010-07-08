@@ -7,8 +7,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <mspack.h>
-#include "md5.h"
-#include "error.h"
+
+#include <md5.h>
+#include <error.h>
 
 #define FILENAME ".test.chmd"
 

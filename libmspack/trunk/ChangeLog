@@ -7,6 +7,9 @@
 	write() implementations treat negative sizes it as a large
 	positive integer and segfault trying to write the buffer.
 
+	* Makefile.am, test/*.c: fixed automake file so that the
+	package passes a "make distcheck".
+
 2010-07-07:  Stuart Caie <kyzer@4u.net>
 
 	* doc/szdd_kwaj_format.html: explain SZDD/KWAJ file format.
