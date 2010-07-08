@@ -1,3 +1,12 @@
+2010-07-08:  Stuart Caie <kyzer@4u.net>
+
+	* qtmd.c: Larry Frieson found an important bug in the Quantum
+	decoder. Window wraps flush all unwritten data to disk.
+	However, sometimes less data is needed, which makes
+	out_bytes negative, which is then passed to write(). Some
+	write() implementations treat negative sizes it as a large
+	positive integer and segfault trying to write the buffer.
+
 2010-07-07:  Stuart Caie <kyzer@4u.net>
 
 	* doc/szdd_kwaj_format.html: explain SZDD/KWAJ file format.

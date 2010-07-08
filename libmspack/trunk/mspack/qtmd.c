@@ -363,6 +363,16 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 
 	  /* flush currently stored data */
 	  i = (&window[qtm->window_size] - qtm->o_ptr);
+
+	  /* this should not happen, but if it does then this code
+	   * can't handle the situation (can't flush up to the end of
+	   * the window, but can't break out either because we haven't
+	   * finished writing the match). bail out in this case */
+	  if (i > out_bytes) {
+	    D(("during window-wrap match; %d bytes to flush but only need %d",
+	       i, (int) out_bytes))
+	    return qtm->error = MSPACK_ERR_DECRUNCH;
+	  }
 	  if (qtm->sys->write(qtm->output, qtm->o_ptr, i) != i) {
 	    return qtm->error = MSPACK_ERR_WRITE;
 	  }
@@ -433,6 +443,8 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
     if (window_posn == qtm->window_size) {
       /* flush all currently stored data */
       i = (qtm->o_end - qtm->o_ptr);
+      /* break out if we have more than enough to finish this request */
+      if (i >= out_bytes) break;
       if (qtm->sys->write(qtm->output, qtm->o_ptr, i) != i) {
 	return qtm->error = MSPACK_ERR_WRITE;
       }
