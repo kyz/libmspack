@@ -9,8 +9,9 @@
 #include <mspack.h>
 #include <ctype.h>
 #include <sys/stat.h>
-#include "md5.h"
-#include "error.h"
+
+#include <md5.h>
+#include <error.h>
 
 mode_t user_umask;
 

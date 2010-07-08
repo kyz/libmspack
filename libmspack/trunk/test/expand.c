@@ -7,8 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #include <mspack.h>
-#include "error.h"
+#include <error.h>
 
 int main(int argc, char *argv[]) {
     struct msszdd_decompressor *szddd;

@@ -12,7 +12,9 @@ dist-hook:
 	-rm -f $(distdir)/*.la
 
 AM_CFLAGS =		-std=c99 -Wall -Wsign-compare -Wconversion -pedantic \
-			-I$(srcdir)/mspack $(MSPACK_FLAGS)
+			$(MSPACK_FLAGS)
+INCLUDES =		-I$(top_srcdir)/mspack -I$(top_srcdir)/test 
+CLEANFILES =		test/.libs/expand
 
 lib_LTLIBRARIES =	libmspack.la
 include_HEADERS =	mspack/mspack.h
@@ -54,16 +56,16 @@ libmschmd_la_SOURCES =	mspack/mspack.h \
 			mspack/readbits.h mspack/readhuff.h
 libmschmd_la_LDFLAGS =	-export-symbols-regex '^mspack_'
 
-test_chmx_SOURCES =	test/chmx.c libmschmd.la
+test_chmx_SOURCES =	test/chmx.c test/error.h libmschmd.la
 test_chmx_LDADD =	libmschmd.la
 
-test_chmd_md5_SOURCES =	test/chmd_md5.c test/md5.c test/md5.h libmschmd.la
+test_chmd_md5_SOURCES =	test/chmd_md5.c test/md5.c test/md5.h \
+			test/error.h libmschmd.la
 test_chmd_md5_LDADD =	libmschmd.la
 
-test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c test/md5.h libmscabd.la
+test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c test/md5.h \
+			test/error.h libmscabd.la
 test_cabd_md5_LDADD =	libmscabd.la
-
-test_cabextract_md5_SOURCES = test/cabextract_md5.c test/md5.c test/md5.h
 
 test_cabd_test_SOURCES=	test/cabd_test.c libmscabd.la
 test_cabd_test_LDADD = 	libmscabd.la
@@ -74,11 +76,11 @@ test_cabrip_LDADD =	libmscabd.la
 test_cabd_memory_SOURCES = test/cabd_memory.c libmscabd.la
 test_cabd_memory_LDADD = libmscabd.la
 
-test_chminfo_SOURCES = test/chminfo.c libmschmd.la
-test_chminfo_LDADD   = libmschmd.la
+test_chminfo_SOURCES =	test/chminfo.c libmschmd.la
+test_chminfo_LDADD =	libmschmd.la
 
-test_multifh_SOURCES = test/multifh.c libmscabd.la
-test_multifh_LDADD =  libmscabd.la
+test_multifh_SOURCES =	test/multifh.c libmscabd.la
+test_multifh_LDADD =	libmscabd.la
 
-test_expand_SOURCES = test/expand.c libmspack.la
-test_expand_LDADD = libmspack.la
+test_expand_SOURCES =	test/expand.c test/error.h libmspack.la
+test_expand_LDADD =	libmspack.la
