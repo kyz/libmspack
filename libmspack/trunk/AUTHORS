@@ -9,3 +9,4 @@ Contributors:
 - Huffman table builder adapted from unlzx by Dave Tritscher
 - LZX decompressor fixes by Jae Jung and Igor Glucksmann
 - Debianisation by Markus Sinner
+- Quantum decompressor fix by Larry Frieson
