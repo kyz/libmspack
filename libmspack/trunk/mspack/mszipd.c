@@ -436,7 +436,7 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
     zip->bytes_output = 0;
     STORE_BITS;
     if ((error = inflate(zip))) {
-      D(("inflate error %d", i))
+      D(("inflate error %d", error))
       if (zip->repair_mode) {
 	zip->sys->message(NULL, "MSZIP error, %u bytes of data lost.",
 			  MSZIP_FRAME_SIZE - zip->bytes_output);
