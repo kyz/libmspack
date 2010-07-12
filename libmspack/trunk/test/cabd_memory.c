@@ -59,7 +59,7 @@ static void mem_close(struct mem_file *fh) {
 
 static int mem_read(struct mem_file *fh, void *buffer, int bytes) {
   int todo;
-  if (!fh) return -1;
+  if (!fh || !buffer || bytes < 0) return -1;
   todo = fh->length - fh->posn;
   if (todo > bytes) todo = bytes;
   if (todo > 0) mem_copy(&fh->data[fh->posn], buffer, (size_t) todo);
@@ -68,7 +68,7 @@ static int mem_read(struct mem_file *fh, void *buffer, int bytes) {
 
 static int mem_write(struct mem_file *fh, void *buffer, int bytes) {
   int todo;
-  if (!fh) return -1;
+  if (!fh || !buffer || bytes < 0) return -1;
   todo = fh->length - fh->posn;
   if (todo > bytes) todo = bytes;
   if (todo > 0) mem_copy(buffer, &fh->data[fh->posn], (size_t) todo);

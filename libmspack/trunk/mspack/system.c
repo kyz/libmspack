@@ -135,7 +135,7 @@ static void msp_close(struct mspack_file *file) {
 
 static int msp_read(struct mspack_file *file, void *buffer, int bytes) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this) {
+  if (this && buffer && bytes >= 0) {
     size_t count = fread(buffer, 1, (size_t) bytes, this->fh);
     if (!ferror(this->fh)) return (int) count;
   }
@@ -144,7 +144,7 @@ static int msp_read(struct mspack_file *file, void *buffer, int bytes) {
 
 static int msp_write(struct mspack_file *file, void *buffer, int bytes) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this) {
+  if (this && buffer && bytes >= 0) {
     size_t count = fwrite(buffer, 1, (size_t) bytes, this->fh);
     if (!ferror(this->fh)) return (int) count;
   }

@@ -1141,7 +1141,7 @@ static void cabx_close(struct mspack_file *file) {
 
 static int cabx_read(struct mspack_file *file, void *buffer, int bytes) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this && this->regular_file) {
+  if (this && this->regular_file && buffer && bytes >= 0) {
     size_t count = fread(buffer, 1, (size_t) bytes, this->fh);
     if (!ferror(this->fh)) return (int) count;
   }
@@ -1150,7 +1150,7 @@ static int cabx_read(struct mspack_file *file, void *buffer, int bytes) {
 
 static int cabx_write(struct mspack_file *file, void *buffer, int bytes) {
   struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this) {
+  if (this && buffer && bytes >= 0) {
     if (this->name == TEST_FNAME) {
       md5_process_bytes(buffer, (size_t) bytes, &md5_context);
       return bytes;
