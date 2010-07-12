@@ -2,6 +2,9 @@
 
 	* system.c: Reject reading/writing a negative number of bytes.
 
+	* chmd.c: allow zero-length files to be seen. Previously they were
+	skipped because they were mistaken for directory entries.
+
 2010-07-08:  Stuart Caie <kyzer@4u.net>
 
 	* qtmd.c: Larry Frieson found an important bug in the Quantum
