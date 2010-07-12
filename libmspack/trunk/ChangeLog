@@ -1,3 +1,7 @@
+2010-07-12:  Stuart Caie <kyzer@4u.net>
+
+	* system.c: Reject reading/writing a negative number of bytes.
+
 2010-07-08:  Stuart Caie <kyzer@4u.net>
 
 	* qtmd.c: Larry Frieson found an important bug in the Quantum

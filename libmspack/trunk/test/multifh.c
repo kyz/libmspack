@@ -170,7 +170,7 @@ static void m_close(struct m_file *fh) {
 
 
 static int m_read(struct m_file *fh, void *buffer, int bytes) {
-  if (!fh || !fh->file) return -1;
+  if (!fh || !fh->file || !buffer || bytes < 0) return -1;
 
   if (fh->file->type == MTYPE_MEMORY) {
     int count = fh->file->x.memory.length - fh->x.position;
@@ -190,7 +190,7 @@ static int m_read(struct m_file *fh, void *buffer, int bytes) {
 
 
 static int m_write(struct m_file *fh, void *buffer, int bytes) {
-  if (!fh || !fh->file) return -1;
+  if (!fh || !fh->file || !buffer || bytes < 0) return -1;
 
   if (fh->file->type == MTYPE_MEMORY) {
     int count = fh->file->x.memory.length - fh->x.position;
