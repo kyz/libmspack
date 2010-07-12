@@ -1,6 +1,14 @@
 #!/usr/bin/perl -w
 # put hh.exe, hhctrl.ocx and itss.dll into this directory
-# for this script to work
+# for this script to work. You can get them by downloading
+# the HTML Help Workshop from Microsoft and then doing:
+#   $ cabextract -F 'hh*' htmlhelp.exe
+#   $ cabextract -F itircl.dll hhupd.exe
+#   $ cabextract -F itss.dll hhupd.exe
+#   $ cp -a itircl.dll ~/.wine/drive_c/windows/system32/
+#   $ cp -a itss.dll ~/.wine/drive_c/windows/system32/
+#   $ wine regsvr32 /s 'C:\WINDOWS\SYSTEM32\itircl.dll'
+#   $ wine regsvr32 /s 'C:\WINDOWS\SYSTEM32\itss.dll'
 
 use strict;
 use File::Temp qw(tempdir);
