@@ -15,8 +15,8 @@
 #include <system.h>
 #include <lzx.h>
 
-/* Microsoft's LZX document and their implementation of the
- * com.ms.util.cab Java package do not concur.
+/* Microsoft's LZX document (in cab-sdk.exe) and their implementation
+ * of the com.ms.util.cab Java package do not concur.
  *
  * In the LZX document, there is a table showing the correlation between
  * window size and the number of position slots. It states that the 1MB
@@ -58,6 +58,21 @@
  * least one element. However, many CAB files contain blocks where the
  * length tree is completely empty (because there are no matches), and
  * this is expected to succeed.
+ *
+ * The errors in LZX documentation appear have been corrected in the
+ * new documentation for the LZX DELTA format.
+ *
+ *     http://msdn.microsoft.com/en-us/library/cc483133.aspx
+ *
+ * However, this is a different format, an extension of regular LZX.
+ * I have noticed the following differences, there may be more:
+ *
+ * The maximum window size has increased from 2MB to 32MB. This also
+ * increases the maximum number of position slots, etc.
+ *
+ * The format now allows for "reference data", supplied by the caller.
+ * If match offsets go further back than the number of bytes
+ * decompressed so far, that is them accessing the reference data.
  */
 
 /* import bit-reading macros and code */

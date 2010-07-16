@@ -15,13 +15,8 @@
  * and usually the last folder of each cabinet extends into the next
  * cabinet.
  *
- * For a complete description of the format, get the official Microsoft
- * CAB SDK. It can be found at the following URL:
- *
- *   http://msdn.microsoft.com/library/en-us/dncabsdk/html/cabdl.asp
- *
- * It is a self-extracting ZIP file, which can be extracted with the unzip
- * command.
+ * For a complete description of the format, see the MSDN site:
+ *   http://msdn.microsoft.com/en-us/library/cc483132.aspx
  */
 
 /* CAB decompression implementation */
