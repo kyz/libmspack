@@ -11,7 +11,7 @@ pkgconfig_DATA = 	libmspack.pc
 dist-hook:
 	-rm -f $(distdir)/*.la
 
-AM_CFLAGS =		-std=c99 -Wall -Wsign-compare -Wconversion -pedantic \
+AM_CFLAGS =		-Wall -Wsign-compare -Wconversion -pedantic \
 			$(MSPACK_FLAGS)
 INCLUDES =		-I$(top_srcdir)/mspack -I$(top_srcdir)/test 
 CLEANFILES =		test/.libs/expand

@@ -1,3 +1,17 @@
+2010-07-16:  Stuart Caie <kyzer@4u.net>
+
+	* Makefile.am: strange interactions. When -std=c99 is used,
+	my Ubuntu's <stdio.h> (libc6-dev 2.11.1-0ubuntu7.2) does NOT
+	define fseeko() unless _LARGEFILE_SOURCE is also defined. But
+	configure always uses -std=gnu99, not -std=c99, so its test
+	determines _LARGEFILE_SOURCE isn't needed but HAVE_FSEEKO is
+	true. The implicit fseeko definition has a 32-bit rather than
+	64-bit offset, which means the mode parameter is interpreted
+	as part of the offset, and the mode is taken from the stack,
+	which is generally 0 (SEEK_SET). This breaks all SEEK_CURs.
+	The code works fine when -std=c99 is not set, so just remove
+	it for the time being.
+
 2010-07-12:  Stuart Caie <kyzer@4u.net>
 
 	* system.c: Reject reading/writing a negative number of bytes.
