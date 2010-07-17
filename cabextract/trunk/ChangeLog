@@ -1,3 +1,8 @@
+2010-07-17  Stuart Caie <kyzer@4u.net>
+
+	* src/cabsplit: added new program, cabsplit, which splits cabinet
+	files into one cabinet file per folder. Useful for debugging.
+
 2010-06-17  Stuart Caie  <kyzer@4u.net>
 
 	* configure.ac: Added --external-libmspack option, which allows
