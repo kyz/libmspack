@@ -1,3 +1,10 @@
+2010-07-19  Stuart Caie <kyzer@4u.net>
+
+	* mspack: MS-ZIP recovery now recovers more bytes. Also, when a file
+	fails to unpack because of a read error during decompression, all
+	subsequent files in the same folder will give the same error, instead
+	of claiming to be OK. See mspack/ChangeLog for full details.
+
 2010-07-17  Stuart Caie <kyzer@4u.net>
 
 	* src/cabsplit: added new program, cabsplit, which splits cabinet
