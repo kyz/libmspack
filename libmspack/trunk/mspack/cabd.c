@@ -1018,6 +1018,9 @@ static int cabd_extract(struct mscab_decompressor *base,
     this->d->offset = 0;
     this->d->block  = 0;
     this->d->i_ptr = this->d->i_end = &this->d->input[0];
+
+    /* read_error lasts for the lifetime of a decompressor */
+    this->read_error = MSPACK_ERR_OK;
   }
 
   /* open file for output */
@@ -1033,20 +1036,20 @@ static int cabd_extract(struct mscab_decompressor *base,
     int error;
     /* get to correct offset.
      * - use NULL fh to say 'no writing' to cabd_sys_write()
-     * - MSPACK_ERR_READ returncode indicates error in cabd_sys_read(),
-     *   the real error will already be stored in this->error
+     * - if cabd_sys_read() has an error, it will set this->read_error
+     *   and pass back MSPACK_ERR_READ
      */
     this->d->outfh = NULL;
     if ((bytes = file->offset - this->d->offset)) {
       error = this->d->decompress(this->d->state, bytes);
-      if (error != MSPACK_ERR_READ) this->error = error;
+      this->error = (error == MSPACK_ERR_READ) ? this->read_error : error;
     }
 
     /* if getting to the correct offset was error free, unpack file */
     if (!this->error) {
       this->d->outfh = fh;
       error = this->d->decompress(this->d->state, (off_t) file->length);
-      if (error != MSPACK_ERR_READ) this->error = error;
+      this->error = (error == MSPACK_ERR_READ) ? this->read_error : error;
     }
   }
 
@@ -1158,13 +1161,13 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
 
       /* check if we're out of input blocks, advance block counter */
       if (this->d->block++ >= this->d->folder->base.num_blocks) {
-	this->error = MSPACK_ERR_DATAFORMAT;
+	this->read_error = MSPACK_ERR_DATAFORMAT;
 	break;
       }
 
       /* read a block */
-      this->error = cabd_sys_read_block(sys, this->d, &outlen, ignore_cksum);
-      if (this->error) return -1;
+      this->read_error = cabd_sys_read_block(sys, this->d, &outlen, ignore_cksum);
+      if (this->read_error) return -1;
 
       /* special Quantum hack -- trailer byte to allow the decompressor
        * to realign itself. CAB Quantum blocks, unlike LZX blocks, can have
