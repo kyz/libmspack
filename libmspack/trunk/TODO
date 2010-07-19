@@ -2,7 +2,7 @@ CAB
 - compression: everything
 
 CHM
-- compression: everything
+- compression: implementation
 - decompression: implement fast_find()
 
 HLP
@@ -12,7 +12,10 @@ LIT
 - everything
 
 SZDD
-- everything
+- compression: implementation
 
 KWAJ
+- compression: implementation
+
+WIM
 - everything
