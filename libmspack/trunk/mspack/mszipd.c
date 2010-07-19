@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2004 Stuart Caie.
+ * (C) 2003-2010 Stuart Caie.
  *
  * The deflate method was created by Phil Katz. MSZIP is equivalent to the
  * deflate method.
@@ -33,6 +33,15 @@
 #define HUFF_LEN(tbl,idx)   zip->tbl##_len[idx]
 #define HUFF_ERROR          return INF_ERR_HUFFSYM
 #include <readhuff.h>
+
+#define FLUSH_IF_NEEDED do {				\
+    if (zip->window_posn == MSZIP_FRAME_SIZE) {		\
+	if (zip->flush_window(zip, MSZIP_FRAME_SIZE)) {	\
+	    return INF_ERR_FLUSH;			\
+	}						\
+	zip->window_posn = 0;				\
+    }							\
+} while (0)
 
 /* match lengths for literal codes 257.. 285 */
 static const unsigned short lit_lengths[29] = {
@@ -201,16 +210,12 @@ static int inflate(struct mszipd_stream *zip) {
 	zip->window_posn += this_run;
 	i_ptr    += this_run;
 	length   -= this_run;
-
-	if (zip->window_posn == MSZIP_FRAME_SIZE) {
-	  if (zip->flush_window(zip, MSZIP_FRAME_SIZE)) return INF_ERR_FLUSH;
-	  zip->window_posn = 0;
-	}
+	FLUSH_IF_NEEDED;
       }
     }
     else if ((block_type == 1) || (block_type == 2)) {
       /* Huffman-compressed LZ77 block */
-      unsigned int window_posn, match_posn, code;
+      unsigned int match_posn, code;
 
       if (block_type == 1) {
 	/* block with fixed Huffman codes */
@@ -243,15 +248,11 @@ static int inflate(struct mszipd_stream *zip) {
       }
 
       /* decode forever until end of block code */
-      window_posn = zip->window_posn;
-      while (1) {
+      for (;;) {
 	READ_HUFFSYM(LITERAL, code);
 	if (code < 256) {
-	  zip->window[window_posn++] = (unsigned char) code;
-	  if (window_posn == MSZIP_FRAME_SIZE) {
-	    if (zip->flush_window(zip, MSZIP_FRAME_SIZE)) return INF_ERR_FLUSH;
-	    window_posn = 0;
-	  }
+	  zip->window[zip->window_posn++] = (unsigned char) code;
+	  FLUSH_IF_NEEDED;
 	}
 	else if (code == 256) {
 	  /* END OF BLOCK CODE: loop break point */
@@ -271,21 +272,16 @@ static int inflate(struct mszipd_stream *zip) {
 	  /* match position is window position minus distance. If distance
 	   * is more than window position numerically, it must 'wrap
 	   * around' the frame size. */ 
-	  match_posn = ((distance > window_posn) ? MSZIP_FRAME_SIZE : 0)
-	    + window_posn - distance;
+	  match_posn = ((distance > zip->window_posn) ? MSZIP_FRAME_SIZE : 0)
+	    + zip->window_posn - distance;
 
 	  /* copy match */
 	  if (length < 12) {
 	    /* short match, use slower loop but no loop setup code */
 	    while (length--) {
-	      zip->window[window_posn++] = zip->window[match_posn++];
+	      zip->window[zip->window_posn++] = zip->window[match_posn++];
 	      match_posn &= MSZIP_FRAME_SIZE - 1;
-
-	      if (window_posn == MSZIP_FRAME_SIZE) {
-		if (zip->flush_window(zip, MSZIP_FRAME_SIZE))
-		  return INF_ERR_FLUSH;
-		window_posn = 0;
-	      }
+	      FLUSH_IF_NEEDED;
 	    }
 	  }
 	  else {
@@ -295,28 +291,21 @@ static int inflate(struct mszipd_stream *zip) {
 	      this_run = length;
 	      if ((match_posn + this_run) > MSZIP_FRAME_SIZE)
 		this_run = MSZIP_FRAME_SIZE - match_posn;
-	      if ((window_posn + this_run) > MSZIP_FRAME_SIZE)
-		this_run = MSZIP_FRAME_SIZE - window_posn;
+	      if ((zip->window_posn + this_run) > MSZIP_FRAME_SIZE)
+		this_run = MSZIP_FRAME_SIZE - zip->window_posn;
 
-	      rundest = &zip->window[window_posn]; window_posn += this_run;
+	      rundest = &zip->window[zip->window_posn]; zip->window_posn += this_run;
 	      runsrc  = &zip->window[match_posn];  match_posn  += this_run;
 	      length -= this_run;
 	      while (this_run--) *rundest++ = *runsrc++;
-
-	      /* flush if necessary */
-	      if (window_posn == MSZIP_FRAME_SIZE) {
-		if (zip->flush_window(zip, MSZIP_FRAME_SIZE))
-		  return INF_ERR_FLUSH;
-		window_posn = 0;
-	      }
 	      if (match_posn == MSZIP_FRAME_SIZE) match_posn = 0;
+	      FLUSH_IF_NEEDED;
 	    } while (length > 0);
 	  }
 
 	} /* else (code >= 257) */
 
-      } /* while (forever) -- break point at 'code == 256' */
-      zip->window_posn = window_posn;
+      } /* for(;;) -- break point at 'code == 256' */
     }
     else {
       /* block_type == 3 -- bad block type */
@@ -438,6 +427,10 @@ int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes) {
     if ((error = inflate(zip))) {
       D(("inflate error %d", error))
       if (zip->repair_mode) {
+	/* recover partially-inflated buffers */
+	if (zip->bytes_output == 0 && zip->window_posn > 0) {
+	  zip->flush_window(zip, zip->window_posn);
+	}
 	zip->sys->message(NULL, "MSZIP error, %u bytes of data lost.",
 			  MSZIP_FRAME_SIZE - zip->bytes_output);
 	for (i = zip->bytes_output; i < MSZIP_FRAME_SIZE; i++) {
