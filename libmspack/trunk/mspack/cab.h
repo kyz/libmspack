@@ -101,7 +101,7 @@ struct mscab_decompressor_p {
   struct mscabd_decompress_state *d;
   struct mspack_system *system;
   int param[3]; /* !!! MATCH THIS TO NUM OF PARAMS IN MSPACK.H !!! */
-  int error;
+  int error, read_error;
 };
 
 struct mscabd_cabinet_p {

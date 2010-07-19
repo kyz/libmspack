@@ -1,3 +1,15 @@
+2010-07-18:  Stuart Caie <kyzer@4u.net>
+
+	* cabd.c: Special logic to pass cabd_sys_read() errors back
+	to cabd_extract() wasn't compatible with the decompressor
+	logic of returning the same error repeatedly once unpacking
+	fails. This meant that if decompressing failed because of
+	a read error, then the next file in the same folder would
+	come back as "no error", but the decompressed wouldn't have
+	even attempted to decompress the file. Added a new state
+	variable, read_error, with the same lifespan as a decompressor,
+	to pass the underlying reason for MSPACK_ERR_READ errors back.
+
 2010-07-16:  Stuart Caie <kyzer@4u.net>
 
 	* Makefile.am: strange interactions. When -std=c99 is used,
