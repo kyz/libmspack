@@ -1,4 +1,4 @@
-libmspack, alpha release
+libmspack 0.2alpha
 
 The purpose of libmspack is to provide compressors and decompressors,
 archivers and dearchivers for Microsoft compression formats: CAB, CHM,
@@ -36,12 +36,12 @@ make install
 This will install the main libmspack library and mspack.h header file.
 Some other libraries and executables are built, but not installed.
 
-If building from CVS, running rebuild.sh will create all the automatically
-generated files like the configure script, and will then ./configure, make
-and make distcheck. Running cleanup.sh will perform a thorough clean,
-deleting all automatically generated files.
+If building from the Subversion repository, running rebuild.sh will create
+all the automatically generated files like the configure script, and will
+then ./configure, make and make distcheck. Running cleanup.sh will perform
+a thorough clean, deleting all automatically generated files.
 
-In addition to gcc, you also need the following for building from CVS:
+In addition to gcc, you also need the following for building from Subversion:
 
 - at least autoconf 2.57
 - at least automake 1.7
@@ -81,12 +81,19 @@ EXAMPLE CODE
 There are a number of useful programs in the test/ directory which
 exercise and demonstrate libmspack's features.
 
+cabd_c10       - Tests the CAB decompressor on the C10 collection.
+cabd_compare   - Compares the CAB decompressor with Microsoft's EXTRACT.EXE
 cabd_md5       - Prints the MD5 checksums of all files within a CAB file/set.
 cabd_memory    - An mspack_system implementation that reads/writes to memory.
 cabd_test      - Regression tests for libmspack's CAB decompression.
+cabrip         - Extracts any CAB files embedded in another file.
+chmd_compare   - Compares the CHM decompressor to Microsoft's HH.EXE
 chmd_md5       - Prints the MD5 checksums of all files within a CHM file.
 chminfo        - Prints verbose information about CHM file structures.
 chmx           - Extracts all files in a CHM file to disk.
+expand         - Extracts an SZDD or KWAJ file.
+msdecompile_md5- Runs Microsoft's HH.EXE -DECOMPILE via WINE.
+msexpand_md5   - Runs Microsoft's EXTRACT.EXE via WINE.
 multifh        - An mspack_system implementation that can simultaneously work
                  on in-memory images, raw file descriptors, open file handles
                  and regular disk files.
