@@ -1,3 +1,8 @@
+New in 1.3:
+* Bugs in the MS-ZIP and Quantum decompressors have been fixed.
+* MS-ZIP recovery has been improved.
+* cabextract should now compile with MinGW
+
 New in 1.2:
 * "-t" option: Allows you to test that every file can be extracted without
   having to extract it. This also prints the MD5 checksum of the file.
