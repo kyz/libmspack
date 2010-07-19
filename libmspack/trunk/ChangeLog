@@ -10,6 +10,13 @@
 	variable, read_error, with the same lifespan as a decompressor,
 	to pass the underlying reason for MSPACK_ERR_READ errors back.
 
+	* mszipd.c: improve MS-ZIP recovery by saving all the bytes
+	decoded prior to a block failing. This requires remembering
+	how far we got through the block, so the code has been made
+	slightly slower (about 0.003 seconds slower per gigabyte
+	unpacked) by removing the local variable window_posn
+	and keeping it in the state structure instead.
+
 2010-07-16:  Stuart Caie <kyzer@4u.net>
 
 	* Makefile.am: strange interactions. When -std=c99 is used,
