@@ -128,8 +128,6 @@ extern "C" {
 # include <unistd.h>
 #endif /* _MSC_VER */
 
-#include <unistd.h>
-
 /**
  * System self-test function, to ensure both library and calling program
  * can use one another.
