@@ -4,6 +4,13 @@
 	MD5summing them, with an MD5summer built into mspack_system.
 	Much, much faster results.
 
+	* qtmd_decompress(): Robert Riebisch pointed out a Quantum
+	data integrity check that could never be tripped, because
+	frame_todo is unsigned, so it will never be decremented
+	below zero. Replaced the check with one that assumes that
+	decrementing past zero wraps frame_todo round to a number
+	more than its maximum value (QTM_FRAME_SIZE).
+
 2010-07-18:  Stuart Caie <kyzer@4u.net>
 
 	* cabd.c: Special logic to pass cabd_sys_read() errors back
