@@ -1,3 +1,9 @@
+2010-07-19:  Stuart Caie <kyzer@4u.net>
+
+	* cabd_md5.c, chmd_md5.c: Replace writing files to disk then
+	MD5summing them, with an MD5summer built into mspack_system.
+	Much, much faster results.
+
 2010-07-18:  Stuart Caie <kyzer@4u.net>
 
 	* cabd.c: Special logic to pass cabd_sys_read() errors back
