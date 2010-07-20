@@ -59,11 +59,11 @@ libmschmd_la_LDFLAGS =	-export-symbols-regex '^mspack_'
 test_chmx_SOURCES =	test/chmx.c test/error.h libmschmd.la
 test_chmx_LDADD =	libmschmd.la
 
-test_chmd_md5_SOURCES =	test/chmd_md5.c test/md5.c test/md5.h \
+test_chmd_md5_SOURCES =	test/chmd_md5.c test/md5.c test/md5.h test/md5_fh.h \
 			test/error.h libmschmd.la
 test_chmd_md5_LDADD =	libmschmd.la
 
-test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c test/md5.h \
+test_cabd_md5_SOURCES =	test/cabd_md5.c test/md5.c test/md5.h test/md5_fh.h \
 			test/error.h libmscabd.la
 test_cabd_md5_LDADD =	libmscabd.la
 
