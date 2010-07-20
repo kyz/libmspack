@@ -419,13 +419,15 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 
     qtm->o_end = &window[window_posn];
 
-    /* another frame completed? */
-    if (frame_todo <= 0) {
-      if (frame_todo < 0) {
-	D(("overshot frame alignment"))
-	return qtm->error = MSPACK_ERR_DECRUNCH;
-      }
+   /* if we subtracted too much from frame_todo, it will
+    * wrap around past zero and go above its max value */
+   if (frame_todo > QTM_FRAME_SIZE) {
+     D(("overshot frame alignment"))
+     return qtm->error = MSPACK_ERR_DECRUNCH;
+   }
 
+    /* another frame completed? */
+    if (frame_todo == 0) {
       /* re-align input */
       if (bits_left & 7) REMOVE_BITS(bits_left & 7);
 
