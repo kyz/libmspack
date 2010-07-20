@@ -10,10 +10,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include <md5.h>
+#include <md5_fh.h>
 #include <error.h>
-
-#define FILENAME ".test.extract"
 
 /**
  * Matches a cabinet's filename case-insensitively in the filesystem and
@@ -83,7 +81,6 @@ int main(int argc, char *argv[]) {
     struct mscabd_cabinet *cab, *c, *c2;
     struct mscabd_file *file;
     char *cabname, *newname;
-    FILE *fh;
     int err;
 
     setbuf(stdout, NULL);
@@ -93,7 +90,7 @@ int main(int argc, char *argv[]) {
     MSPACK_SYS_SELFTEST(err);
     if (err) return 1;
 
-    if (!(cabd = mspack_create_cab_decompressor(NULL))) {
+    if (!(cabd = mspack_create_cab_decompressor(&read_files_write_md5))) {
 	fprintf(stderr, "can't make decompressor\n");
 	return 1;
     }
@@ -146,23 +143,13 @@ int main(int argc, char *argv[]) {
 
 	/* extract files */
 	for (file = cab->files; file; file = file->next ) {
-	    if (cabd->extract(cabd, file, FILENAME) != MSPACK_ERR_OK) {
+	    if (cabd->extract(cabd, file, NULL) == MSPACK_ERR_OK) {
+		printf("%s  %s\n", md5_string, file->filename);
+	    }
+	    else {
 		fprintf(stderr, "%s: error extracting \"%s\": %s\n",
 			cabname, file->filename, ERROR(cabd));
-		continue;
 	    }
-	    if ((fh = fopen(FILENAME, "rb"))) {
-		unsigned char buf[16];
-		memset(buf, 0, 16);
-		md5_stream(fh, &buf[0]);
-		fclose(fh);
-		printf("%02x%02x%02x%02x%02x%02x%02x%02x"
-		       "%02x%02x%02x%02x%02x%02x%02x%02x  %s\n",
-		       buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6],
-		       buf[7], buf[8], buf[9], buf[10], buf[11], buf[12],
-		       buf[13], buf[14], buf[15], file->filename);
-	    }
-	    unlink(FILENAME);
 	}
 
 	/* free all resources */

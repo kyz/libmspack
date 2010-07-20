@@ -8,10 +8,8 @@
 #include <string.h>
 #include <mspack.h>
 
-#include <md5.h>
+#include <md5_fh.h>
 #include <error.h>
-
-#define FILENAME ".test.chmd"
 
 static int sortfunc(const void *a, const void *b) {
   off_t diff = 
@@ -26,7 +24,6 @@ int main(int argc, char *argv[]) {
   struct mschmd_file *file, **f;
   unsigned int numf, i;
   int err;
-  FILE *fh;
 
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
@@ -34,7 +31,7 @@ int main(int argc, char *argv[]) {
   MSPACK_SYS_SELFTEST(err);
   if (err) return 0;
 
-  if ((chmd = mspack_create_chm_decompressor(NULL))) {
+  if ((chmd = mspack_create_chm_decompressor(&read_files_write_md5))) {
     for (argv++; *argv; argv++) {
       printf("*** %s\n", *argv);
       if ((chm = chmd->open(chmd, *argv))) {
@@ -45,21 +42,12 @@ int main(int argc, char *argv[]) {
 	  for (i=0, file=chm->files; file; file = file->next) f[i++] = file;
 	  qsort(f, numf, sizeof(struct mschmd_file *), &sortfunc);
 	  for (i = 0; i < numf; i++) {
-	    if (chmd->extract(chmd, f[i], FILENAME)) {
+	    if (chmd->extract(chmd, f[i], NULL)) {
 	      fprintf(stderr, "%s: extract error on \"%s\": %s\n",
 		      *argv, f[i]->filename, ERROR(chmd));
-	      exit(1);
 	    }
-            if ((fh = fopen(FILENAME, "rb"))) {
-              unsigned char buf[16];
-              memset(buf, 0, 16);
-              md5_stream (fh, &buf[0]);
-              fclose(fh);
-              printf("%02x%02x%02x%02x%02x%02x%02x%02x"
-                     "%02x%02x%02x%02x%02x%02x%02x%02x %s\n",
-                     buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6],
-                     buf[7], buf[8], buf[9], buf[10], buf[11], buf[12],
-                     buf[13], buf[14], buf[15], f[i]->filename);
+	    else {
+	      printf("%s %s\n", md5_string, f[i]->filename);
             }
 	  }
 	  free(f);
