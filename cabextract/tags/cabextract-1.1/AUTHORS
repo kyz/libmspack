@@ -1,0 +1,15 @@
+Principal author: Stuart Caie <kyzer@4u.net>
+
+cabextract uses a cut-down version of the libmspack library, available at
+http://www.kyz.uklinux.net/libmspack/
+
+Japanese manual page by Katsumi Saito.
+Original manual page and Debian packaging by Eric Sharkey.
+FreeBSD packaging by Maxim Sovolev.
+NetBSD packaging by Ben Collver et al.
+SuSE packaging by Stefan Dirsch.
+RPM spec file by Soos Peter.
+
+cabextract uses GNU versions of the getopt_long(), mktime() and fnmatch()
+functions, (C) Free Software Foundation, if not found as part of the
+operating system.
