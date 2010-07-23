@@ -1,0 +1,128 @@
+2006-09-20:  Stuart Caie   <kyzer@4u.net>
+
+	* system.h: I had a choice of adding more to configure.ac to
+	test for __func__ and __FUNCTION__, or just removing __FUNCTION__
+	from the D() macro. I chose the latter.
+
+	* Makefile.am: Now the --enable-debug in configure will actually
+	apply -DDEBUG to the sources.
+
+2006-09-20:  Stuart Caie   <kyzer@4u.net>
+
+	* qtmd_decompress(): Fixed a major bug in the QTM decoder, as
+	reported by Tomasz Kojm last year. Removed the restriction on
+	window sizes as a result. Correctly decodes the XLVIEW cabinets.
+
+2006-08-31:  Stuart Caie   <kyzer@4u.net>
+
+	* lzxd_decompress(): Two major bugs fixed. Firstly, the R0/R1/R2
+	local variables weren't set to 1 after lzxd_reset_state().
+	Secondly, the LZX decompression stream can sometimes become
+	odd-aligned (after an uncompressed block) and the next 16 bit
+	fetch needs to be split across two input buffers, ENSURE_BITS()
+	didn't cover this case. Many thanks to Igor Glucksmann for
+	discovering both these bugs.
+
+2005-06-30:  Stuart Caie   <kyzer@4u.net>
+
+	* cabd_search(): fixed problems with searching files > 4GB for
+	cabinets.
+
+2005-06-23:  Stuart Caie   <kyzer@4u.net>
+
+	* qtmd_init(): The QTM decoder is broken for QTM streams with a
+	window size less than the frame size. Until this is fixed, fail
+	to initialise QTM window sizes less than 15. Thanks to Tomasz Kojm
+	for finding the bug.
+
+2005-03-22:  Stuart Caie   <kyzer@4u.net>
+
+	* system.h: now undefs "read", as the latest glibc defines read()
+	as a macro which messes everything up. Thanks to Ville Skyttä for
+	the update.
+
+2005-03-14:  Stuart Caie   <kyzer@4u.net>
+
+	* test/multifh.c: write an mspack_system implementation that can
+	handle normal disk files, open file handles, open file descriptors
+	and raw memory all at the same time.
+
+2005-02-24:  Stuart Caie   <kyzer@4u.net>
+
+	* chmd_read_headers(): avoid infinite loop when chmhs1_ChunkSize is
+	zero. Thanks to Serge Semashko for the research and discovery.
+
+2005-02-18:  Stuart Caie   <kyzer@4u.net>
+
+	* mspack.h: renamed the "interface" parameter of mspack_version() to
+	"entity", as interface is a reserved word in C++. Thanks to Yuriy Z
+	for the discovery.
+
+2004-12-09:  Stuart Caie   <kyzer@4u.net>
+
+	* lzss.h, szdd.h, szddd.h: more work on the SZDD/LZSS design.
+	
+2004-06-12:  Stuart Caie   <kyzer@4u.net>
+
+	* lzxd_static_init(): removed write to lzxd_extra_bits[52], thanks
+	to Nigel Horne from the ClamAV project.
+
+2004-04-23:  Stuart Caie   <kyzer@4u.net>
+
+	* mspack.h: changed 'this' parameters to 'self' to allow compiling in
+	C++ compilers, thanks to Michal Cihar for the suggestion.
+
+	* mspack.h, system.h, mspack.def, winbuild.sh: integrated some changes
+	from Petr Blahos to let libmspack build as a Win32 DLL.
+
+	* chmd_fast_find(): added the first part of this code, and comments
+	sufficient to finish it :)
+
+2004-04-08  Stuart Caie   <kyzer@4u.net>
+
+	* test/chminfo.c: added a program for dumping useful data from CHM
+	files, e.g. index entries and reset tables. I wrote this a while ago
+	for investigating a corrupt cabinet, but I never committed it.
+
+2004-03-26  Stuart Caie   <kyzer@4u.net>
+
+	* test/cabd_memory.c: added a new test example which shows an
+	mspack_system implementation that reads and writes from memory only,
+	no file I/O. Even the source code has a little cab file embedded in it.
+
+2004-03-10  Stuart Caie   <kyzer@4u.net>
+
+	* cabd.c: updated the location of the CAB SDK.
+
+	* cabd.c: changed a couple of MSPACK_ERR_READ errors not based on
+	read() failures into MSPACK_ERR_DATAFORMAT errors.
+
+	* mszipd_decompress(): repair mode now aborts after writing a
+	repaired block if the error was a hard error (e.g. read error, out
+	of blocks, etc)
+
+2004-03-08  Stuart Caie   <kyzer@4u.net>
+
+	* Makefile.am: now builds and installs a versioned library.
+
+	* mszipd.c: completed a new MS-ZIP and inflate implementation.
+
+	* system.c: added mspack_version() and committed to a versioned
+	ABI for the library.
+
+	* cabd.c: made mszip repair functionality work correctly.
+
+	* cabd.c: now identifies invalid block headers
+
+	* doc/: API documentation is now included with the library, not
+	just on the web.
+
+	* chmd.c: fixed error messages and 64-bit debug output.
+
+	* chmd.c: now also catches NULL files in section 1.
+
+	* test/chmx.c: now acts more like cabextract.
+
+2003-08-29  Stuart Caie   <kyzer@4u.net>
+
+	* ChangeLog: started keeping a ChangeLog :)
