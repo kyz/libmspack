@@ -32,9 +32,6 @@
 #if HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#if HAVE_UNISTD_H
-# include <unistd.h>
-#endif
 
 #ifdef HAVE_FSEEKO
 # define FSEEK fseeko
@@ -110,7 +107,7 @@
 
 FILE *fh;
 char *filename;
-FILELEN filelength;
+FILELEN filelen;
 void search();
 void getinfo();
 
@@ -128,7 +125,7 @@ void getinfo();
 
 
 int myread(void *buf, int length) {
-  FILELEN remain = filelength - GETOFFSET;
+  FILELEN remain = filelen - GETOFFSET;
   if (length > remain) length = (int) remain;
   if (fread(buf, 1, length, fh) != length) {
     perror(filename);
@@ -164,7 +161,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  filelength = FTELL(fh);
+  filelen = FTELL(fh);
 
   if (FSEEK(fh, 0, SEEK_SET) != 0) {
     perror(filename);
@@ -172,7 +169,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  printf("Examining file \"%s\" (%" FL " bytes)...\n", filename, filelength);
+  printf("Examining file \"%s\" (%" FL " bytes)...\n", filename, filelen);
   search();
   fclose(fh);
   return 0;
@@ -188,12 +185,12 @@ void search() {
   unsigned long cablen32, foffset32;
   int state = 0;
 
-  for (offset = 0; offset < filelength; offset += length) {
+  for (offset = 0; offset < filelen; offset += length) {
     /* search length is either the full length of the search buffer,
      * or the amount of data remaining to the end of the file,
      * whichever is less.
      */
-    length = filelength - offset;
+    length = filelen - offset;
     if (length > SEARCH_SIZE) length = SEARCH_SIZE;
 
     /* fill the search buffer with data from disk */
@@ -241,8 +238,8 @@ void search() {
 	foffset = (FILELEN) foffset32;
 	cablen  = (FILELEN) cablen32;
 	if ((foffset < cablen) &&
-	    ((caboff + foffset) < (filelength + 32)) &&
-	    ((caboff + cablen) < (filelength + 32)) )
+	    ((caboff + foffset) < (filelen + 32)) &&
+	    ((caboff + cablen) < (filelen + 32)) )
 	{
 	  /* found a potential result - try loading it */
 	  printf("Found cabinet header at offset %" FL "\n", caboff);
@@ -259,7 +256,7 @@ void search() {
 	p++, state++; break;
       } /* switch state */
     } /* while p < pend */
-  } /* while offset < filelength */
+  } /* while offset < filelen */
 }
 
 
