@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <unistd.h>
 #include <mspack.h>
 
 /* definitions */

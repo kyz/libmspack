@@ -124,9 +124,6 @@ extern "C" {
 
 #include <sys/types.h>
 #include <stdlib.h>
-#ifndef _MSC_VER
-# include <unistd.h>
-#endif /* _MSC_VER */
 
 /**
  * System self-test function, to ensure both library and calling program
