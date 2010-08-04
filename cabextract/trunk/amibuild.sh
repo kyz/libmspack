@@ -35,7 +35,7 @@ export PATH
 rm -f *.lha
 
 ppc-amigaos-gcc -Wall -O2 -o cabextract -DHAVE_CONFIG_H -DHAVE_FSEEKO -I. -Imspack mspack/*.c src/cabextract.c md5.c fnmatch.c
-lha a cabextract_OS4.lha cabextract README
+lha a cabextract_OS4.lha cabextract
 
 m68k-amigaos-gcc -Wall -O2 -o cabextract -DHAVE_CONFIG_H -DNDEBUG -I. -Imspack mspack/*.c src/cabextract.c md5.c fnmatch.c getopt.c getopt1.c
-lha a cabextract.lha cabextract README
+lha a cabextract.lha cabextract
