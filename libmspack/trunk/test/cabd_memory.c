@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <mspack.h>
 
 /* use a pointer to a mem_buf structure as "filenames" */

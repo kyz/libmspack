@@ -1,3 +1,7 @@
+2010-08-04:  Stuart Caie <kyzer@4u.net>
+
+	* many files: removed unnecessary <unistd.h> include
+
 2010-07-19:  Stuart Caie <kyzer@4u.net>
 
 	* cabd_md5.c, chmd_md5.c: Replace writing files to disk then
