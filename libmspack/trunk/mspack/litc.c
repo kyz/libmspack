@@ -19,6 +19,6 @@ struct mslit_compressor *
   return NULL;
 }
 
-void mspack_destroy_lit_compressor(struct mslit_compressor *this) {
+void mspack_destroy_lit_compressor(struct mslit_compressor *self) {
   /* todo */
 }

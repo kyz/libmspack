@@ -19,6 +19,6 @@ struct mshlp_compressor *
   return NULL;
 }
 
-void mspack_destroy_hlp_compressor(struct mshlp_compressor *this) {
+void mspack_destroy_hlp_compressor(struct mshlp_compressor *self) {
   /* todo */
 }

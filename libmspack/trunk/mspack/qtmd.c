@@ -201,13 +201,13 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
   if (input_buffer_size < 2) return NULL;
 
   /* allocate decompression state */
-  if (!(qtm = system->alloc(system, sizeof(struct qtmd_stream)))) {
+  if (!(qtm = (struct qtmd_stream *) system->alloc(system, sizeof(struct qtmd_stream)))) {
     return NULL;
   }
 
   /* allocate decompression window and input buffer */
-  qtm->window = system->alloc(system, (size_t) window_size);
-  qtm->inbuf  = system->alloc(system, (size_t) input_buffer_size);
+  qtm->window = (unsigned char *) system->alloc(system, (size_t) window_size);
+  qtm->inbuf  = (unsigned char *) system->alloc(system, (size_t) input_buffer_size);
   if (!qtm->window || !qtm->inbuf) {
     system->free(qtm->window);
     system->free(qtm->inbuf);

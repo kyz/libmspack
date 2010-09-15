@@ -354,12 +354,12 @@ struct mszipd_stream *mszipd_init(struct mspack_system *system,
   if (!input_buffer_size) return NULL;
 
   /* allocate decompression state */
-  if (!(zip = system->alloc(system, sizeof(struct mszipd_stream)))) {
+  if (!(zip = (struct mszipd_stream *) system->alloc(system, sizeof(struct mszipd_stream)))) {
     return NULL;
   }
 
   /* allocate input buffer */
-  zip->inbuf  = system->alloc(system, (size_t) input_buffer_size);
+  zip->inbuf  = (unsigned char *) system->alloc(system, (size_t) input_buffer_size);
   if (!zip->inbuf) {
     system->free(zip);
     return NULL;

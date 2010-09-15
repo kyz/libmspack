@@ -38,7 +38,7 @@ static char *find_cabinet_file(char *origcab, char *cabname) {
     len = (tail - origcab) + 1;
 
     /* allocate memory for our copy */
-    if (!(cab = malloc((tail ? len : 2) + strlen(cabname) + 1))) return NULL;
+    if (!(cab = (char *) malloc((tail ? len : 2) + strlen(cabname) + 1))) return NULL;
 
     /* add the directory path from the original cabinet name, or "." */
     if (tail) memcpy(cab, origcab, (size_t) len);

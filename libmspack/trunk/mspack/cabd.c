@@ -80,7 +80,7 @@ static char *cabd_read_string(
 static struct mscabd_cabinet *cabd_search(
   struct mscab_decompressor *base, char *filename);
 static int cabd_find(
-  struct mscab_decompressor_p *this, unsigned char *buf,
+  struct mscab_decompressor_p *self, unsigned char *buf,
   struct mspack_file *fh, char *filename, off_t flen,
   off_t *firstlen, struct mscabd_cabinet_p **firstcab);
 
@@ -97,9 +97,9 @@ static int cabd_merge(
 static int cabd_extract(
   struct mscab_decompressor *base, struct mscabd_file *file, char *filename);
 static int cabd_init_decomp(
-  struct mscab_decompressor_p *this, unsigned int ct);
+  struct mscab_decompressor_p *self, unsigned int ct);
 static void cabd_free_decomp(
-  struct mscab_decompressor_p *this);
+  struct mscab_decompressor_p *self);
 static int cabd_sys_read(
   struct mspack_file *file, void *buffer, int bytes);
 static int cabd_sys_write(
@@ -133,29 +133,29 @@ static int cabd_error(
 struct mscab_decompressor *
   mspack_create_cab_decompressor(struct mspack_system *sys)
 {
-  struct mscab_decompressor_p *this = NULL;
+  struct mscab_decompressor_p *self = NULL;
 
   if (!sys) sys = mspack_default_system;
   if (!mspack_valid_system(sys)) return NULL;
 
-  if ((this = sys->alloc(sys, sizeof(struct mscab_decompressor_p)))) {
-    this->base.open       = &cabd_open;
-    this->base.close      = &cabd_close;
-    this->base.search     = &cabd_search;
-    this->base.extract    = &cabd_extract;
-    this->base.prepend    = &cabd_prepend;
-    this->base.append     = &cabd_append;
-    this->base.set_param  = &cabd_param;
-    this->base.last_error = &cabd_error;
-    this->system          = sys;
-    this->d               = NULL;
-    this->error           = MSPACK_ERR_OK;
+  if ((self = (struct mscab_decompressor_p *) sys->alloc(sys, sizeof(struct mscab_decompressor_p)))) {
+    self->base.open       = &cabd_open;
+    self->base.close      = &cabd_close;
+    self->base.search     = &cabd_search;
+    self->base.extract    = &cabd_extract;
+    self->base.prepend    = &cabd_prepend;
+    self->base.append     = &cabd_append;
+    self->base.set_param  = &cabd_param;
+    self->base.last_error = &cabd_error;
+    self->system          = sys;
+    self->d               = NULL;
+    self->error           = MSPACK_ERR_OK;
 
-    this->param[MSCABD_PARAM_SEARCHBUF] = 32768;
-    this->param[MSCABD_PARAM_FIXMSZIP]  = 0;
-    this->param[MSCABD_PARAM_DECOMPBUF] = 4096;
+    self->param[MSCABD_PARAM_SEARCHBUF] = 32768;
+    self->param[MSCABD_PARAM_FIXMSZIP]  = 0;
+    self->param[MSCABD_PARAM_DECOMPBUF] = 4096;
   }
-  return (struct mscab_decompressor *) this;
+  return (struct mscab_decompressor *) self;
 }
 
 /***************************************
@@ -164,15 +164,15 @@ struct mscab_decompressor *
  * destructor
  */
 void mspack_destroy_cab_decompressor(struct mscab_decompressor *base) {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
-  if (this) {
-    struct mspack_system *sys = this->system;
-    cabd_free_decomp(this);
-    if (this->d) {
-      if (this->d->infh) sys->close(this->d->infh);
-      sys->free(this->d);
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
+  if (self) {
+    struct mspack_system *sys = self->system;
+    cabd_free_decomp(self);
+    if (self->d) {
+      if (self->d->infh) sys->close(self->d->infh);
+      sys->free(self->d);
     }
-    sys->free(this);
+    sys->free(self);
   }
 }
 
@@ -185,32 +185,32 @@ void mspack_destroy_cab_decompressor(struct mscab_decompressor *base) {
 static struct mscabd_cabinet *cabd_open(struct mscab_decompressor *base,
 					char *filename)
 {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_cabinet_p *cab = NULL;
   struct mspack_system *sys;
   struct mspack_file *fh;
   int error;
 
   if (!base) return NULL;
-  sys = this->system;
+  sys = self->system;
 
   if ((fh = sys->open(sys, filename, MSPACK_SYS_OPEN_READ))) {
-    if ((cab = sys->alloc(sys, sizeof(struct mscabd_cabinet_p)))) {
+    if ((cab = (struct mscabd_cabinet_p *) sys->alloc(sys, sizeof(struct mscabd_cabinet_p)))) {
       cab->base.filename = filename;
       error = cabd_read_headers(sys, fh, cab, (off_t) 0, 0);
       if (error) {
 	cabd_close(base, (struct mscabd_cabinet *) cab);
 	cab = NULL;
       }
-      this->error = error;
+      self->error = error;
     }
     else {
-      this->error = MSPACK_ERR_NOMEMORY;
+      self->error = MSPACK_ERR_NOMEMORY;
     }
     sys->close(fh);
   }
   else {
-    this->error = MSPACK_ERR_OPEN;
+    self->error = MSPACK_ERR_OPEN;
   }
   return (struct mscabd_cabinet *) cab;
 }
@@ -223,7 +223,7 @@ static struct mscabd_cabinet *cabd_open(struct mscab_decompressor *base,
 static void cabd_close(struct mscab_decompressor *base,
 		       struct mscabd_cabinet *origcab)
 {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_folder_data *dat, *ndat;
   struct mscabd_cabinet *cab, *ncab;
   struct mscabd_folder *fol, *nfol;
@@ -231,9 +231,9 @@ static void cabd_close(struct mscab_decompressor *base,
   struct mspack_system *sys;
 
   if (!base) return;
-  sys = this->system;
+  sys = self->system;
 
-  this->error = MSPACK_ERR_OK;
+  self->error = MSPACK_ERR_OK;
 
   while (origcab) {
     /* free files */
@@ -248,11 +248,11 @@ static void cabd_close(struct mscab_decompressor *base,
       nfol = fol->next;
 
       /* free folder decompression state if it has been decompressed */
-      if (this->d && (this->d->folder == (struct mscabd_folder_p *) fol)) {
-	if (this->d->infh) sys->close(this->d->infh);
-	cabd_free_decomp(this);
-	sys->free(this->d);
-	this->d = NULL;
+      if (self->d && (self->d->folder == (struct mscabd_folder_p *) fol)) {
+	if (self->d->infh) sys->close(self->d->infh);
+	cabd_free_decomp(self);
+	sys->free(self->d);
+	self->d = NULL;
       }
 
       /* free folder data segments */
@@ -408,7 +408,7 @@ static int cabd_read_headers(struct mspack_system *sys,
       }
     }
 
-    if (!(fol = sys->alloc(sys, sizeof(struct mscabd_folder_p)))) {
+    if (!(fol = (struct mscabd_folder_p *) sys->alloc(sys, sizeof(struct mscabd_folder_p)))) {
       return MSPACK_ERR_NOMEMORY;
     }
     fol->base.next       = NULL;
@@ -433,7 +433,7 @@ static int cabd_read_headers(struct mspack_system *sys,
       return MSPACK_ERR_READ;
     }
 
-    if (!(file = sys->alloc(sys, sizeof(struct mscabd_file)))) {
+    if (!(file = (struct mscabd_file *) sys->alloc(sys, sizeof(struct mscabd_file)))) {
       return MSPACK_ERR_NOMEMORY;
     }
 
@@ -539,7 +539,7 @@ static char *cabd_read_string(struct mspack_system *sys,
     return NULL;
   }
 
-  if (!(str = sys->alloc(sys, len))) {
+  if (!(str = (char *) sys->alloc(sys, len))) {
     *error = MSPACK_ERR_NOMEMORY;
     return NULL;
   }
@@ -563,7 +563,7 @@ static char *cabd_read_string(struct mspack_system *sys,
 static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
 					  char *filename)
 {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_cabinet_p *cab = NULL;
   struct mspack_system *sys;
   unsigned char *search_buf;
@@ -571,19 +571,19 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
   off_t filelen, firstlen = 0;
 
   if (!base) return NULL;
-  sys = this->system;
+  sys = self->system;
 
   /* allocate a search buffer */
-  search_buf = sys->alloc(sys, (size_t) this->param[MSCABD_PARAM_SEARCHBUF]);
+  search_buf = (unsigned char *) sys->alloc(sys, (size_t) self->param[MSCABD_PARAM_SEARCHBUF]);
   if (!search_buf) {
-    this->error = MSPACK_ERR_NOMEMORY;
+    self->error = MSPACK_ERR_NOMEMORY;
     return NULL;
   }
 
   /* open file and get its full file length */
   if ((fh = sys->open(sys, filename, MSPACK_SYS_OPEN_READ))) {
-    if (!(this->error = mspack_sys_filelen(sys, fh, &filelen))) {
-      this->error = cabd_find(this, search_buf, fh, filename,
+    if (!(self->error = mspack_sys_filelen(sys, fh, &filelen))) {
+      self->error = cabd_find(self, search_buf, fh, filename,
 			      filelen, &firstlen, &cab);
     }
 
@@ -605,7 +605,7 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
     sys->close(fh);
   }
   else {
-    this->error = MSPACK_ERR_OPEN;
+    self->error = MSPACK_ERR_OPEN;
   }
 
   /* free the search buffer */
@@ -614,13 +614,13 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
   return (struct mscabd_cabinet *) cab;
 }
 
-static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
+static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
 		     struct mspack_file *fh, char *filename, off_t flen,
 		     off_t *firstlen, struct mscabd_cabinet_p **firstcab)
 {
   struct mscabd_cabinet_p *cab, *link = NULL;
   off_t caboff, offset, foffset, cablen, length;
-  struct mspack_system *sys = this->system;
+  struct mspack_system *sys = self->system;
   unsigned char *p, *pend, state = 0;
   unsigned int cablen_u32, foffset_u32;
   int false_cabs = 0;
@@ -630,8 +630,8 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
     /* search length is either the full length of the search buffer, or the
      * amount of data remaining to the end of the file, whichever is less. */
     length = flen - offset;
-    if (length > this->param[MSCABD_PARAM_SEARCHBUF]) {
-      length = this->param[MSCABD_PARAM_SEARCHBUF];
+    if (length > self->param[MSCABD_PARAM_SEARCHBUF]) {
+      length = self->param[MSCABD_PARAM_SEARCHBUF];
     }
 
     /* fill the search buffer with data from disk */
@@ -715,13 +715,13 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
 	    ((caboff + cablen)  < (flen + 32)) )
 	{
 	  /* likely cabinet found -- try reading it */
-	  if (!(cab = sys->alloc(sys, sizeof(struct mscabd_cabinet_p)))) {
+	  if (!(cab = (struct mscabd_cabinet_p *) sys->alloc(sys, sizeof(struct mscabd_cabinet_p)))) {
 	    return MSPACK_ERR_NOMEMORY;
 	  }
 	  cab->base.filename = filename;
 	  if (cabd_read_headers(sys, fh, cab, caboff, 1)) {
 	    /* destroy the failed cabinet */
-	    cabd_close((struct mscab_decompressor *) this,
+	    cabd_close((struct mscab_decompressor *) self,
 		       (struct mscabd_cabinet *) cab);
 	    false_cabs++;
 	  }
@@ -766,7 +766,7 @@ static int cabd_find(struct mscab_decompressor_p *this, unsigned char *buf,
  * CABD_MERGE, CABD_PREPEND, CABD_APPEND
  ***************************************
  * joins cabinets together, also merges split folders between these two
- * cabinets only. this includes freeing the duplicate folder and file(s)
+ * cabinets only. This includes freeing the duplicate folder and file(s)
  * and allocating a further mscabd_folder_data structure to append to the
  * merged folder's data parts list.
  */
@@ -788,34 +788,34 @@ static int cabd_merge(struct mscab_decompressor *base,
 		      struct mscabd_cabinet *lcab,
 		      struct mscabd_cabinet *rcab)
 {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_folder_data *data, *ndata;
   struct mscabd_folder_p *lfol, *rfol;
   struct mscabd_file *fi, *rfi, *lfi;
   struct mscabd_cabinet *cab;
   struct mspack_system *sys;
 
-  if (!this) return MSPACK_ERR_ARGS;
-  sys = this->system;
+  if (!self) return MSPACK_ERR_ARGS;
+  sys = self->system;
 
   /* basic args check */
   if (!lcab || !rcab || (lcab == rcab)) {
     D(("lcab NULL, rcab NULL or lcab = rcab"))
-    return this->error = MSPACK_ERR_ARGS;
+    return self->error = MSPACK_ERR_ARGS;
   }
 
   /* check there's not already a cabinet attached */
   if (lcab->nextcab || rcab->prevcab) {
     D(("cabs already joined"))
-    return this->error = MSPACK_ERR_ARGS;
+    return self->error = MSPACK_ERR_ARGS;
   }
 
   /* do not create circular cabinet chains */
   for (cab = lcab->prevcab; cab; cab = cab->prevcab) {
-    if (cab == rcab) {D(("circular!")) return this->error = MSPACK_ERR_ARGS;}
+    if (cab == rcab) {D(("circular!")) return self->error = MSPACK_ERR_ARGS;}
   }
   for (cab = rcab->nextcab; cab; cab = cab->nextcab) {
-    if (cab == lcab) {D(("circular!")) return this->error = MSPACK_ERR_ARGS;}
+    if (cab == lcab) {D(("circular!")) return self->error = MSPACK_ERR_ARGS;}
   }
 
   /* warn about odd set IDs or indices */
@@ -853,18 +853,18 @@ static int cabd_merge(struct mscab_decompressor *base,
 
     if (!lfol->merge_next) {
       D(("rcab has merge files, lcab doesn't"))
-      return this->error = MSPACK_ERR_DATAFORMAT;
+      return self->error = MSPACK_ERR_DATAFORMAT;
     }
 
     if (!rfol->merge_prev) {
       D(("lcab has merge files, rcab doesn't"))
-      return this->error = MSPACK_ERR_DATAFORMAT;
+      return self->error = MSPACK_ERR_DATAFORMAT;
     }
 
     /* check that both folders use the same compression method/settings */
     if (lfol->base.comp_type != rfol->base.comp_type) {
       D(("compression type mismatch"))
-      return this->error = MSPACK_ERR_DATAFORMAT;
+      return self->error = MSPACK_ERR_DATAFORMAT;
     }
 
     /* for all files in lfol (which is the last folder in whichever cab),
@@ -875,15 +875,15 @@ static int cabd_merge(struct mscab_decompressor *base,
     while (lfi) {
       if (!rfi || (lfi->offset !=  rfi->offset)) {
 	D(("folder merge mismatch"))
-	return this->error = MSPACK_ERR_DATAFORMAT;
+	return self->error = MSPACK_ERR_DATAFORMAT;
       }
       lfi = lfi->next;
       rfi = rfi->next;
     }
 
     /* allocate a new folder data structure */
-    if (!(data = sys->alloc(sys, sizeof(struct mscabd_folder_data)))) {
-      return this->error = MSPACK_ERR_NOMEMORY;
+    if (!(data = (struct mscabd_folder_data *) sys->alloc(sys, sizeof(struct mscabd_folder_data)))) {
+      return self->error = MSPACK_ERR_NOMEMORY;
     }
 
     /* attach cabs */
@@ -946,7 +946,7 @@ static int cabd_merge(struct mscab_decompressor *base,
     cab->folders = lcab->folders;
   }
 
-  return this->error = MSPACK_ERR_OK;
+  return self->error = MSPACK_ERR_OK;
 }
 
 /***************************************
@@ -957,15 +957,15 @@ static int cabd_merge(struct mscab_decompressor *base,
 static int cabd_extract(struct mscab_decompressor *base,
 			 struct mscabd_file *file, char *filename)
 {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_folder_p *fol;
   struct mspack_system *sys;
   struct mspack_file *fh;
 
-  if (!this) return MSPACK_ERR_ARGS;
-  if (!file) return this->error = MSPACK_ERR_ARGS;
+  if (!self) return MSPACK_ERR_ARGS;
+  if (!file) return self->error = MSPACK_ERR_ARGS;
 
-  sys = this->system;
+  sys = self->system;
   fol = (struct mscabd_folder_p *) file->folder;
 
   /* check if file can be extracted */
@@ -974,61 +974,61 @@ static int cabd_extract(struct mscab_decompressor *base,
   {
     sys->message(NULL, "ERROR; file \"%s\" cannot be extracted, "
 		 "cabinet set is incomplete.", file->filename);
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
 
   /* allocate generic decompression state */
-  if (!this->d) {
-    this->d = sys->alloc(sys, sizeof(struct mscabd_decompress_state));
-    if (!this->d) return this->error = MSPACK_ERR_NOMEMORY;
-    this->d->folder     = NULL;
-    this->d->data       = NULL;
-    this->d->sys        = *sys;
-    this->d->sys.read   = &cabd_sys_read;
-    this->d->sys.write  = &cabd_sys_write;
-    this->d->state      = NULL;
-    this->d->infh       = NULL;
-    this->d->incab      = NULL;
+  if (!self->d) {
+    self->d = (struct mscabd_decompress_state *) sys->alloc(sys, sizeof(struct mscabd_decompress_state));
+    if (!self->d) return self->error = MSPACK_ERR_NOMEMORY;
+    self->d->folder     = NULL;
+    self->d->data       = NULL;
+    self->d->sys        = *sys;
+    self->d->sys.read   = &cabd_sys_read;
+    self->d->sys.write  = &cabd_sys_write;
+    self->d->state      = NULL;
+    self->d->infh       = NULL;
+    self->d->incab      = NULL;
   }
 
   /* do we need to change folder or reset the current folder? */
-  if ((this->d->folder != fol) || (this->d->offset > file->offset)) {
+  if ((self->d->folder != fol) || (self->d->offset > file->offset)) {
     /* do we need to open a new cab file? */
-    if (!this->d->infh || (fol->data.cab != this->d->incab)) {
+    if (!self->d->infh || (fol->data.cab != self->d->incab)) {
       /* close previous file handle if from a different cab */
-      if (this->d->infh) sys->close(this->d->infh);
-      this->d->incab = fol->data.cab;
-      this->d->infh = sys->open(sys, fol->data.cab->base.filename,
+      if (self->d->infh) sys->close(self->d->infh);
+      self->d->incab = fol->data.cab;
+      self->d->infh = sys->open(sys, fol->data.cab->base.filename,
 				MSPACK_SYS_OPEN_READ);
-      if (!this->d->infh) return this->error = MSPACK_ERR_OPEN;
+      if (!self->d->infh) return self->error = MSPACK_ERR_OPEN;
     }
     /* seek to start of data blocks */
-    if (sys->seek(this->d->infh, fol->data.offset, MSPACK_SYS_SEEK_START)) {
-      return this->error = MSPACK_ERR_SEEK;
+    if (sys->seek(self->d->infh, fol->data.offset, MSPACK_SYS_SEEK_START)) {
+      return self->error = MSPACK_ERR_SEEK;
     }
 
     /* set up decompressor */
-    if (cabd_init_decomp(this, (unsigned int) fol->base.comp_type)) {
-      return this->error;
+    if (cabd_init_decomp(self, (unsigned int) fol->base.comp_type)) {
+      return self->error;
     }
 
     /* initialise new folder state */
-    this->d->folder = fol;
-    this->d->data   = &fol->data;
-    this->d->offset = 0;
-    this->d->block  = 0;
-    this->d->i_ptr = this->d->i_end = &this->d->input[0];
+    self->d->folder = fol;
+    self->d->data   = &fol->data;
+    self->d->offset = 0;
+    self->d->block  = 0;
+    self->d->i_ptr = self->d->i_end = &self->d->input[0];
 
     /* read_error lasts for the lifetime of a decompressor */
-    this->read_error = MSPACK_ERR_OK;
+    self->read_error = MSPACK_ERR_OK;
   }
 
   /* open file for output */
   if (!(fh = sys->open(sys, filename, MSPACK_SYS_OPEN_WRITE))) {
-    return this->error = MSPACK_ERR_OPEN;
+    return self->error = MSPACK_ERR_OPEN;
   }
 
-  this->error = MSPACK_ERR_OK;
+  self->error = MSPACK_ERR_OK;
 
   /* if file has more than 0 bytes */
   if (file->length) {
@@ -1036,90 +1036,90 @@ static int cabd_extract(struct mscab_decompressor *base,
     int error;
     /* get to correct offset.
      * - use NULL fh to say 'no writing' to cabd_sys_write()
-     * - if cabd_sys_read() has an error, it will set this->read_error
+     * - if cabd_sys_read() has an error, it will set self->read_error
      *   and pass back MSPACK_ERR_READ
      */
-    this->d->outfh = NULL;
-    if ((bytes = file->offset - this->d->offset)) {
-      error = this->d->decompress(this->d->state, bytes);
-      this->error = (error == MSPACK_ERR_READ) ? this->read_error : error;
+    self->d->outfh = NULL;
+    if ((bytes = file->offset - self->d->offset)) {
+      error = self->d->decompress(self->d->state, bytes);
+      self->error = (error == MSPACK_ERR_READ) ? self->read_error : error;
     }
 
     /* if getting to the correct offset was error free, unpack file */
-    if (!this->error) {
-      this->d->outfh = fh;
-      error = this->d->decompress(this->d->state, (off_t) file->length);
-      this->error = (error == MSPACK_ERR_READ) ? this->read_error : error;
+    if (!self->error) {
+      self->d->outfh = fh;
+      error = self->d->decompress(self->d->state, (off_t) file->length);
+      self->error = (error == MSPACK_ERR_READ) ? self->read_error : error;
     }
   }
 
   /* close output file */
   sys->close(fh);
-  this->d->outfh = NULL;
+  self->d->outfh = NULL;
 
-  return this->error;
+  return self->error;
 }
 
 /***************************************
  * CABD_INIT_DECOMP, CABD_FREE_DECOMP
  ***************************************
  * cabd_init_decomp initialises decompression state, according to which
- * decompression method was used. relies on this->d->folder being the same
+ * decompression method was used. relies on self->d->folder being the same
  * as when initialised.
  *
  * cabd_free_decomp frees decompression state, according to which method
  * was used.
  */
-static int cabd_init_decomp(struct mscab_decompressor_p *this, unsigned int ct)
+static int cabd_init_decomp(struct mscab_decompressor_p *self, unsigned int ct)
 {
-  struct mspack_file *fh = (struct mspack_file *) this;
+  struct mspack_file *fh = (struct mspack_file *) self;
 
-  assert(this && this->d);
+  assert(self && self->d);
 
   /* free any existing decompressor */
-  cabd_free_decomp(this);
+  cabd_free_decomp(self);
 
-  this->d->comp_type = ct;
+  self->d->comp_type = ct;
 
   switch (ct & cffoldCOMPTYPE_MASK) {
   case cffoldCOMPTYPE_NONE:
-    this->d->decompress = (int (*)(void *, off_t)) &noned_decompress;
-    this->d->state = noned_init(&this->d->sys, fh, fh,
-				this->param[MSCABD_PARAM_DECOMPBUF]);
+    self->d->decompress = (int (*)(void *, off_t)) &noned_decompress;
+    self->d->state = noned_init(&self->d->sys, fh, fh,
+				self->param[MSCABD_PARAM_DECOMPBUF]);
     break;
   case cffoldCOMPTYPE_MSZIP:
-    this->d->decompress = (int (*)(void *, off_t)) &mszipd_decompress;
-    this->d->state = mszipd_init(&this->d->sys, fh, fh,
-				 this->param[MSCABD_PARAM_DECOMPBUF],
-				 this->param[MSCABD_PARAM_FIXMSZIP]);
+    self->d->decompress = (int (*)(void *, off_t)) &mszipd_decompress;
+    self->d->state = mszipd_init(&self->d->sys, fh, fh,
+				 self->param[MSCABD_PARAM_DECOMPBUF],
+				 self->param[MSCABD_PARAM_FIXMSZIP]);
     break;
   case cffoldCOMPTYPE_QUANTUM:
-    this->d->decompress = (int (*)(void *, off_t)) &qtmd_decompress;
-    this->d->state = qtmd_init(&this->d->sys, fh, fh, (int) (ct >> 8) & 0x1f,
-			       this->param[MSCABD_PARAM_DECOMPBUF]);
+    self->d->decompress = (int (*)(void *, off_t)) &qtmd_decompress;
+    self->d->state = qtmd_init(&self->d->sys, fh, fh, (int) (ct >> 8) & 0x1f,
+			       self->param[MSCABD_PARAM_DECOMPBUF]);
     break;
   case cffoldCOMPTYPE_LZX:
-    this->d->decompress = (int (*)(void *, off_t)) &lzxd_decompress;
-    this->d->state = lzxd_init(&this->d->sys, fh, fh, (int) (ct >> 8) & 0x1f, 0,
-			       this->param[MSCABD_PARAM_DECOMPBUF], (off_t) 0);
+    self->d->decompress = (int (*)(void *, off_t)) &lzxd_decompress;
+    self->d->state = lzxd_init(&self->d->sys, fh, fh, (int) (ct >> 8) & 0x1f, 0,
+			       self->param[MSCABD_PARAM_DECOMPBUF], (off_t) 0);
     break;
   default:
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
-  return this->error = (this->d->state) ? MSPACK_ERR_OK : MSPACK_ERR_NOMEMORY;
+  return self->error = (self->d->state) ? MSPACK_ERR_OK : MSPACK_ERR_NOMEMORY;
 }
 
-static void cabd_free_decomp(struct mscab_decompressor_p *this) {
-  if (!this || !this->d || !this->d->folder || !this->d->state) return;
+static void cabd_free_decomp(struct mscab_decompressor_p *self) {
+  if (!self || !self->d || !self->d->folder || !self->d->state) return;
 
-  switch (this->d->comp_type & cffoldCOMPTYPE_MASK) {
-  case cffoldCOMPTYPE_NONE:    noned_free(this->d->state);   break;
-  case cffoldCOMPTYPE_MSZIP:   mszipd_free(this->d->state);  break;
-  case cffoldCOMPTYPE_QUANTUM: qtmd_free(this->d->state);    break;
-  case cffoldCOMPTYPE_LZX:     lzxd_free(this->d->state);    break;
+  switch (self->d->comp_type & cffoldCOMPTYPE_MASK) {
+  case cffoldCOMPTYPE_NONE:    noned_free((struct noned_state *) self->d->state);   break;
+  case cffoldCOMPTYPE_MSZIP:   mszipd_free((struct mszipd_stream *) self->d->state);  break;
+  case cffoldCOMPTYPE_QUANTUM: qtmd_free((struct qtmd_stream *) self->d->state);    break;
+  case cffoldCOMPTYPE_LZX:     lzxd_free((struct lzxd_stream *) self->d->state);    break;
   }
-  this->d->decompress = NULL;
-  this->d->state      = NULL;
+  self->d->decompress = NULL;
+  self->d->state      = NULL;
 }
 
 /***************************************
@@ -1130,29 +1130,29 @@ static void cabd_free_decomp(struct mscab_decompressor_p *this) {
  * and serve the read bytes to the decompressors
  *
  * cabd_sys_write is the internal writer function which the decompressors
- * use. it either writes data to disk (this->d->outfh) with the real
+ * use. it either writes data to disk (self->d->outfh) with the real
  * sys->write() function, or does nothing with the data when
- * this->d->outfh == NULL. advances this->d->offset
+ * self->d->outfh == NULL. advances self->d->offset
  */
 static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) file;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) file;
   unsigned char *buf = (unsigned char *) buffer;
-  struct mspack_system *sys = this->system;
+  struct mspack_system *sys = self->system;
   int avail, todo, outlen, ignore_cksum;
 
-  ignore_cksum = this->param[MSCABD_PARAM_FIXMSZIP] &&
-    ((this->d->comp_type & cffoldCOMPTYPE_MASK) == cffoldCOMPTYPE_MSZIP);
+  ignore_cksum = self->param[MSCABD_PARAM_FIXMSZIP] &&
+    ((self->d->comp_type & cffoldCOMPTYPE_MASK) == cffoldCOMPTYPE_MSZIP);
 
   todo = bytes;
   while (todo > 0) {
-    avail = this->d->i_end - this->d->i_ptr;
+    avail = self->d->i_end - self->d->i_ptr;
 
     /* if out of input data, read a new block */
     if (avail) {
       /* copy as many input bytes available as possible */
       if (avail > todo) avail = todo;
-      sys->copy(this->d->i_ptr, buf, (size_t) avail);
-      this->d->i_ptr += avail;
+      sys->copy(self->d->i_ptr, buf, (size_t) avail);
+      self->d->i_ptr += avail;
       buf  += avail;
       todo -= avail;
     }
@@ -1160,36 +1160,36 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
       /* out of data, read a new block */
 
       /* check if we're out of input blocks, advance block counter */
-      if (this->d->block++ >= this->d->folder->base.num_blocks) {
-	this->read_error = MSPACK_ERR_DATAFORMAT;
+      if (self->d->block++ >= self->d->folder->base.num_blocks) {
+	self->read_error = MSPACK_ERR_DATAFORMAT;
 	break;
       }
 
       /* read a block */
-      this->read_error = cabd_sys_read_block(sys, this->d, &outlen, ignore_cksum);
-      if (this->read_error) return -1;
+      self->read_error = cabd_sys_read_block(sys, self->d, &outlen, ignore_cksum);
+      if (self->read_error) return -1;
 
       /* special Quantum hack -- trailer byte to allow the decompressor
        * to realign itself. CAB Quantum blocks, unlike LZX blocks, can have
        * anything from 0 to 4 trailing null bytes. */
-      if ((this->d->comp_type & cffoldCOMPTYPE_MASK)==cffoldCOMPTYPE_QUANTUM) {
-	*this->d->i_end++ = 0xFF;
+      if ((self->d->comp_type & cffoldCOMPTYPE_MASK)==cffoldCOMPTYPE_QUANTUM) {
+	*self->d->i_end++ = 0xFF;
       }
 
       /* is this the last block? */
-      if (this->d->block >= this->d->folder->base.num_blocks) {
+      if (self->d->block >= self->d->folder->base.num_blocks) {
 	/* last block */
-	if ((this->d->comp_type & cffoldCOMPTYPE_MASK) == cffoldCOMPTYPE_LZX) {
+	if ((self->d->comp_type & cffoldCOMPTYPE_MASK) == cffoldCOMPTYPE_LZX) {
 	  /* special LZX hack -- on the last block, inform LZX of the
 	   * size of the output data stream. */
-	  lzxd_set_output_length(this->d->state, (off_t)
-				 ((this->d->block-1) * CAB_BLOCKMAX + outlen));
+	  lzxd_set_output_length((struct lzxd_stream *) self->d->state, (off_t)
+				 ((self->d->block-1) * CAB_BLOCKMAX + outlen));
 	}
       }
       else {
 	/* not the last block */
 	if (outlen != CAB_BLOCKMAX) {
-	  this->system->message(this->d->infh,
+	  self->system->message(self->d->infh,
 				"WARNING; non-maximal data block");
 	}
       }
@@ -1199,10 +1199,10 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
 }
 
 static int cabd_sys_write(struct mspack_file *file, void *buffer, int bytes) {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) file;
-  this->d->offset += bytes;
-  if (this->d->outfh) {
-    return this->system->write(this->d->outfh, buffer, bytes);
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) file;
+  self->d->offset += bytes;
+  if (self->d->outfh) {
+    return self->system->write(self->d->outfh, buffer, bytes);
   }
   return bytes;
 }
@@ -1345,8 +1345,8 @@ static struct noned_state *noned_init(struct mspack_system *sys,
 				      struct mspack_file *out,
 				      int bufsize)
 {
-  struct noned_state *state = sys->alloc(sys, sizeof(struct noned_state));
-  unsigned char *buf = sys->alloc(sys, (size_t) bufsize);
+  struct noned_state *state = (struct noned_state *) sys->alloc(sys, sizeof(struct noned_state));
+  unsigned char *buf = (unsigned char *) sys->alloc(sys, (size_t) bufsize);
   if (state && buf) {
     state->sys     = sys;
     state->i       = in;
@@ -1389,20 +1389,20 @@ static void noned_free(struct noned_state *state) {
  * allows a parameter to be set
  */
 static int cabd_param(struct mscab_decompressor *base, int param, int value) {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
-  if (!this) return MSPACK_ERR_ARGS;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
+  if (!self) return MSPACK_ERR_ARGS;
 
   switch (param) {
   case MSCABD_PARAM_SEARCHBUF:
     if (value < 4) return MSPACK_ERR_ARGS;
-    this->param[MSCABD_PARAM_SEARCHBUF] = value;
+    self->param[MSCABD_PARAM_SEARCHBUF] = value;
     break;
   case MSCABD_PARAM_FIXMSZIP:
-    this->param[MSCABD_PARAM_FIXMSZIP] = value;
+    self->param[MSCABD_PARAM_FIXMSZIP] = value;
     break;
   case MSCABD_PARAM_DECOMPBUF:
     if (value < 4) return MSPACK_ERR_ARGS;
-    this->param[MSCABD_PARAM_DECOMPBUF] = value;
+    self->param[MSCABD_PARAM_DECOMPBUF] = value;
     break;
   default:
     return MSPACK_ERR_ARGS;
@@ -1416,6 +1416,6 @@ static int cabd_param(struct mscab_decompressor *base, int param, int value) {
  * returns the last error that occurred
  */
 static int cabd_error(struct mscab_decompressor *base) {
-  struct mscab_decompressor_p *this = (struct mscab_decompressor_p *) base;
-  return (this) ? this->error : MSPACK_ERR_ARGS;
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
+  return (self) ? self->error : MSPACK_ERR_ARGS;
 }

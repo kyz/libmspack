@@ -11,7 +11,7 @@
 # include <config.h>
 #endif
 
-#include <mspack.h>
+#include <system.h>
 
 #ifndef LARGEFILE_SUPPORT
 const char *largefile_msg = "library not compiled to support large files.";
@@ -103,7 +103,7 @@ struct mspack_file_p {
   char *name;
 };
 
-static struct mspack_file *msp_open(struct mspack_system *this,
+static struct mspack_file *msp_open(struct mspack_system *self,
 				    char *filename, int mode)
 {
   struct mspack_file_p *fh;
@@ -117,7 +117,7 @@ static struct mspack_file *msp_open(struct mspack_system *this,
   default: return NULL;
   }
 
-  if ((fh = malloc(sizeof(struct mspack_file_p)))) {
+  if ((fh = (struct mspack_file_p *) malloc(sizeof(struct mspack_file_p)))) {
     fh->name = filename;
     if ((fh->fh = fopen(filename, fmode))) return (struct mspack_file *) fh;
     free(fh);
@@ -126,34 +126,34 @@ static struct mspack_file *msp_open(struct mspack_system *this,
 }
 
 static void msp_close(struct mspack_file *file) {
-  struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this) {
-    fclose(this->fh);
-    free(this);
+  struct mspack_file_p *self = (struct mspack_file_p *) file;
+  if (self) {
+    fclose(self->fh);
+    free(self);
   }
 }
 
 static int msp_read(struct mspack_file *file, void *buffer, int bytes) {
-  struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this && buffer && bytes >= 0) {
-    size_t count = fread(buffer, 1, (size_t) bytes, this->fh);
-    if (!ferror(this->fh)) return (int) count;
+  struct mspack_file_p *self = (struct mspack_file_p *) file;
+  if (self && buffer && bytes >= 0) {
+    size_t count = fread(buffer, 1, (size_t) bytes, self->fh);
+    if (!ferror(self->fh)) return (int) count;
   }
   return -1;
 }
 
 static int msp_write(struct mspack_file *file, void *buffer, int bytes) {
-  struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this && buffer && bytes >= 0) {
-    size_t count = fwrite(buffer, 1, (size_t) bytes, this->fh);
-    if (!ferror(this->fh)) return (int) count;
+  struct mspack_file_p *self = (struct mspack_file_p *) file;
+  if (self && buffer && bytes >= 0) {
+    size_t count = fwrite(buffer, 1, (size_t) bytes, self->fh);
+    if (!ferror(self->fh)) return (int) count;
   }
   return -1;
 }
 
 static int msp_seek(struct mspack_file *file, off_t offset, int mode) {
-  struct mspack_file_p *this = (struct mspack_file_p *) file;
-  if (this) {
+  struct mspack_file_p *self = (struct mspack_file_p *) file;
+  if (self) {
     switch (mode) {
     case MSPACK_SYS_SEEK_START: mode = SEEK_SET; break;
     case MSPACK_SYS_SEEK_CUR:   mode = SEEK_CUR; break;
@@ -161,20 +161,20 @@ static int msp_seek(struct mspack_file *file, off_t offset, int mode) {
     default: return -1;
     }
 #ifdef HAVE_FSEEKO
-    return fseeko(this->fh, offset, mode);
+    return fseeko(self->fh, offset, mode);
 #else
-    return fseek(this->fh, offset, mode);
+    return fseek(self->fh, offset, mode);
 #endif
   }
   return -1;
 }
 
 static off_t msp_tell(struct mspack_file *file) {
-  struct mspack_file_p *this = (struct mspack_file_p *) file;
+  struct mspack_file_p *self = (struct mspack_file_p *) file;
 #ifdef HAVE_FSEEKO
-  return (this) ? (off_t) ftello(this->fh) : 0;
+  return (self) ? (off_t) ftello(self->fh) : 0;
 #else
-  return (this) ? (off_t) ftell(this->fh) : 0;
+  return (self) ? (off_t) ftell(self->fh) : 0;
 #endif
 }
 
@@ -188,7 +188,7 @@ static void msp_msg(struct mspack_file *file, char *format, ...) {
   fflush(stderr);
 }
 
-static void *msp_alloc(struct mspack_system *this, size_t bytes) {
+static void *msp_alloc(struct mspack_system *self, size_t bytes) {
 #ifdef DEBUG
   /* make uninitialised data obvious */
   char *buf = malloc(bytes + 8);

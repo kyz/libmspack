@@ -10,6 +10,10 @@
 #ifndef MSPACK_SYSTEM_H
 #define MSPACK_SYSTEM_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ensure config.h is read before mspack.h */
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -109,6 +113,10 @@ static inline int mspack_memcmp(const void *s1, const void *s2, size_t n) {
   if (n == 0) return 0;
   while (--n && (*c1 == *c2)) c1++, c2++;
   return *c1 - *c2;
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 

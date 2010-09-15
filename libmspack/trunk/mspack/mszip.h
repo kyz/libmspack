@@ -13,6 +13,10 @@
 #ifndef MSPACK_MSZIP_H
 #define MSPACK_MSZIP_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* MSZIP (deflate) compression / (inflate) decompression definitions */
 
 #define MSZIP_FRAME_SIZE          (32768) /* size of LZ history window */
@@ -109,5 +113,9 @@ extern int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes);
  * - calls system->free() using the system pointer given in mszipd_init()
  */
 void mszipd_free(struct mszipd_stream *zip);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

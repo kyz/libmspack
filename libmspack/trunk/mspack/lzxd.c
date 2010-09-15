@@ -233,13 +233,13 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
   if (!input_buffer_size) return NULL;
 
   /* allocate decompression state */
-  if (!(lzx = system->alloc(system, sizeof(struct lzxd_stream)))) {
+  if (!(lzx = (struct lzxd_stream *) system->alloc(system, sizeof(struct lzxd_stream)))) {
     return NULL;
   }
 
   /* allocate decompression window and input buffer */
-  lzx->window = system->alloc(system, (size_t) window_size);
-  lzx->inbuf  = system->alloc(system, (size_t) input_buffer_size);
+  lzx->window = (unsigned char *) system->alloc(system, (size_t) window_size);
+  lzx->inbuf  = (unsigned char *) system->alloc(system, (size_t) input_buffer_size);
   if (!lzx->window || !lzx->inbuf) {
     system->free(lzx->window);
     system->free(lzx->inbuf);

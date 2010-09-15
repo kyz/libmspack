@@ -1,3 +1,12 @@
+2010-09-15:  Stuart Caie <kyzer@4u.net>
+
+	* many files: Made the code compile with C++
+	- Renamed all 'this' variables/parameters to 'self'
+	- Added casts to all memory allocations.
+	- Added extern "C" to header files with extern declarations.
+	- Made system.c include system.h.
+	- Changed the K&R-style headers to ANSI-style headers in md5.c
+
 2010-08-04:  Stuart Caie <kyzer@4u.net>
 
 	* many files: removed unnecessary <unistd.h> include

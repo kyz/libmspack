@@ -43,7 +43,7 @@ unsigned char *load_sys_data(struct mschm_decompressor *chmd,
   }
   if (!file || file->section->id != 0) return NULL;
   if (chmd->extract(chmd, file, FILENAME)) return NULL;
-  if (!(data = malloc((size_t) file->length))) return NULL;
+  if (!(data = (unsigned char *) malloc((size_t) file->length))) return NULL;
   if ((fh = fopen(FILENAME, "rb"))) {
     fread(data, (size_t) file->length, 1, fh);
     fclose(fh);
@@ -74,7 +74,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
   unsigned int i;
   FILE *fh;
 
-  if (!(chunk = malloc(chm->chunk_size))) return;
+  if (!(chunk = (unsigned char *) malloc(chm->chunk_size))) return;
   
   if ((fh = fopen(filename, "rb"))) {
 #ifdef HAVE_FSEEKO

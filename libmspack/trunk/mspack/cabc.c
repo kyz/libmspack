@@ -19,6 +19,6 @@ struct mscab_compressor *
   return NULL;
 }
 
-void mspack_destroy_cab_compressor(struct mscab_compressor *this) {
+void mspack_destroy_cab_compressor(struct mscab_compressor *self) {
   /* todo */
 }
