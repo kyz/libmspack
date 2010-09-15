@@ -48,7 +48,7 @@ struct m_file {
 /* ------------------------------------------------------------------------ */
 /* mspack_system implementation */
 
-static void *m_alloc(struct mspack_system *this, size_t bytes) {
+static void *m_alloc(struct mspack_system *self, size_t bytes) {
   return malloc(bytes);
 }
 
@@ -74,7 +74,7 @@ static void m_msg(struct m_file *file, char *format, ...) {
 }
 
 
-static struct m_file *m_open_mem(struct mspack_system *this,
+static struct m_file *m_open_mem(struct mspack_system *self,
 				 struct m_filename *fn, int mode)
 {
   struct m_file *fh;
@@ -83,7 +83,7 @@ static struct m_file *m_open_mem(struct mspack_system *this,
   if (!fn->x.memory.data)   return NULL;
   if (!fn->x.memory.length) return NULL;
 
-  if ((fh = m_alloc(this, sizeof(struct m_file)))) {
+  if ((fh = (struct m_file *) m_alloc(self, sizeof(struct m_file)))) {
     fh->x.position = (mode == MSPACK_SYS_OPEN_APPEND) ?
       fn->x.memory.length : 0;
     fh->file = fn;
@@ -91,7 +91,7 @@ static struct m_file *m_open_mem(struct mspack_system *this,
   return fh;
 }
 
-static struct m_file *m_open_file(struct mspack_system *this,
+static struct m_file *m_open_file(struct mspack_system *self,
 				  struct m_filename *fn, int mode)
 {
   struct m_file *fh;
@@ -114,7 +114,7 @@ static struct m_file *m_open_file(struct mspack_system *this,
   }
 
   /* allocate memory for the file handle */
-  if (!(fh = m_alloc(this, sizeof(struct m_file)))) return NULL;
+  if (!(fh = (struct m_file *) m_alloc(self, sizeof(struct m_file)))) return NULL;
 
   /* open or duplicate the filehandle */
   switch (fn->type) {
@@ -144,19 +144,19 @@ static struct m_file *m_open_file(struct mspack_system *this,
   return fh;
 }
 
-static struct m_file *m_open(struct mspack_system *this,
+static struct m_file *m_open(struct mspack_system *self,
 			     struct m_filename *fn, int mode)
 {
-  if (!this || !fn) return NULL;
+  if (!self || !fn) return NULL;
 
   switch (fn->type) {
   case MTYPE_DISKFILE:
   case MTYPE_STDIOFH:
   case MTYPE_FILEDESC:
-    return m_open_file(this, fn, mode);
+    return m_open_file(self, fn, mode);
 
   case MTYPE_MEMORY:
-    return m_open_mem(this, fn, mode);
+    return m_open_mem(self, fn, mode);
   }
   return NULL;
 }
@@ -260,13 +260,13 @@ static off_t m_tell(struct m_file *fh) {
 
 
 static struct mspack_system multi_system = {
-  (struct mspack_file * (*)()) &m_open,
-  (void (*)())  &m_close,
-  (int (*)())   &m_read, 
-  (int (*)())   &m_write,
-  (int (*)())   &m_seek, 
-  (off_t (*)()) &m_tell,
-  (void (*)())  &m_msg,
+  (struct mspack_file * (*)(struct mspack_system *, char *, int)) &m_open,
+  (void (*)(struct mspack_file *)) &m_close,
+  (int (*)(struct mspack_file *, void *, int)) &m_read, 
+  (int (*)(struct mspack_file *, void *, int)) &m_write,
+  (int (*)(struct mspack_file *, off_t, int)) &m_seek, 
+  (off_t (*)(struct mspack_file *)) &m_tell,
+  (void (*)(struct mspack_file *, char *, ...))  &m_msg,
   &m_alloc,
   &m_free,
   &m_copy,
@@ -281,7 +281,7 @@ char *create_filename(char *filename) {
 
   if (!filename) return NULL; /* filename must not be null */
 
-  if ((fn = malloc(sizeof(struct m_filename)))) {
+  if ((fn = (struct m_filename *) malloc(sizeof(struct m_filename)))) {
     fn->type = MTYPE_DISKFILE;
     fn->filename = filename; /* pretty-printable filename */
     fn->x.diskfile = filename;
@@ -294,7 +294,7 @@ char *create_filename_from_handle(FILE *fh) {
 
   if (!fh) return NULL; /* file handle must not be null */
 
-  if ((fn = malloc(sizeof(struct m_filename)))) {
+  if ((fn = (struct m_filename *) malloc(sizeof(struct m_filename)))) {
     fn->type = MTYPE_STDIOFH;
     fn->filename = NULL; /* pretty-printable filename */
     fn->x.stdiofh = fh;
@@ -307,7 +307,7 @@ char *create_filename_from_descriptor(int fd) {
 
   if (fd < 0) return NULL; /* file descriptor must be valid */
 
-  if ((fn = malloc(sizeof(struct m_filename)))) {
+  if ((fn = (struct m_filename *) malloc(sizeof(struct m_filename)))) {
     fn->type = MTYPE_FILEDESC;
     fn->filename = NULL; /* pretty-printable filename */
     fn->x.filedesc = fd;
@@ -321,7 +321,7 @@ char *create_filename_from_memory(void *data, size_t length) {
   if (!data) return NULL; /* data pointer must not be NULL */
   if (length == 0) return NULL; /* length must not be zero */
 
-  if ((fn = malloc(sizeof(struct m_filename)))) {
+  if ((fn = (struct m_filename *) malloc(sizeof(struct m_filename)))) {
     fn->type = MTYPE_MEMORY;
     fn->filename = NULL; /* pretty-printable filename */
     fn->x.memory.data   = (unsigned char *) data;

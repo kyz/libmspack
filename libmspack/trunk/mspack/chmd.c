@@ -32,9 +32,9 @@ static int chmd_extract(
 static int chmd_sys_write(
   struct mspack_file *file, void *buffer, int bytes);
 static int chmd_init_decomp(
-  struct mschm_decompressor_p *this, struct mschmd_file *file);
+  struct mschm_decompressor_p *self, struct mschmd_file *file);
 static unsigned char *read_sys_file(
-  struct mschm_decompressor_p *this, struct mschmd_file *file);
+  struct mschm_decompressor_p *self, struct mschmd_file *file);
 static int chmd_error(
   struct mschm_decompressor *base);
 
@@ -53,23 +53,23 @@ static char *rtable_name  = "::DataSpace/Storage/MSCompressed/Transform/"
 struct mschm_decompressor *
   mspack_create_chm_decompressor(struct mspack_system *sys)
 {
-  struct mschm_decompressor_p *this = NULL;
+  struct mschm_decompressor_p *self = NULL;
 
   if (!sys) sys = mspack_default_system;
   if (!mspack_valid_system(sys)) return NULL;
 
-  if ((this = sys->alloc(sys, sizeof(struct mschm_decompressor_p)))) {
-    this->base.open       = &chmd_open;
-    this->base.close      = &chmd_close;
-    this->base.extract    = &chmd_extract;
-    this->base.last_error = &chmd_error;
-    this->base.fast_open  = &chmd_fast_open;
-    this->base.fast_find  = &chmd_fast_find;
-    this->system          = sys;
-    this->error           = MSPACK_ERR_OK;
-    this->d               = NULL;
+  if ((self = (struct mschm_decompressor_p *) sys->alloc(sys, sizeof(struct mschm_decompressor_p)))) {
+    self->base.open       = &chmd_open;
+    self->base.close      = &chmd_close;
+    self->base.extract    = &chmd_extract;
+    self->base.last_error = &chmd_error;
+    self->base.fast_open  = &chmd_fast_open;
+    self->base.fast_find  = &chmd_fast_find;
+    self->system          = sys;
+    self->error           = MSPACK_ERR_OK;
+    self->d               = NULL;
   }
-  return (struct mschm_decompressor *) this;
+  return (struct mschm_decompressor *) self;
 }
 
 /***************************************
@@ -78,15 +78,15 @@ struct mschm_decompressor *
  * destructor
  */
 void mspack_destroy_chm_decompressor(struct mschm_decompressor *base) {
-  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) base;
-  if (this) {
-    struct mspack_system *sys = this->system;
-    if (this->d) {
-      if (this->d->infh)  sys->close(this->d->infh);
-      if (this->d->state) lzxd_free(this->d->state);
-      sys->free(this->d);
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
+  if (self) {
+    struct mspack_system *sys = self->system;
+    if (self->d) {
+      if (self->d->infh)  sys->close(self->d->infh);
+      if (self->d->state) lzxd_free(self->d->state);
+      sys->free(self->d);
     }
-    sys->free(this);
+    sys->free(self);
   }
 }
 
@@ -124,32 +124,32 @@ static struct mschmd_header *chmd_fast_open(struct mschm_decompressor *base,
 static struct mschmd_header *chmd_real_open(struct mschm_decompressor *base,
 					    char *filename, int entire)
 {
-  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) base;
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mschmd_header *chm = NULL;
   struct mspack_system *sys;
   struct mspack_file *fh;
   int error;
 
   if (!base) return NULL;
-  sys = this->system;
+  sys = self->system;
 
   if ((fh = sys->open(sys, filename, MSPACK_SYS_OPEN_READ))) {
-    if ((chm = sys->alloc(sys, sizeof(struct mschmd_header)))) {
+    if ((chm = (struct mschmd_header *) sys->alloc(sys, sizeof(struct mschmd_header)))) {
       chm->filename = filename;
       error = chmd_read_headers(sys, fh, chm, entire);
       if (error) {
 	chmd_close(base, chm);
 	chm = NULL;
       }
-      this->error = error;
+      self->error = error;
     }
     else {
-      this->error = MSPACK_ERR_NOMEMORY;
+      self->error = MSPACK_ERR_NOMEMORY;
     }
     sys->close(fh);
   }
   else {
-    this->error = MSPACK_ERR_OPEN;
+    self->error = MSPACK_ERR_OPEN;
   }
   return chm;
 }
@@ -162,14 +162,14 @@ static struct mschmd_header *chmd_real_open(struct mschm_decompressor *base,
 static void chmd_close(struct mschm_decompressor *base,
 		       struct mschmd_header *chm)
 {
-  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) base;
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mschmd_file *fi, *nfi;
   struct mspack_system *sys;
 
   if (!base) return;
-  sys = this->system;
+  sys = self->system;
 
-  this->error = MSPACK_ERR_OK;
+  self->error = MSPACK_ERR_OK;
 
   /* free files */
   for (fi = chm->files; fi; fi = nfi) {
@@ -182,11 +182,11 @@ static void chmd_close(struct mschm_decompressor *base,
   }
 
   /* if this CHM was being decompressed, free decompression state */
-  if (this->d && (this->d->chm == chm)) {
-    if (this->d->infh) sys->close(this->d->infh);
-    if (this->d->state) lzxd_free(this->d->state);
-    sys->free(this->d);
-    this->d = NULL;
+  if (self->d && (self->d->chm == chm)) {
+    if (self->d->infh) sys->close(self->d->infh);
+    if (self->d->state) lzxd_free(self->d->state);
+    sys->free(self->d);
+    self->d = NULL;
   }
 
   sys->free(chm);
@@ -342,7 +342,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   }
   num_chunks = EndGetI32(&buf[chmhs1_LastPMGL]) - x + 1;
 
-  if (!(chunk = sys->alloc(sys, chm->chunk_size))) {
+  if (!(chunk = (unsigned char *) sys->alloc(sys, chm->chunk_size))) {
     return MSPACK_ERR_NOMEMORY;
   }
 
@@ -385,7 +385,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
 	continue;
       }
 
-      if (!(fi = sys->alloc(sys, sizeof(struct mschmd_file) + name_len + 1))) {
+      if (!(fi = (struct mschmd_file *) sys->alloc(sys, sizeof(struct mschmd_file) + name_len + 1))) {
 	sys->free(chunk);
 	return MSPACK_ERR_NOMEMORY;
       }
@@ -436,18 +436,18 @@ static int chmd_fast_find(struct mschm_decompressor *base,
 			  struct mschmd_header *chm, char *filename,
 			  struct mschmd_file *f_ptr, int f_size)
 {
-  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) base;
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mspack_system *sys;
   struct mspack_file *fh;
   unsigned int block;
   unsigned char *chunk;
 
-  if (!this || !chm || !f_ptr || (f_size != sizeof(struct mschmd_file))) {
+  if (!self || !chm || !f_ptr || (f_size != sizeof(struct mschmd_file))) {
     return MSPACK_ERR_ARGS;
   }
-  sys = this->system;
+  sys = self->system;
 
-  if (!(chunk = sys->alloc(sys, chm->chunk_size))) {
+  if (!(chunk = (unsigned char *) sys->alloc(sys, chm->chunk_size))) {
     return MSPACK_ERR_NOMEMORY;
   }
 
@@ -510,61 +510,61 @@ static int chmd_fast_find(struct mschm_decompressor *base,
 static int chmd_extract(struct mschm_decompressor *base,
 			struct mschmd_file *file, char *filename)
 {
-  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) base;
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mspack_system *sys;
   struct mschmd_header *chm;
   struct mspack_file *fh;
   off_t bytes;
 
-  if (!this) return MSPACK_ERR_ARGS;
-  if (!file || !file->section) return this->error = MSPACK_ERR_ARGS;
-  sys = this->system;
+  if (!self) return MSPACK_ERR_ARGS;
+  if (!file || !file->section) return self->error = MSPACK_ERR_ARGS;
+  sys = self->system;
   chm = file->section->chm;
 
   /* create decompression state if it doesn't exist */
-  if (!this->d) {
-    this->d = sys->alloc(sys, sizeof(struct mschmd_decompress_state));
-    if (!this->d) return this->error = MSPACK_ERR_NOMEMORY;
-    this->d->chm       = chm;
-    this->d->offset    = 0;
-    this->d->state     = NULL;
-    this->d->sys       = *sys;
-    this->d->sys.write = &chmd_sys_write;
-    this->d->infh      = NULL;
-    this->d->outfh     = NULL;
+  if (!self->d) {
+    self->d = (struct mschmd_decompress_state *) sys->alloc(sys, sizeof(struct mschmd_decompress_state));
+    if (!self->d) return self->error = MSPACK_ERR_NOMEMORY;
+    self->d->chm       = chm;
+    self->d->offset    = 0;
+    self->d->state     = NULL;
+    self->d->sys       = *sys;
+    self->d->sys.write = &chmd_sys_write;
+    self->d->infh      = NULL;
+    self->d->outfh     = NULL;
   }
 
   /* open input chm file if not open, or the open one is a different chm */
-  if (!this->d->infh || (this->d->chm != chm)) {
-    if (this->d->infh)  sys->close(this->d->infh);
-    if (this->d->state) lzxd_free(this->d->state);
-    this->d->chm    = chm;
-    this->d->offset = 0;
-    this->d->state  = NULL;
-    this->d->infh   = sys->open(sys, chm->filename, MSPACK_SYS_OPEN_READ);
-    if (!this->d->infh) return this->error = MSPACK_ERR_OPEN;
+  if (!self->d->infh || (self->d->chm != chm)) {
+    if (self->d->infh)  sys->close(self->d->infh);
+    if (self->d->state) lzxd_free(self->d->state);
+    self->d->chm    = chm;
+    self->d->offset = 0;
+    self->d->state  = NULL;
+    self->d->infh   = sys->open(sys, chm->filename, MSPACK_SYS_OPEN_READ);
+    if (!self->d->infh) return self->error = MSPACK_ERR_OPEN;
   }
 
   /* open file for output */
   if (!(fh = sys->open(sys, filename, MSPACK_SYS_OPEN_WRITE))) {
-    return this->error = MSPACK_ERR_OPEN;
+    return self->error = MSPACK_ERR_OPEN;
   }
 
   /* if file is empty, simply creating it is enough */
   if (!file->length) {
     sys->close(fh);
-    return this->error = MSPACK_ERR_OK;
+    return self->error = MSPACK_ERR_OK;
   }
 
-  this->error = MSPACK_ERR_OK;
+  self->error = MSPACK_ERR_OK;
 
   switch (file->section->id) {
   case 0: /* Uncompressed section file */
     /* simple seek + copy */
-    if (sys->seek(this->d->infh, file->section->chm->sec0.offset
+    if (sys->seek(self->d->infh, file->section->chm->sec0.offset
 		  + file->offset, MSPACK_SYS_SEEK_START))
     {
-      this->error = MSPACK_ERR_SEEK;
+      self->error = MSPACK_ERR_SEEK;
     }
     else {
       unsigned char buf[512];
@@ -572,12 +572,12 @@ static int chmd_extract(struct mschm_decompressor *base,
       while (length > 0) {
 	int run = sizeof(buf);
 	if ((off_t)run > length) run = (int)length;
-	if (sys->read(this->d->infh, &buf[0], run) != run) {
-	  this->error = MSPACK_ERR_READ;
+	if (sys->read(self->d->infh, &buf[0], run) != run) {
+	  self->error = MSPACK_ERR_READ;
 	  break;
 	}
 	if (sys->write(fh, &buf[0], run) != run) {
-	  this->error = MSPACK_ERR_WRITE;
+	  self->error = MSPACK_ERR_WRITE;
 	  break;
 	}
 	length -= run;
@@ -589,61 +589,61 @@ static int chmd_extract(struct mschm_decompressor *base,
     /* (re)initialise compression state if we it is not yet initialised,
      * or we have advanced too far and have to backtrack
      */
-    if (!this->d->state || (file->offset < this->d->offset)) {
-      if (this->d->state) {
-	lzxd_free(this->d->state);
-	this->d->state = NULL;
+    if (!self->d->state || (file->offset < self->d->offset)) {
+      if (self->d->state) {
+	lzxd_free(self->d->state);
+	self->d->state = NULL;
       }
-      if (chmd_init_decomp(this, file)) break;
+      if (chmd_init_decomp(self, file)) break;
     }
 
     /* seek to input data */
-    if (sys->seek(this->d->infh, this->d->inoffset, MSPACK_SYS_SEEK_START)) {
-      this->error = MSPACK_ERR_SEEK;
+    if (sys->seek(self->d->infh, self->d->inoffset, MSPACK_SYS_SEEK_START)) {
+      self->error = MSPACK_ERR_SEEK;
       break;
     }
 
     /* get to correct offset. */
-    this->d->outfh = NULL;
-    if ((bytes = file->offset - this->d->offset)) {
-      this->error = lzxd_decompress(this->d->state, bytes);
+    self->d->outfh = NULL;
+    if ((bytes = file->offset - self->d->offset)) {
+      self->error = lzxd_decompress(self->d->state, bytes);
     }
 
     /* if getting to the correct offset was error free, unpack file */
-    if (!this->error) {
-      this->d->outfh = fh;
-      this->error = lzxd_decompress(this->d->state, file->length);
+    if (!self->error) {
+      self->d->outfh = fh;
+      self->error = lzxd_decompress(self->d->state, file->length);
     }
 
     /* save offset in input source stream, in case there is a section 0
      * file between now and the next section 1 file extracted */
-    this->d->inoffset = sys->tell(this->d->infh);
+    self->d->inoffset = sys->tell(self->d->infh);
 
     /* if an LZX error occured, the LZX decompressor is now useless */
-    if (this->error) {
-      if (this->d->state) lzxd_free(this->d->state);
-      this->d->state = NULL;
+    if (self->error) {
+      if (self->d->state) lzxd_free(self->d->state);
+      self->d->state = NULL;
     }
     break;
   }
 
   sys->close(fh);
-  return this->error;
+  return self->error;
 }
 
 /***************************************
  * CHMD_SYS_WRITE
  ***************************************
  * chmd_sys_write is the internal writer function which the decompressor
- * uses. If either writes data to disk (this->d->outfh) with the real
+ * uses. If either writes data to disk (self->d->outfh) with the real
  * sys->write() function, or does nothing with the data when
- * this->d->outfh == NULL. advances this->d->offset.
+ * self->d->outfh == NULL. advances self->d->offset.
  */
 static int chmd_sys_write(struct mspack_file *file, void *buffer, int bytes) {
-  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) file;
-  this->d->offset += bytes;
-  if (this->d->outfh) {
-    return this->system->write(this->d->outfh, buffer, bytes);
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) file;
+  self->d->offset += bytes;
+  if (self->d->outfh) {
+    return self->system->write(self->d->outfh, buffer, bytes);
   }
   return bytes;
 }
@@ -655,11 +655,11 @@ static int chmd_sys_write(struct mspack_file *file, void *buffer, int bytes) {
  * from the nearest reset offset and length that is needed for the given
  * file.
  */
-static int chmd_init_decomp(struct mschm_decompressor_p *this,
+static int chmd_init_decomp(struct mschm_decompressor_p *self,
 			    struct mschmd_file *file)
 {
   int window_size, window_bits, reset_interval, entry, tablepos, entrysize;
-  struct mspack_system *sys = this->system;
+  struct mspack_system *sys = self->system;
   struct mschmd_sec_mscompressed *sec;
   struct mschmd_file sysfile;
   unsigned char *data;
@@ -669,12 +669,12 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
 
   /* ensure we have a mscompressed content section */
   if (!sec->content) {
-    if (chmd_fast_find((struct mschm_decompressor *) this, sec->base.chm,
+    if (chmd_fast_find((struct mschm_decompressor *) self, sec->base.chm,
 			content_name, &sysfile, sizeof(sysfile)))
-      return this->error = MSPACK_ERR_DATAFORMAT;
+      return self->error = MSPACK_ERR_DATAFORMAT;
 
-    if (!(sec->content = sys->alloc(sys, sizeof(sysfile))))
-      return this->error = MSPACK_ERR_NOMEMORY;
+    if (!(sec->content = (struct mschmd_file *) sys->alloc(sys, sizeof(sysfile))))
+      return self->error = MSPACK_ERR_NOMEMORY;
 
     *sec->content = sysfile;
     sec->content->filename = content_name;
@@ -684,12 +684,12 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
 
   /* ensure we have a ControlData file */
   if (!sec->control) {
-    if (chmd_fast_find((struct mschm_decompressor *) this, sec->base.chm,
+    if (chmd_fast_find((struct mschm_decompressor *) self, sec->base.chm,
 			control_name, &sysfile, sizeof(sysfile)))
-      return this->error = MSPACK_ERR_DATAFORMAT;
+      return self->error = MSPACK_ERR_DATAFORMAT;
 
-    if (!(sec->control = sys->alloc(sys, sizeof(sysfile))))
-      return this->error = MSPACK_ERR_NOMEMORY;
+    if (!(sec->control = (struct mschmd_file *) sys->alloc(sys, sizeof(sysfile))))
+      return self->error = MSPACK_ERR_NOMEMORY;
 
     *sec->control = sysfile;
     sec->control->filename = content_name;
@@ -699,12 +699,12 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
 
   /* ensure we have a reset table */
   if (!sec->rtable) {
-    if (chmd_fast_find((struct mschm_decompressor *) this, sec->base.chm,
+    if (chmd_fast_find((struct mschm_decompressor *) self, sec->base.chm,
 			rtable_name, &sysfile, sizeof(sysfile)))
-      return this->error = MSPACK_ERR_DATAFORMAT;
+      return self->error = MSPACK_ERR_DATAFORMAT;
 
-    if (!(sec->rtable = sys->alloc(sys, sizeof(sysfile))))
-      return this->error = MSPACK_ERR_NOMEMORY;
+    if (!(sec->rtable = (struct mschmd_file *) sys->alloc(sys, sizeof(sysfile))))
+      return self->error = MSPACK_ERR_NOMEMORY;
 
     *sec->rtable = sysfile;
     sec->rtable->filename = content_name;
@@ -713,15 +713,15 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   }
 
   /* read ControlData */
-  if (!(data = read_sys_file(this, sec->control))) {
+  if (!(data = read_sys_file(self, sec->control))) {
     D(("can't read mscompressed control data file"))
-    return this->error;
+    return self->error;
   }
 
   /* check LZXC signature */
   if (EndGetI32(&data[lzxcd_Signature]) != 0x43585A4C) {
     sys->free(data);
-    return this->error = MSPACK_ERR_SIGNATURE;
+    return self->error = MSPACK_ERR_SIGNATURE;
   }
 
   /* read reset_interval and window_size and validate version number */
@@ -737,7 +737,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   default:
     D(("bad controldata version"))
     sys->free(data);
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
 
   /* free ControlData */
@@ -754,26 +754,26 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   case 0x200000: window_bits = 21; break;
   default:
     D(("bad controldata window size"))
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
 
   /* validate reset_interval */
   if (reset_interval % LZX_FRAME_SIZE) {
     D(("bad controldata reset interval"))
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
 
   /* read ResetTable file */
-  if (!(data = read_sys_file(this, sec->rtable))) {
+  if (!(data = read_sys_file(self, sec->rtable))) {
     D(("can't read reset table"))
-    return this->error;
+    return self->error;
   }
 
   /* check sanity of reset table */
   if (EndGetI32(&data[lzxrt_FrameLen]) != LZX_FRAME_SIZE) {
     D(("bad resettable frame length"))
     sys->free(data);
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
 
   /* get the uncompressed length of the LZX stream */
@@ -782,9 +782,9 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
 #else
   length = EndGetI32(&data[lzxrt_UncompLen]);
   if (EndGetI32(&data[lzxrt_UncompLen+4]) || (length < 0)) {
-    sys->message(this->d->infh, largefile_msg);
+    sys->message(self->d->infh, largefile_msg);
     sys->free(data);
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
 #endif
 
@@ -810,27 +810,27 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   {
     D(("bad resettable reset interval choice"))
     sys->free(data);
-    return this->error = MSPACK_ERR_DATAFORMAT;
+    return self->error = MSPACK_ERR_DATAFORMAT;
   }
 
   /* get offset of compressed data stream:
    * = offset of uncompressed section from start of file
    * + offset of compressed stream from start of uncompressed section
    * + offset of chosen reset interval from start of compressed stream */
-  this->d->inoffset = file->section->chm->sec0.offset + sec->content->offset;
+  self->d->inoffset = file->section->chm->sec0.offset + sec->content->offset;
   switch (entrysize) {
   case 4:
-    this->d->inoffset += EndGetI32(&data[tablepos]);
+    self->d->inoffset += EndGetI32(&data[tablepos]);
     break;
   case 8:
 #ifdef LARGEFILE_SUPPORT
-    this->d->inoffset += EndGetI64(&data[tablepos]);
+    self->d->inoffset += EndGetI64(&data[tablepos]);
 #else
-    this->d->inoffset += EndGetI32(&data[tablepos]);
+    self->d->inoffset += EndGetI32(&data[tablepos]);
     if (EndGetI32(&data[tablepos+4])) {
-      sys->message(this->d->infh, largefile_msg);
+      sys->message(self->d->infh, largefile_msg);
       sys->free(data);
-      return this->error = MSPACK_ERR_DATAFORMAT;
+      return self->error = MSPACK_ERR_DATAFORMAT;
     }
 #endif
     break;
@@ -840,16 +840,16 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
   sys->free(data);
 
   /* set start offset and overall remaining stream length */
-  this->d->offset = entry * LZX_FRAME_SIZE;
-  length -= this->d->offset;
+  self->d->offset = entry * LZX_FRAME_SIZE;
+  length -= self->d->offset;
 
   /* initialise LZX stream */
-  this->d->state = lzxd_init(&this->d->sys, this->d->infh,
-			     (struct mspack_file *) this, window_bits,
+  self->d->state = lzxd_init(&self->d->sys, self->d->infh,
+			     (struct mspack_file *) self, window_bits,
 			     reset_interval / LZX_FRAME_SIZE,
 			     4096, length);
-  if (!this->d->state) this->error = MSPACK_ERR_NOMEMORY;
-  return this->error;
+  if (!self->d->state) self->error = MSPACK_ERR_NOMEMORY;
+  return self->error;
 }
 
 /***************************************
@@ -858,33 +858,33 @@ static int chmd_init_decomp(struct mschm_decompressor_p *this,
  * Allocates memory for a section 0 (uncompressed) file and reads it into
  * memory.
  */
-static unsigned char *read_sys_file(struct mschm_decompressor_p *this,
+static unsigned char *read_sys_file(struct mschm_decompressor_p *self,
 				    struct mschmd_file *file)
 {
-  struct mspack_system *sys = this->system;
+  struct mspack_system *sys = self->system;
   unsigned char *data = NULL;
   int len;
 
   if (!file || !file->section || (file->section->id != 0)) {
-    this->error = MSPACK_ERR_DATAFORMAT;
+    self->error = MSPACK_ERR_DATAFORMAT;
     return NULL;
   }
 
   len = (int) file->length;
 
-  if (!(data = sys->alloc(sys, (size_t) len))) {
-    this->error = MSPACK_ERR_NOMEMORY;
+  if (!(data = (unsigned char *) sys->alloc(sys, (size_t) len))) {
+    self->error = MSPACK_ERR_NOMEMORY;
     return NULL;
   }
-  if (sys->seek(this->d->infh, file->section->chm->sec0.offset
+  if (sys->seek(self->d->infh, file->section->chm->sec0.offset
 		+ file->offset, MSPACK_SYS_SEEK_START))
   {
-    this->error = MSPACK_ERR_SEEK;
+    self->error = MSPACK_ERR_SEEK;
     sys->free(data);
     return NULL;
   }
-  if (sys->read(this->d->infh, data, len) != len) {
-    this->error = MSPACK_ERR_READ;
+  if (sys->read(self->d->infh, data, len) != len) {
+    self->error = MSPACK_ERR_READ;
     sys->free(data);
     return NULL;
   }
@@ -897,6 +897,6 @@ static unsigned char *read_sys_file(struct mschm_decompressor_p *this,
  * returns the last error that occurred
  */
 static int chmd_error(struct mschm_decompressor *base) {
-  struct mschm_decompressor_p *this = (struct mschm_decompressor_p *) base;
-  return (this) ? this->error : MSPACK_ERR_ARGS;
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
+  return (self) ? self->error : MSPACK_ERR_ARGS;
 }

@@ -69,7 +69,7 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   /* length of output directory */
   if (dir) x += strlen((char *) dir);
 
-  if (!(name = malloc(x + 2))) {
+  if (!(name = (unsigned char *) malloc(x + 2))) {
     fprintf(stderr, "out of memory!\n");
     return NULL;
   }
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
 
 	/* EXTRACT OUT OF ORDER */
 	for (file = chm->files; file; file = file->next) {
-	  char *outname = create_output_name(file->filename,NULL,0,1,0);
+	  char *outname = create_output_name((unsigned char *) file->filename,NULL,0,1,0);
 	  printf("EOO %s\n", outname);
 	  ensure_filepath(outname);
 	  if (chmd->extract(chmd, file, outname)) {
@@ -200,11 +200,11 @@ int main(int argc, char *argv[]) {
 
 	/* EXTRACT IN ORDER [ordered by offset into content section] */
 	for (numf=0, file=chm->files; file; file = file->next) numf++;
-	if ((f = calloc(numf, sizeof(struct mschmd_file *)))) {
+	if ((f = (struct mschmd_file **) calloc(numf, sizeof(struct mschmd_file *)))) {
 	  for (i=0, file=chm->files; file; file = file->next) f[i++] = file;
 	  qsort(f, numf, sizeof(struct mschmd_file *), &sortfunc);
 	  for (i = 0; i < numf; i++) {
-	    char *outname = create_output_name(f[i]->filename,NULL,0,1,0);
+	    char *outname = create_output_name((unsigned char *)f[i]->filename,NULL,0,1,0);
 	    printf("EIO %s\n", outname);
 	    ensure_filepath(outname);
 	    if (chmd->extract(chmd, f[i], outname)) {

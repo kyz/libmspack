@@ -20,7 +20,7 @@ struct mem_file {
   size_t length, posn;
 };
 
-static void *mem_alloc(struct mspack_system *this, size_t bytes) {
+static void *mem_alloc(struct mspack_system *self, size_t bytes) {
   /* put your memory allocator here */
   return malloc(bytes);
 }
@@ -39,13 +39,13 @@ static void mem_msg(struct mem_file *file, char *format, ...) {
   /* put your own printf-type routine here, or leave it empty */
 }
 
-static struct mem_file *mem_open(struct mspack_system *this,
+static struct mem_file *mem_open(struct mspack_system *self,
 				 struct mem_buf *fn, int mode)
 {
   struct mem_file *fh;
   if (!fn || !fn->data || !fn->length) return NULL;
-  if ((fh = mem_alloc(this, sizeof(struct mem_file)))) {
-    fh->data   = fn->data;
+  if ((fh = (struct mem_file *) mem_alloc(self, sizeof(struct mem_file)))) {
+    fh->data   = (char *) fn->data;
     fh->length = fn->length;
     fh->posn   = (mode == MSPACK_SYS_OPEN_APPEND) ? fn->length : 0;
   }
@@ -92,13 +92,13 @@ static off_t mem_tell(struct mem_file *fh) {
 }
 
 static struct mspack_system mem_system = {
-  (struct mspack_file * (*)()) &mem_open,
-  (void (*)())  &mem_close,
-  (int (*)())   &mem_read, 
-  (int (*)())   &mem_write,
-  (int (*)())   &mem_seek, 
-  (off_t (*)()) &mem_tell,
-  (void (*)())  &mem_msg,
+  (struct mspack_file * (*)(struct mspack_system *, char *, int)) &mem_open,
+  (void (*)(struct mspack_file *)) &mem_close,
+  (int (*)(struct mspack_file *, void *, int)) &mem_read, 
+  (int (*)(struct mspack_file *, void *, int)) &mem_write,
+  (int (*)(struct mspack_file *, off_t, int)) &mem_seek, 
+  (off_t (*)(struct mspack_file *)) &mem_tell,
+  (void (*)(struct mspack_file *, char *, ...)) &mem_msg,
   &mem_alloc,
   &mem_free,
   &mem_copy,
@@ -149,7 +149,7 @@ int main() {
       /* for all files */
       for (file = cab->files; file; file = file->next) {
 	/* fill out our "filename" (memory pointer and length) */
-	output.data = malloc(file->length);
+	output.data = (char *) malloc(file->length);
 	output.length = file->length;
 
 	/* let cabd extract this file to our memory buffer */

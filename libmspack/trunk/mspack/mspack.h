@@ -2139,7 +2139,7 @@ struct mskwaj_decompressor {
 };
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif

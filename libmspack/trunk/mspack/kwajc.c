@@ -19,6 +19,6 @@ struct mskwaj_compressor *
   return NULL;
 }
 
-void mspack_destroy_kwaj_compressor(struct mskwaj_compressor *this) {
+void mspack_destroy_kwaj_compressor(struct mskwaj_compressor *self) {
   /* todo */
 }

@@ -19,6 +19,6 @@ struct msszdd_compressor *
   return NULL;
 }
 
-void mspack_destroy_szdd_compressor(struct msszdd_compressor *this) {
+void mspack_destroy_szdd_compressor(struct msszdd_compressor *self) {
   /* todo */
 }

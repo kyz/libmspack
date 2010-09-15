@@ -53,21 +53,21 @@ static int lzh_read_input(
 struct mskwaj_decompressor *
     mspack_create_kwaj_decompressor(struct mspack_system *sys)
 {
-  struct mskwaj_decompressor_p *this = NULL;
+  struct mskwaj_decompressor_p *self = NULL;
 
   if (!sys) sys = mspack_default_system;
   if (!mspack_valid_system(sys)) return NULL;
 
-  if ((this = sys->alloc(sys, sizeof(struct mskwaj_decompressor_p)))) {
-    this->base.open       = &kwajd_open;
-    this->base.close      = &kwajd_close;
-    this->base.extract    = &kwajd_extract;
-    this->base.decompress = &kwajd_decompress;
-    this->base.last_error = &kwajd_error;
-    this->system          = sys;
-    this->error           = MSPACK_ERR_OK;
+  if ((self = (struct mskwaj_decompressor_p *) sys->alloc(sys, sizeof(struct mskwaj_decompressor_p)))) {
+    self->base.open       = &kwajd_open;
+    self->base.close      = &kwajd_close;
+    self->base.extract    = &kwajd_extract;
+    self->base.decompress = &kwajd_decompress;
+    self->base.last_error = &kwajd_error;
+    self->system          = sys;
+    self->error           = MSPACK_ERR_OK;
   }
-  return (struct mskwaj_decompressor *) this;
+  return (struct mskwaj_decompressor *) self;
 }
 
 /***************************************
@@ -77,10 +77,10 @@ struct mskwaj_decompressor *
  */
 void mspack_destroy_kwaj_decompressor(struct mskwaj_decompressor *base)
 {
-    struct mskwaj_decompressor_p *this = (struct mskwaj_decompressor_p *) base;
-    if (this) {
-	struct mspack_system *sys = this->system;
-	sys->free(this);
+    struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
+    if (self) {
+	struct mspack_system *sys = self->system;
+	sys->free(self);
     }
 }
 
@@ -92,26 +92,26 @@ void mspack_destroy_kwaj_decompressor(struct mskwaj_decompressor *base)
 static struct mskwajd_header *kwajd_open(struct mskwaj_decompressor *base,
 					 char *filename)
 {
-    struct mskwaj_decompressor_p *this = (struct mskwaj_decompressor_p *) base;
+    struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
     struct mskwajd_header *hdr;
     struct mspack_system *sys;
     struct mspack_file *fh;
 
-    if (!this) return NULL;
-    sys = this->system;
+    if (!self) return NULL;
+    sys = self->system;
 
     fh  = sys->open(sys, filename, MSPACK_SYS_OPEN_READ);
-    hdr = sys->alloc(sys, sizeof(struct mskwajd_header_p));
+    hdr = (struct mskwajd_header *) sys->alloc(sys, sizeof(struct mskwajd_header_p));
     if (fh && hdr) {
 	((struct mskwajd_header_p *) hdr)->fh = fh;
-	this->error = kwajd_read_headers(sys, fh, hdr);
+	self->error = kwajd_read_headers(sys, fh, hdr);
     }
     else {
-	if (!fh)  this->error = MSPACK_ERR_OPEN;
-	if (!hdr) this->error = MSPACK_ERR_NOMEMORY;
+	if (!fh)  self->error = MSPACK_ERR_OPEN;
+	if (!hdr) self->error = MSPACK_ERR_NOMEMORY;
     }
     
-    if (this->error) {
+    if (self->error) {
 	if (fh)  sys->close(fh);
 	if (hdr) sys->free(hdr);
 	hdr = NULL;
@@ -128,18 +128,18 @@ static struct mskwajd_header *kwajd_open(struct mskwaj_decompressor *base,
 static void kwajd_close(struct mskwaj_decompressor *base,
 			struct mskwajd_header *hdr)
 {
-    struct mskwaj_decompressor_p *this = (struct mskwaj_decompressor_p *) base;
+    struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
     struct mskwajd_header_p *hdr_p = (struct mskwajd_header_p *) hdr;
 
-    if (!this || !this->system) return;
+    if (!self || !self->system) return;
 
     /* close the file handle associated */
-    this->system->close(hdr_p->fh);
+    self->system->close(hdr_p->fh);
 
     /* free the memory associated */
-    this->system->free(hdr);
+    self->system->free(hdr);
 
-    this->error = MSPACK_ERR_OK;
+    self->error = MSPACK_ERR_OK;
 }
 
 /***************************************
@@ -198,7 +198,7 @@ static int kwajd_read_headers(struct mspack_system *sys,
     /* filename and extension */
     if (hdr->headers & (MSKWAJ_HDR_HASFILENAME | MSKWAJ_HDR_HASFILEEXT)) {
 	off_t pos = sys->tell(fh);
-	char *fn = sys->alloc(sys, (size_t) 13);
+	char *fn = (char *) sys->alloc(sys, (size_t) 13);
 
 	/* allocate memory for maximum length filename */
 	if (! fn) return MSPACK_ERR_NOMEMORY;
@@ -229,7 +229,7 @@ static int kwajd_read_headers(struct mspack_system *sys,
     if (hdr->headers & MSKWAJ_HDR_HASEXTRATEXT) {
 	if (sys->read(fh, &buf[0], 2) != 2) return MSPACK_ERR_READ;
 	i = EndGetI16(&buf[0]);
-	hdr->extra = sys->alloc(sys, (size_t)i+1);
+	hdr->extra = (char *) sys->alloc(sys, (size_t)i+1);
 	if (! hdr->extra) return MSPACK_ERR_NOMEMORY;
 	if (sys->read(fh, hdr->extra, i) != i) return MSPACK_ERR_READ;
 	hdr->extra[i] = '\0';
@@ -246,34 +246,34 @@ static int kwajd_read_headers(struct mspack_system *sys,
 static int kwajd_extract(struct mskwaj_decompressor *base,
 			 struct mskwajd_header *hdr, char *filename)
 {
-    struct mskwaj_decompressor_p *this = (struct mskwaj_decompressor_p *) base;
+    struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
     struct mspack_system *sys;
     struct mspack_file *fh, *outfh;
 
-    if (!this) return MSPACK_ERR_ARGS;
-    if (!hdr) return this->error = MSPACK_ERR_ARGS;
+    if (!self) return MSPACK_ERR_ARGS;
+    if (!hdr) return self->error = MSPACK_ERR_ARGS;
 
-    sys = this->system;
+    sys = self->system;
     fh = ((struct mskwajd_header_p *) hdr)->fh;
 
     /* seek to the compressed data */
     if (sys->seek(fh, hdr->data_offset, MSPACK_SYS_SEEK_START)) {
-	return this->error = MSPACK_ERR_SEEK;
+	return self->error = MSPACK_ERR_SEEK;
     }
 
     /* open file for output */
     if (!(outfh = sys->open(sys, filename, MSPACK_SYS_OPEN_WRITE))) {
-	return this->error = MSPACK_ERR_OPEN;
+	return self->error = MSPACK_ERR_OPEN;
     }
 
-    this->error = MSPACK_ERR_OK;
+    self->error = MSPACK_ERR_OK;
 
     /* decompress based on format */
     if (hdr->comp_type == MSKWAJ_COMP_NONE ||
 	hdr->comp_type == MSKWAJ_COMP_XOR)
     {
 	/* NONE is a straight copy. XOR is a copy xored with 0xFF */
-	unsigned char *buf = sys->alloc(sys, (size_t) KWAJ_INPUT_SIZE);
+	unsigned char *buf = (unsigned char *) sys->alloc(sys, (size_t) KWAJ_INPUT_SIZE);
 	if (buf) {
 	    int read, i;
 	    while ((read = sys->read(fh, buf, KWAJ_INPUT_SIZE)) > 0) {
@@ -281,34 +281,34 @@ static int kwajd_extract(struct mskwaj_decompressor *base,
 		    for (i = 0; i < read; i++) buf[i] ^= 0xFF;
 		}
 		if (sys->write(outfh, buf, read) != read) {
-		    this->error = MSPACK_ERR_WRITE;
+		    self->error = MSPACK_ERR_WRITE;
 		    break;
 		}
 	    }
-	    if (read < 0) this->error = MSPACK_ERR_READ;
+	    if (read < 0) self->error = MSPACK_ERR_READ;
 	    sys->free(buf);
 	}
 	else {
-	    this->error = MSPACK_ERR_NOMEMORY;
+	    self->error = MSPACK_ERR_NOMEMORY;
 	}
     }
     else if (hdr->comp_type == MSKWAJ_COMP_SZDD) {
-	this->error = lzss_decompress(sys, fh, outfh, KWAJ_INPUT_SIZE,
+	self->error = lzss_decompress(sys, fh, outfh, KWAJ_INPUT_SIZE,
 				      LZSS_MODE_EXPAND);
     }
     else if (hdr->comp_type == MSKWAJ_COMP_LZH) {
 	struct kwajd_stream *lzh = lzh_init(sys, fh, outfh);
-	this->error = (lzh) ? lzh_decompress(lzh) : MSPACK_ERR_NOMEMORY;
+	self->error = (lzh) ? lzh_decompress(lzh) : MSPACK_ERR_NOMEMORY;
 	lzh_free(lzh);
     }
     else {
-	this->error = MSPACK_ERR_DATAFORMAT;
+	self->error = MSPACK_ERR_DATAFORMAT;
     }
 
     /* close output file */
     sys->close(outfh);
 
-    return this->error;
+    return self->error;
 }
 
 /***************************************
@@ -319,16 +319,16 @@ static int kwajd_extract(struct mskwaj_decompressor *base,
 static int kwajd_decompress(struct mskwaj_decompressor *base,
 			    char *input, char *output)
 {
-    struct mskwaj_decompressor_p *this = (struct mskwaj_decompressor_p *) base;
+    struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
     struct mskwajd_header *hdr;
     int error;
 
-    if (!this) return MSPACK_ERR_ARGS;
+    if (!self) return MSPACK_ERR_ARGS;
 
-    if (!(hdr = kwajd_open(base, input))) return this->error;
+    if (!(hdr = kwajd_open(base, input))) return self->error;
     error = kwajd_extract(base, hdr, output);
     kwajd_close(base, hdr);
-    return this->error = error;
+    return self->error = error;
 }
 
 /***************************************
@@ -338,8 +338,8 @@ static int kwajd_decompress(struct mskwaj_decompressor *base,
  */
 static int kwajd_error(struct mskwaj_decompressor *base)
 {
-    struct mskwaj_decompressor_p *this = (struct mskwaj_decompressor_p *) base;
-    return (this) ? this->error : MSPACK_ERR_ARGS;
+    struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
+    return (self) ? self->error : MSPACK_ERR_ARGS;
 }
 
 /***************************************
@@ -414,7 +414,7 @@ static struct kwajd_stream *lzh_init(struct mspack_system *sys,
     struct kwajd_stream *lzh;
 
     if (!sys || !in || !out) return NULL;
-    if (!(lzh = sys->alloc(sys, sizeof(struct kwajd_stream)))) return NULL;
+    if (!(lzh = (struct kwajd_stream *) sys->alloc(sys, sizeof(struct kwajd_stream)))) return NULL;
 
     lzh->sys    = sys;
     lzh->input  = in;

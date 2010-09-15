@@ -19,6 +19,6 @@ struct mschm_compressor *
   return NULL;
 }
 
-void mspack_destroy_chm_compressor(struct mschm_compressor *this) {
+void mspack_destroy_chm_compressor(struct mschm_compressor *self) {
   /* todo */
 }

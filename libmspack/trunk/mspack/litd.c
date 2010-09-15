@@ -19,6 +19,6 @@ struct mslit_decompressor *
   return NULL;
 }
 
-void mspack_destroy_lit_decompressor(struct mslit_decompressor *this) {
+void mspack_destroy_lit_decompressor(struct mslit_decompressor *self) {
   /* todo */
 }

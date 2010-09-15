@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
 	/* extract in order of the offset into content section - faster */
 	for (numf=0, file=chm->files; file; file = file->next) numf++;
-	if ((f = calloc(numf, sizeof(struct mschmd_file *)))) {
+	if ((f = (struct mschmd_file **) calloc(numf, sizeof(struct mschmd_file *)))) {
 	  for (i=0, file=chm->files; file; file = file->next) f[i++] = file;
 	  qsort(f, numf, sizeof(struct mschmd_file *), &sortfunc);
 	  for (i = 0; i < numf; i++) {

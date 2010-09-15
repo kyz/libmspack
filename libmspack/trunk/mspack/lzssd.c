@@ -52,7 +52,7 @@ int lzss_decompress(struct mspack_system *system,
     }
 
     /* allocate memory */
-    window = system->alloc(system, LZSS_WINDOW_SIZE + input_buffer_size);
+    window = (unsigned char *) system->alloc(system, LZSS_WINDOW_SIZE + input_buffer_size);
     if (!window) return MSPACK_ERR_NOMEMORY;
 
     /* initialise decompression */

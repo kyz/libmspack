@@ -13,6 +13,10 @@
 #ifndef MSPACK_LZX_H
 #define MSPACK_LZX_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* LZX compression / decompression definitions */
 
 /* some constants defined by the LZX specification */
@@ -181,5 +185,9 @@ extern int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes);
  * @param lzx LZX decompression state to free.
  */
 void lzxd_free(struct lzxd_stream *lzx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

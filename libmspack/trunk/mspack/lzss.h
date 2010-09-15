@@ -10,6 +10,10 @@
 #ifndef MSPACK_LZSS_H
 #define MSPACK_LZSS_H 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* LZSS compression / decompression definitions */
 
 #define LZSS_WINDOW_SIZE (4096)
@@ -54,5 +58,9 @@ extern int lzss_decompress(struct mspack_system *system,
 			   struct mspack_file *output,
 			   int input_buffer_size,
 			   int mode);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

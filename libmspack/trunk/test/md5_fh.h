@@ -21,7 +21,7 @@ static struct mspack_file *m_open(struct mspack_system *self, char *filename, in
     if (mode != MSPACK_SYS_OPEN_WRITE &&
 	mode != MSPACK_SYS_OPEN_READ) return NULL;
 
-    if ((fh = malloc(sizeof(struct mspack_file_p)))) {
+    if ((fh = (struct mspack_file_p *) malloc(sizeof(struct mspack_file_p)))) {
 	if (mode == MSPACK_SYS_OPEN_WRITE) {
 	    fh->fh = NULL;
 	    md5_init_ctx(&md5_context);
