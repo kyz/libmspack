@@ -11,9 +11,10 @@ pkgconfig_DATA = 	libmspack.pc
 dist-hook:
 	-rm -f $(distdir)/*.la
 
+ACLOCAL_AMFLAGS =	-I m4
 AM_CFLAGS =		-Wall -Wsign-compare -Wconversion -pedantic \
 			$(MSPACK_FLAGS)
-INCLUDES =		-I$(top_srcdir)/mspack -I$(top_srcdir)/test 
+AM_CPPFLAGS =		-I$(top_srcdir)/mspack -I$(top_srcdir)/test 
 CLEANFILES =		test/.libs/expand
 
 lib_LTLIBRARIES =	libmspack.la
