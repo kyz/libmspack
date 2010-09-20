@@ -2,9 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 AC_INIT([libmspack],[0.2alpha],[kyzer@4u.net])
+AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([mspack/mspack.h])
 AC_CONFIG_HEADER([config.h])
+
+dnl Enable silent rules by default (if yet support in automake)
+dnl use 'make V=1' to look at verbose commandline
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # --enable-debug option
 AC_ARG_ENABLE(debug,
@@ -19,7 +24,7 @@ AM_CONDITIONAL(DEBUG, test x$enable_debug = 'xyes')
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
+LT_INIT
 AC_EXEEXT
 
 # Checks for header files.

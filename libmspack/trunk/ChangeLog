@@ -1,3 +1,10 @@
+2010-09-20:  Stuart Caie <kyzer@4u.net>
+
+	* Makefile.am, configure.ac: Use modern auto* practises; turn on
+	automake silent rules where possible, use "m4" directory for libtool
+	macros, use LT_INIT instead of AC_PROG_LIBTOOL and use AM_CPPFLAGS
+	instead of INCLUDES. Thanks to Sergei Trofimovich for the patch.
+
 2010-09-15:  Stuart Caie <kyzer@4u.net>
 
 	* many files: Made the code compile with C++
