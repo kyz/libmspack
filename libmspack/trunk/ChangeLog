@@ -1,3 +1,14 @@
+2010-09-24:  Stuart Caie <kyzer@4u.net>
+
+	* readhuff.h: Don't let build_decode_table() allow empty trees.
+	It's meant to be special case just for the LZX length tree, so
+	move that logic out to the LZX code. Thanks to Danny Kroshin for
+	discovering the bug.
+
+	* lzxd.c: Allow empty length trees, but not other trees. If
+	the length tree is empty, fail if asked to decode a length symbol.
+	Again, thanks to Danny Kroshin for discovering the bug.
+
 2010-09-20:  Stuart Caie <kyzer@4u.net>
 
 	* Makefile.am: Set EXTRA_DIST so it doesn't include .svn

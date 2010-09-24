@@ -29,6 +29,9 @@
 # define HUFF_MAXBITS 16
 #endif
 
+/* Decodes the next huffman symbol from the input bitstream into var.
+ * Do not use this macro on a table unless build_decode_table() succeeded.
+ */
 #define READ_HUFFSYM(tbl, var) do {			\
     ENSURE_BITS(HUFF_MAXBITS);				\
     sym = HUFF_TABLE(tbl, PEEK_BITS(TABLEBITS(tbl)));	\
@@ -165,10 +168,6 @@ static int make_decode_table(unsigned int nsyms, unsigned int nbits,
     }
 
     /* full table? */
-    if (pos == table_mask) return 0;
-
-    /* either erroneous table, or all elements are 0 - let's find out. */
-    for (sym = 0; sym < nsyms; sym++) if (length[sym]) return 1;
-    return 0;
+    return (pos == table_mask) ? 0 : 1;
 }
 #endif
