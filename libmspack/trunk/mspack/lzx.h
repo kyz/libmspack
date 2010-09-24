@@ -94,6 +94,7 @@ struct lzxd_stream {
 				(LZX_LENGTH_MAXSYMBOLS * 2)];
   unsigned short ALIGNED_table [(1 << LZX_ALIGNED_TABLEBITS) +
 				(LZX_ALIGNED_MAXSYMBOLS * 2)];
+  unsigned char LENGTH_empty;
 
   /* this is used purely for doing the intel E8 transform */
   unsigned char  e8_buf[LZX_FRAME_SIZE];

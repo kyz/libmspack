@@ -104,6 +104,22 @@
 	return lzx->error = MSPACK_ERR_DECRUNCH;			\
     }
 
+#define BUILD_TABLE_MAYBE_EMPTY(tbl) do {				\
+    lzx->tbl##_empty = 0;						\
+    if (make_decode_table(MAXSYMBOLS(tbl), TABLEBITS(tbl),		\
+                          &HUFF_LEN(tbl,0), &HUFF_TABLE(tbl,0)))	\
+    {									\
+	for (i = 0; i < MAXSYMBOLS(tbl); i++) {				\
+	    if (HUFF_LEN(tbl, i) > 0) {					\
+		D(("failed to build %s table", #tbl))			\
+		return lzx->error = MSPACK_ERR_DECRUNCH;		\
+	    }								\
+	}								\
+	/* empty tree - allow it, but don't decode symbols with it */	\
+	lzx->tbl##_empty = 1;						\
+    }									\
+} while (0)
+
 /* READ_LENGTHS(tablename, first, last) reads in code lengths for symbols
  * first to last in the given table. The code lengths are stored in their
  * own special LZX way.
@@ -387,7 +403,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	  if (lzx->MAINTREE_len[0xE8] != 0) lzx->intel_started = 1;
 	  /* read lengths of and build lengths huffman decoding tree */
 	  READ_LENGTHS(LENGTH, 0, LZX_NUM_SECONDARY_LENGTHS);
-	  BUILD_TABLE(LENGTH);
+	  BUILD_TABLE_MAYBE_EMPTY(LENGTH);
 	  break;
 
 	case LZX_BLOCKTYPE_UNCOMPRESSED:
@@ -441,6 +457,10 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    /* get match length */
 	    match_length = main_element & LZX_NUM_PRIMARY_LENGTHS;
 	    if (match_length == LZX_NUM_PRIMARY_LENGTHS) {
+	      if (lzx->LENGTH_empty) {
+                D(("LENGTH symbol needed but tree is empty"))
+                return lzx->error = MSPACK_ERR_DECRUNCH;
+              }
 	      READ_HUFFSYM(LENGTH, length_footer);
 	      match_length += length_footer;
 	    }
@@ -509,6 +529,10 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    /* get match length */
 	    match_length = main_element & LZX_NUM_PRIMARY_LENGTHS;
 	    if (match_length == LZX_NUM_PRIMARY_LENGTHS) {
+              if (lzx->LENGTH_empty) {
+                D(("LENGTH symbol needed but tree is empty"))
+                return lzx->error = MSPACK_ERR_DECRUNCH;
+              } 
 	      READ_HUFFSYM(LENGTH, length_footer);
 	      match_length += length_footer;
 	    }
