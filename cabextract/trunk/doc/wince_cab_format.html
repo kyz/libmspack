@@ -60,14 +60,16 @@ format for packaging Java software, but this did not succeed.
 
 <p>
 Firstly, the overall file format of a Windows CE installation cabinet is
-the standard Microsoft Cabinet file format. This is documented in the
-Microsoft document <tt>CABFMT.DOC</tt> in the Microsoft Cabinet SDK
-(<tt>CAB-SDK.EXE</tt>), which is not freely distributable. The format can
-be gleaned from open source tools and libraries such as <a
+the standard Microsoft Cabinet file format. This was originally documented
+in the Microsoft document <tt>CABFMT.DOC</tt> as part of the Microsoft
+Cabinet SDK (<tt>CAB-SDK.EXE</tt>), it is now documented in the <a
+href="http://msdn.microsoft.com/en-us/library/bb267310%28VS.85%29.aspx">Windows
+Installer documentation</a>.  The format can also be gleaned from open
+source tools and libraries such as <a
 href="http://www.cabextract.org.uk/">cabextract</a> and <a
 href="http://www.cabextract.org.uk/libmspack/">libmspack</a>. Windows CE
 installation cabinets typically use no compression (the NONE compression
-method in the cabinet specification).
+method in the cabinet specification), sometimes MSZIP compression.
 </p>
 
 <h2><a name="cab_contents">Cabinet file contents</a></h2>
@@ -327,6 +329,8 @@ its reference count is 0.</td></tr>
 device). Mutually exclusive with bit 29.</td></tr>
 <tr><td>Bit 29 (0x20000000)</td><td>If bit is set, do not overwrite target
 if target is newer. Mutually exclusive with bit 30.</td></tr>
+<tr><td>Bit 28 (0x10000000)</td><td>If bit is set, self-register this
+DLL.</td></tr>
 <tr><td>Bit 10 (0x00000400)</td><td>If bit is set, do not copy this file
 to the target unless the target already exists. Mutually exclusive with
 bit 4.</td></tr>
