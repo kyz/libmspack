@@ -1,3 +1,8 @@
+2011-01-19  Stuart Caie <kyzer@4u.net>
+
+	* doc/wince_cab_format.html: Identified a new file flag in the WinCE
+	header file. Thanks to Paul Sokolovsky for asking me to look into it.
+
 2010-07-19  Stuart Caie <kyzer@4u.net>
 
 	* mspack: MS-ZIP recovery now recovers more bytes. Also, when a file
