@@ -1,3 +1,9 @@
+2011-04-25  Stuart Caie <kyzer@4u.net>
+
+	* load_spanning_cabinets(): Print the error code caused by a failed
+	cabinet merge, before ruining the error code by calling cabd->close().
+	Thanks to Drew D'Addesio for reporting the problem.
+
 2011-01-19  Stuart Caie <kyzer@4u.net>
 
 	* doc/wince_cab_format.html: Identified a new file flag in the WinCE
