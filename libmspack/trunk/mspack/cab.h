@@ -120,8 +120,8 @@ struct mscabd_folder_data {
 struct mscabd_folder_p {
   struct mscabd_folder base;
   struct mscabd_folder_data data;    /* where are the data blocks?           */
-  struct mscabd_file *merge_prev;    /* do we need to merge backwards?       */
-  struct mscabd_file *merge_next;    /* do we need to merge forwards?        */
+  struct mscabd_file *merge_prev;    /* first file needing backwards merge   */
+  struct mscabd_file *merge_next;    /* first file needing forwards merge    */
 };
 
 #endif
