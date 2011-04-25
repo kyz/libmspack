@@ -16,7 +16,7 @@
  * cabinet.
  *
  * For a complete description of the format, see the MSDN site:
- *   http://msdn.microsoft.com/en-us/library/cc483132.aspx
+ *   http://msdn.microsoft.com/en-us/library/bb267310.aspx
  */
 
 /* CAB decompression implementation */
@@ -93,6 +93,9 @@ static int cabd_append(
 static int cabd_merge(
   struct mscab_decompressor *base, struct mscabd_cabinet *lcab,
   struct mscabd_cabinet *rcab);
+static int cabd_can_merge_folders(
+  struct mspack_system *sys, struct mscabd_folder_p *lfol,
+  struct mscabd_folder_p *rfol);
 
 static int cabd_extract(
   struct mscab_decompressor *base, struct mscabd_file *file, char *filename);
@@ -849,36 +852,9 @@ static int cabd_merge(struct mscab_decompressor *base,
     fi->next = rcab->files;
   }
   else {
-    /* folder merge required */
-
-    if (!lfol->merge_next) {
-      D(("rcab has merge files, lcab doesn't"))
+    /* folder merge required - do the files match? */
+    if (! cabd_can_merge_folders(sys, lfol, rfol)) {
       return self->error = MSPACK_ERR_DATAFORMAT;
-    }
-
-    if (!rfol->merge_prev) {
-      D(("lcab has merge files, rcab doesn't"))
-      return self->error = MSPACK_ERR_DATAFORMAT;
-    }
-
-    /* check that both folders use the same compression method/settings */
-    if (lfol->base.comp_type != rfol->base.comp_type) {
-      D(("compression type mismatch"))
-      return self->error = MSPACK_ERR_DATAFORMAT;
-    }
-
-    /* for all files in lfol (which is the last folder in whichever cab),
-     * compare them to the files from rfol. they should be identical in
-     * number and order. to verify this, check the OFFSETS of each file. */
-    lfi = lfol->merge_next;
-    rfi = rfol->merge_prev;
-    while (lfi) {
-      if (!rfi || (lfi->offset !=  rfi->offset)) {
-	D(("folder merge mismatch"))
-	return self->error = MSPACK_ERR_DATAFORMAT;
-      }
-      lfi = lfi->next;
-      rfi = rfi->next;
     }
 
     /* allocate a new folder data structure */
@@ -949,13 +925,60 @@ static int cabd_merge(struct mscab_decompressor *base,
   return self->error = MSPACK_ERR_OK;
 }
 
+/* decides if two folders are OK to merge */
+static int cabd_can_merge_folders(struct mspack_system *sys,
+                                  struct mscabd_folder_p *lfol,
+                                  struct mscabd_folder_p *rfol)
+{
+    struct mscabd_file *lfi, *rfi, *l, *r;
+
+    /* check that both folders use the same compression method/settings */
+    if (lfol->base.comp_type != rfol->base.comp_type) {
+        D(("folder merge: compression type mismatch"))
+        return 0;
+    }
+
+    if (!(lfi = lfol->merge_next) || !(rfi = rfol->merge_prev)) {
+        D(("folder merge: one cabinet has no files to merge"))
+        return 0;
+    }
+
+    /* for all files in lfol (which is the last folder in whichever cab and
+     * only has files to merge), compare them to the files from rfol. They
+     * should be identical in number and order. to verify this, check the
+     * offset and length of each file. */
+    int matching = 1;
+    for (l=lfi, r=rfi; l; l=l->next, r=r->next) {
+	if (!r || (l->offset != r->offset) || (l->length != r->length)) {
+	    matching = 0;
+	    break;
+	}
+    }
+
+    if (matching) return 1;
+
+    /* if rfol does not begin with an identical copy of the files in lfol, make
+     * make a judgement call; if at least ONE file from lfol is in rfol, allow
+     * the merge with a warning about missing files. */
+    matching = 0;
+    for (l = lfi; l; l = l->next) {
+	for (r = rfi; r; r = r->next) {
+	    if (l->offset == r->offset && l->length == r->length) break;
+	}
+        if (r) matching = 1; else sys->message(NULL,
+            "WARNING; merged file %s not listed in both cabinets", l->filename);
+    }
+    return matching;
+}
+
+
 /***************************************
  * CABD_EXTRACT
  ***************************************
  * extracts a file from a cabinet
  */
 static int cabd_extract(struct mscab_decompressor *base,
-			 struct mscabd_file *file, char *filename)
+                        struct mscabd_file *file, char *filename)
 {
   struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_folder_p *fol;
