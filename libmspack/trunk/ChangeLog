@@ -1,3 +1,12 @@
+2011-04-25:  Stuart Caie <kyzer@4u.net>
+
+	* cabd_merge():  Drew D'Addesio showed me spanning cabinets which
+	don't have all the CFFILE entries they should, but otherwise have
+	all necessary data for extraction. Changed the merging folders
+	test to be less strict; if folders don't exactly match, warn which
+	files are missing, but allow merging if at least one necessary
+	file is present.
+
 2010-09-24:  Stuart Caie <kyzer@4u.net>
 
 	* readhuff.h: Don't let build_decode_table() allow empty trees.
