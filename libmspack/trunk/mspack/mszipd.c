@@ -171,7 +171,6 @@ static int inflate(struct mszipd_stream *zip) {
 
     /* read in block type */
     READ_BITS(block_type, 2);
-    D(("block_type=%u last_block=%u", block_type, last_block))
 
     if (block_type == 0) {
       /* uncompressed block */
