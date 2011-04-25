@@ -167,13 +167,13 @@ for my $hdrfile (@ARGV) {
 	my $data = substr $x, length($name) + 1;
 
 	printf "  k%02d: hive=%s\n", $id, $reghives[$hive];
-	printf "       name=«%s» subst=%d flags=0x%08x\n", $name, $unk, $flags;
+	printf "       name=<<%s>> subst=%d flags=0x%08x\n", $name, $unk, $flags;
 
 	if (($flags & 0x10001) == 0x10001) {
 	  $x = unpack 'V', $data; printf "       [DWORD] %08x (%d)\n", $x, $x;
 	}
 	elsif (($flags & 0x10001) == 0x10000) {
-	  for (split /\000/, $data) {printf "       [MULTI_SZ] «%s»\n", $_}
+	  for (split /\000/, $data) {printf "       [MULTI_SZ] <<%s>>\n", $_}
 	}
 	elsif (($flags & 0x10001) == 0x00001) {
 	  printf "       [BINARY] (%d bytes hexdump follows)\n", length($data);
@@ -201,8 +201,8 @@ for my $hdrfile (@ARGV) {
 	else {
 	  $fid = $files[$fid];
 	}
-	printf "  l%02d: src=«%s»\n", $id, $fid;
-	printf "       dest=«%s»  (unk=%d)\n", $name, $unk;
+	printf "  l%02d: src=<<%s>>\n", $id, $fid;
+	printf "       dest=<<%s>>  (unk=%d)\n", $name, $unk;
       }
 
       print "\n";
