@@ -556,8 +556,9 @@ static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
              cab->prevname, cab->previnfo);
     }
     if (!(cab2 = cabd->open(cabd,name)) || cabd->prepend(cabd, cab, cab2)) {
+      fprintf(stderr, "%s: can't prepend %s: %s\n", basename,
+              cab->prevname, cab_error(cabd));
       if (cab2) cabd->close(cabd, cab2);
-      fprintf(stderr, "%s: %s\n", basename, cab_error(cabd));
       break;
     }
     memorise_file(&cab_exts, name, basename);
@@ -575,8 +576,9 @@ static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
              cab->nextname, cab->nextinfo);
     }
     if (!(cab2 = cabd->open(cabd,name)) || cabd->append(cabd, cab, cab2)) {
+      fprintf(stderr, "%s: can't append %s: %s\n", basename,
+              cab->nextname, cab_error(cabd));
       if (cab2) cabd->close(cabd, cab2);
-      fprintf(stderr, "%s: %s\n", basename, cab_error(cabd));
       break;
     }
     memorise_file(&cab_exts, name, basename);
