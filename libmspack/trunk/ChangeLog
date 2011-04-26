@@ -1,3 +1,9 @@
+2011-04-26:  Stuart Caie <kyzer@4u.net>
+
+	* test/chminfo.c: more sanity checks for corrupted CHM files where
+	entries go past the end of a PGML/PGMI chunk, thanks to
+	Sergei Trofimovich for sending me examples and analysis.
+
 2011-04-25:  Stuart Caie <kyzer@4u.net>
 
 	* cabd_merge():  Drew D'Addesio showed me spanning cabinets which
