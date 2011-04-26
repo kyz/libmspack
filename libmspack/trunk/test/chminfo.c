@@ -57,7 +57,7 @@ unsigned char *load_sys_data(struct mschm_decompressor *chmd,
 }
 
 char *guid(unsigned char *data) {
-  static char result[41];
+  static char result[43];
   snprintf(result, sizeof(result),
            "{%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X%02X%02X}",
            EndGetI32(&data[0]),
@@ -68,6 +68,14 @@ char *guid(unsigned char *data) {
            data[14], data[15], data[16], data[17]);
   return result;
 }
+
+#define READ_ENCINT(var, label) do {	       		\
+    (var) = 0;						\
+    do {						\
+	if (p > &chunk[chm->chunk_size-2]) goto label;	\
+	(var) = ((var) << 7) | (*p & 0x7F);		\
+    } while (*p++ & 0x80);				\
+} while (0)
 
 void print_dir(struct mschmd_header *chm, char *filename) {
   unsigned char dir[0x54], *chunk;
@@ -114,7 +122,12 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         k = chm->chunk_size - 2;
         num_entries = chunk[k] | (chunk[k+1] << 8);
         quickref_size = EndGetI32(&chunk[4]);
-        printf("    PGML entries=%u free=%u 0=%u prev=%d next=%d\n",
+	if (quickref_size > (chm->chunk_size - 20)) {
+	    printf("    QR size of %d too large (max is %d)\n",
+		   quickref_size, chm->chunk_size - 20);
+	    quickref_size = chm->chunk_size - 20;
+	}
+        printf("    PGML entries=%u qrsize=%u zero=%u prev=%d next=%d\n",
                num_entries, quickref_size, EndGetI32(&chunk[8]),
                EndGetI32(&chunk[12]), EndGetI32(&chunk[16]));
 
@@ -122,6 +135,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         j = (1 << chm->density) + 1;
         while (j < num_entries) {
           k -= 2;
+	  if (k < (chm->chunk_size - quickref_size)) break;
           printf("    QR: entry %4u = offset %u\n",
                  j, (chunk[k] | (chunk[k+1] << 8)) + 20);
           j += (1 << chm->density) + 1;
@@ -131,15 +145,16 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         for (j = 0; j < num_entries; j++) {
           unsigned int name_len = 0, section = 0, offset = 0, length = 0;
           printf("    %4d: ", p - &chunk[0]);
-          do { name_len = (name_len << 7) | (*p & 0x7F); } while (*p++ & 0x80);
-          name = p; p += name_len;
-          do { section  = (section  << 7) | (*p & 0x7F); } while (*p++ & 0x80);
-          do { offset   = (offset   << 7) | (*p & 0x7F); } while (*p++ & 0x80);
-          do { length   = (length   << 7) | (*p & 0x7F); } while (*p++ & 0x80);
+	  READ_ENCINT(name_len, PGML_end); name = p; p += name_len;
+	  READ_ENCINT(section, PGML_end);
+	  READ_ENCINT(offset, PGML_end);
+	  READ_ENCINT(length, PGML_end);
           printf("sec=%u off=%-10u len=%-10u name=\"",section,offset,length);
           if (name_len) fwrite(name, 1, name_len, stdout);
           printf("\"\n");
 	}
+      PGML_end:
+	if (j != num_entries) printf("premature end of chunk\n");
 
       }
       else if  ((chunk[0] == 'P') && (chunk[1] == 'M') &&
@@ -161,15 +176,16 @@ void print_dir(struct mschmd_header *chm, char *filename) {
 
         p = &chunk[8];
         for (j = 0; j < num_entries; j++) {
-          unsigned int name_len = 0, section = 0;
+          unsigned int name_len, section;
           printf("    %4d: ", p - &chunk[0]);
-          do { name_len = (name_len << 7) | (*p & 0x7F); } while (*p++ & 0x80);
-          name = p; p += name_len;
-          do { section  = (section  << 7) | (*p & 0x7F); } while (*p++ & 0x80);
+          READ_ENCINT(name_len, PGMI_end); name = p; p += name_len;
+          READ_ENCINT(section, PGMI_end);
           printf("chunk=%-4u name=\"",section);
           if (name_len) fwrite(name, 1, name_len, stdout);
           printf("\"\n");
 	}
+      PGMI_end: 
+	if (j != num_entries) printf("premature end of chunk\n");
       }
       else {
 	printf("    unknown format\n");
