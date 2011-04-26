@@ -30,6 +30,7 @@ AC_EXEEXT
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([limits.h stdlib.h])
+AC_CHECK_SIZEOF([off_t])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

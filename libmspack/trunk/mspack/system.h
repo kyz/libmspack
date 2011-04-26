@@ -59,6 +59,7 @@ extern "C" {
 
 #if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
      (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
+     (defined(SIZEOF_OFF_T)      && SIZEOF_OFF_T      >= 8)  || \
      defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE))
 # define LARGEFILE_SUPPORT
 # define LD "lld"
