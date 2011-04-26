@@ -1,5 +1,19 @@
 2011-04-26:  Stuart Caie <kyzer@4u.net>
 
+	* configure.ac, mspack/system.h: Added a configure test to get
+	the size of off_t. If off_t is 8 bytes or more, we presume this
+	system has large file support. This fixes LFS detection for Fedora
+	x86_64 and Darwin/Mac OS X, neither of which declare FILESIZEBITS in
+	<limits.h>. It's not against the POSIX standard to do this: "A
+	definition of [FILESIZEBITS] shall be omitted from the <limits.h>
+	header on specific implementations where the corresponding value is
+	equal to or greater than the stated minimum, but where the value can
+	vary depending on the file to which it is applied."
+	(http://pubs.opengroup.org/onlinepubs/009695399/basedefs/limits.h.html)
+	Thanks to Edward Sheldrake for the patch.
+
+2011-04-26:  Stuart Caie <kyzer@4u.net>
+
 	* chmd.c: all 64-bit integer reads are now consolidated into
 	the read_off64() function
 
