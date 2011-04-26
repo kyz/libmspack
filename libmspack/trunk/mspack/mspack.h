@@ -1,5 +1,5 @@
 /* libmspack -- a library for working with Microsoft compression formats.
- * (C) 2003-2010 Stuart Caie <kyzer@4u.net>
+ * (C) 2003-2011 Stuart Caie <kyzer@4u.net>
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -1177,6 +1177,9 @@ struct mschmd_sec_mscompressed {
 
   /** A pointer to the file which contains the LZX reset table. */
   struct mschmd_file *rtable;
+
+  /** A pointer to the file which contains the LZX span information. */
+  struct mschmd_file *spaninfo;
 };
 
 /**

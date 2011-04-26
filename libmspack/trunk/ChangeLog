@@ -1,5 +1,26 @@
 2011-04-26:  Stuart Caie <kyzer@4u.net>
 
+	* chmd.c: all 64-bit integer reads are now consolidated into
+	the read_off64() function
+
+	* chmd_read_headers(): this function has been made resilient
+	against accessing memory past the end of a chunk. Thanks to
+	Sergei Trofimovich for sending me examples and analysis.
+
+	* chmd_init_decomp(): this function now reads the SpanInfo file
+	if the ResetTable file isn't available, it also checks that each
+	system file it needs is large enough before accessing it, and
+	some of its code has been split into several new functions:
+	find_sys_file(), read_reset_table() and read_spaninfo()
+
+2011-04-26:  Stuart Caie <kyzer@4u.net>
+
+	* mspack.h, chmd.c: now reads the SpanInfo system file if the
+	ResetTable file isn't available. This adds a new spaninfo pointer
+	into struct mschmd_sec_mscompressed
+
+2011-04-26:  Stuart Caie <kyzer@4u.net>
+
 	* test/chminfo.c: more sanity checks for corrupted CHM files where
 	entries go past the end of a PGML/PGMI chunk, thanks to
 	Sergei Trofimovich for sending me examples and analysis.
