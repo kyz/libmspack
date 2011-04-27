@@ -189,7 +189,7 @@ struct cabextract_args args = {
  * cabx_open() when the STDOUT_FNAME pointer is given as a filename, so
  * treat this like a constant rather than a string.
  */
-char *STDOUT_FNAME = "stdout";
+const char *STDOUT_FNAME = "stdout";
 
 /** A special filename. Extracting to this filename will send the output
  * through an MD5 checksum calculator, instead of a file on disk. The
@@ -197,7 +197,7 @@ char *STDOUT_FNAME = "stdout";
  * filename, so treat this like a constant rather than a string. 
  */
 
-char *TEST_FNAME = "test";
+const char *TEST_FNAME = "test";
 
 /** A global MD5 context, used when a file is written to TEST_FNAME */
 struct md5_ctx md5_context;
@@ -223,13 +223,13 @@ static int ensure_filepath(char *path);
 static char *cab_error(struct mscab_decompressor *cd);
 
 static struct mspack_file *cabx_open(struct mspack_system *this,
-                                     char *filename, int mode);
+                                     const char *filename, int mode);
 static void cabx_close(struct mspack_file *file);
 static int cabx_read(struct mspack_file *file, void *buffer, int bytes);
 static int cabx_write(struct mspack_file *file, void *buffer, int bytes);
 static int cabx_seek(struct mspack_file *file, off_t offset, int mode);
 static off_t cabx_tell(struct mspack_file *file);
-static void cabx_msg(struct mspack_file *file, char *format, ...);
+static void cabx_msg(struct mspack_file *file, const char *format, ...);
 static void *cabx_alloc(struct mspack_system *this, size_t bytes);
 static void cabx_free(void *buffer);
 static void cabx_copy(void *src, void *dest, size_t bytes);
@@ -520,8 +520,8 @@ static int process_cabinet(char *basename) {
     } /* for (all files in cab) */
 
     /* free the spanning cabinet filenames [not freed by cabd->close()] */
-    for (cab2 = cab->prevcab; cab2; cab2 = cab2->prevcab) free(cab2->filename);
-    for (cab2 = cab->nextcab; cab2; cab2 = cab2->nextcab) free(cab2->filename);
+    for (cab2 = cab->prevcab; cab2; cab2 = cab2->prevcab) free((void*)cab2->filename);
+    for (cab2 = cab->nextcab; cab2; cab2 = cab2->nextcab) free((void*)cab2->filename);
   } /* for (all cabs) */
 
   /* free all loaded cabinets */
@@ -1072,14 +1072,15 @@ static char *cab_error(struct mscab_decompressor *cd) {
 
 struct mspack_file_p {
   FILE *fh;
-  char *name, regular_file;
+  const char *name;
+  char regular_file;
 };
 
 static struct mspack_file *cabx_open(struct mspack_system *this,
-                                    char *filename, int mode)
+                                    const char *filename, int mode)
 {
   struct mspack_file_p *fh;
-  char *fmode;
+  const char *fmode;
 
   /* Use of the STDOUT_FNAME pointer for a filename means the file should
    * actually be extracted to stdout. Use of the TEST_FNAME pointer for a
@@ -1193,7 +1194,7 @@ static off_t cabx_tell(struct mspack_file *file) {
 #endif
 }
 
-static void cabx_msg(struct mspack_file *file, char *format, ...) {
+static void cabx_msg(struct mspack_file *file, const char *format, ...) {
   va_list ap;
   if (file) {
     fprintf(stderr, "%s: ", ((struct mspack_file_p *) file)->name);
