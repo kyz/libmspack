@@ -88,7 +88,7 @@ void cabd_open_test_03() {
   struct mscab_decompressor *cabd;
   struct mscabd_cabinet *cab;
   unsigned int i;
-  char *files[] = {
+  const char *files[] = {
     "test_files/cabd/reserve_---.cab",
     "test_files/cabd/reserve_--D.cab",
     "test_files/cabd/reserve_-F-.cab",
@@ -152,7 +152,7 @@ void cabd_open_test_05() {
   struct mscab_decompressor *cabd;
   struct mscabd_cabinet *cab;
   unsigned int i;
-  char *files[] = {
+  const char *files[] = {
     "test_files/cabd/partial_shortheader.cab",
     "test_files/cabd/partial_shortextheader.cab",
     "test_files/cabd/partial_nofolder.cab",
@@ -161,7 +161,7 @@ void cabd_open_test_05() {
     "test_files/cabd/partial_shortfile1.cab",
     "test_files/cabd/partial_shortfile2.cab"
   };
-  char *str_files[] = {
+  const char *str_files[] = {
     "test_files/cabd/partial_str_nopname.cab",
     "test_files/cabd/partial_str_shortpname.cab",
     "test_files/cabd/partial_str_nopinfo.cab",

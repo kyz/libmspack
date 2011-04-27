@@ -100,14 +100,14 @@ struct mspack_system *mspack_default_system = NULL;
 
 struct mspack_file_p {
   FILE *fh;
-  char *name;
+  const char *name;
 };
 
 static struct mspack_file *msp_open(struct mspack_system *self,
-				    char *filename, int mode)
+				    const char *filename, int mode)
 {
   struct mspack_file_p *fh;
-  char *fmode;
+  const char *fmode;
 
   switch (mode) {
   case MSPACK_SYS_OPEN_READ:   fmode = "rb";  break;
@@ -178,7 +178,7 @@ static off_t msp_tell(struct mspack_file *file) {
 #endif
 }
 
-static void msp_msg(struct mspack_file *file, char *format, ...) {
+static void msp_msg(struct mspack_file *file, const char *format, ...) {
   va_list ap;
   if (file) fprintf(stderr, "%s: ", ((struct mspack_file_p *) file)->name);
   va_start(ap, format);

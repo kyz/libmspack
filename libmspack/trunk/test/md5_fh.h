@@ -16,7 +16,7 @@ struct mspack_file_p {
     FILE *fh;
 };
 
-static struct mspack_file *m_open(struct mspack_system *self, char *filename, int mode) {
+static struct mspack_file *m_open(struct mspack_system *self, const char *filename, int mode) {
     struct mspack_file_p *fh;
     if (mode != MSPACK_SYS_OPEN_WRITE &&
 	mode != MSPACK_SYS_OPEN_READ) return NULL;
@@ -99,7 +99,7 @@ static off_t m_tell(struct mspack_file *file) {
 #endif
 }
 
-static void m_msg(struct mspack_file *file, char *format, ...) {
+static void m_msg(struct mspack_file *file, const char *format, ...) {
     va_list ap;
     va_start(ap, format);
     vfprintf(stderr, format, ap);

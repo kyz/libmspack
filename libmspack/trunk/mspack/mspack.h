@@ -262,7 +262,7 @@ struct mspack_system {
    * @see close(), read(), write(), seek(), tell(), message()
    */
   struct mspack_file * (*open)(struct mspack_system *self,
-			       char *filename,
+			       const char *filename,
 			       int mode);
 
   /**
@@ -357,7 +357,7 @@ struct mspack_system {
    * @see open()
    */
   void (*message)(struct mspack_file *file,
-		  char *format,
+		  const char *format,
 		  ...);
 
   /**
@@ -636,7 +636,7 @@ struct mscabd_cabinet {
    * physical file that the cabinet resides in. This is given by the
    * library user and may be in any format.
    */
-  char *filename;
+  const char *filename;
   
   /** The file offset of cabinet within the physical file it resides in. */
   off_t base_offset;
@@ -896,7 +896,7 @@ struct mscab_decompressor {
    * @see close(), search(), last_error()
    */
   struct mscabd_cabinet * (*open) (struct mscab_decompressor *self,
-				   char *filename);
+				   const char *filename);
 
   /**
    * Closes a previously opened cabinet or cabinet set.
@@ -965,7 +965,7 @@ struct mscab_decompressor {
    * @see close(), open(), last_error()
    */
   struct mscabd_cabinet * (*search) (struct mscab_decompressor *self,
-				     char *filename);
+				     const char *filename);
 
   /**
    * Appends one mscabd_cabinet to another, forming or extending a cabinet
@@ -1057,7 +1057,7 @@ struct mscab_decompressor {
    */
   int (*extract)(struct mscab_decompressor *self,
 		 struct mscabd_file *file,
-		 char *filename);
+		 const char *filename);
 
   /**
    * Sets a CAB decompression engine parameter.
@@ -1115,7 +1115,7 @@ struct mschmc_file {
 
   /** The filename of the source file that will be added to the CHM. This
    * is passed directly to mspack_system::open(). */
-  char *filename;
+  const char *filename;
 
   /** The full path and filename of the file within the CHM helpfile, a
    * UTF-1 encoded null-terminated string. */
@@ -1210,7 +1210,7 @@ struct mschmd_header {
    * The filename of the CHM helpfile. This is given by the library user
    * and may be in any format.
    */
-  char *filename;
+  const char *filename;
 
   /** The length of the CHM helpfile, in bytes. */
   off_t length;
@@ -1349,7 +1349,7 @@ struct mschm_compressor {
    */
   int (*generate)(struct mschm_compressor *self,
 		  struct mschmc_file file_list[],
-		  char *output_file);
+		  const char *output_file);
 
   /**
    * Specifies whether a temporary file is used during CHM generation.
@@ -1406,7 +1406,7 @@ struct mschm_compressor {
    */
   int (*use_temporary_file)(struct mschm_compressor *self,
 			    int use_temp_file,
-			    char *temp_file);
+			    const char *temp_file);
   /**
    * Sets a CHM compression engine parameter.
    *
@@ -1496,7 +1496,7 @@ struct mschm_decompressor {
    * @see close()
    */
   struct mschmd_header *(*open)(struct mschm_decompressor *self,
-				char *filename);
+				const char *filename);
 
   /**
    * Closes a previously opened CHM helpfile.
@@ -1538,7 +1538,7 @@ struct mschm_decompressor {
    */
   int (*extract)(struct mschm_decompressor *self,
 		 struct mschmd_file *file,
-		 char *filename);
+		 const char *filename);
 
   /**
    * Returns the error code set by the most recently called method.
@@ -1576,7 +1576,7 @@ struct mschm_decompressor {
    * @see open(), close(), fast_find(), extract()
    */
   struct mschmd_header *(*fast_open)(struct mschm_decompressor *self,
-				     char *filename);
+				     const char *filename);
 
   /**
    * Finds file details quickly.
@@ -1618,7 +1618,7 @@ struct mschm_decompressor {
    */
   int (*fast_find)(struct mschm_decompressor *self,
 		   struct mschmd_header *chm,
-		   char *filename,
+		   const char *filename,
 		   struct mschmd_file *f_ptr,
 		   int f_size);
 };
@@ -1726,8 +1726,8 @@ struct msszdd_compressor {
    * @see set_param()
    */
   int (*compress)(struct msszdd_compressor *self,
-		  char *input,
-		  char *output,
+		  const char *input,
+		  const char *output,
 		  off_t length);
 
   /**
@@ -1794,7 +1794,7 @@ struct msszdd_decompressor {
    * @see close()
    */
   struct msszddd_header *(*open)(struct msszdd_decompressor *self,
-				 char *filename);
+				 const char *filename);
 
   /**
    * Closes a previously opened SZDD file.
@@ -1827,7 +1827,7 @@ struct msszdd_decompressor {
    */
   int (*extract)(struct msszdd_decompressor *self,
 		 struct msszddd_header *szdd,
-		 char *filename);
+		 const char *filename);
 
   /**
    * Decompresses an SZDD file to an output file in one step.
@@ -1847,8 +1847,8 @@ struct msszdd_decompressor {
    * @return an error code, or MSPACK_ERR_OK if successful
    */
   int (*decompress)(struct msszdd_decompressor *self,
-		    char *input,
-		    char *output);
+		    const char *input,
+		    const char *output);
 
   /**
    * Returns the error code set by the most recently called method.
@@ -1960,8 +1960,8 @@ struct mskwaj_compressor {
    * @see set_param()
    */
   int (*compress)(struct mskwaj_compressor *self,
-		  char *input,
-		  char *output,
+		  const char *input,
+		  const char *output,
 		  off_t length);
 
   /**
@@ -2010,7 +2010,7 @@ struct mskwaj_compressor {
    *         filename is too long
    */
   int (*set_filename)(struct mskwaj_compressor *self,
-		      char *filename);
+		      const char *filename);
 
   /**
    * Sets arbitrary data that will be stored in the header of the
@@ -2072,7 +2072,7 @@ struct mskwaj_decompressor {
    * @see close()
    */
   struct mskwajd_header *(*open)(struct mskwaj_decompressor *self,
-				 char *filename);
+				 const char *filename);
 
   /**
    * Closes a previously opened KWAJ file.
@@ -2104,7 +2104,7 @@ struct mskwaj_decompressor {
    */
   int (*extract)(struct mskwaj_decompressor *self,
 		 struct mskwajd_header *kwaj,
-		 char *filename);
+		 const char *filename);
 
   /**
    * Decompresses an KWAJ file to an output file in one step.
@@ -2124,8 +2124,8 @@ struct mskwaj_decompressor {
    * @return an error code, or MSPACK_ERR_OK if successful
    */
   int (*decompress)(struct mskwaj_decompressor *self,
-		    char *input,
-		    char *output);
+		    const char *input,
+		    const char *output);
 
   /**
    * Returns the error code set by the most recently called method.
