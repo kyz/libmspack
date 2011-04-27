@@ -7,32 +7,13 @@
 #include <unistd.h>
 #include <string.h>
 #include <mspack.h>
+#include <system.h>
 
 #define FILENAME ".chminfo-temp"
 
-#ifndef _FILE_OFFSET_BITS
-#define _FILE_OFFSET_BITS 32
-#endif
-#if (_FILE_OFFSET_BITS < 64)
-# define LU "lu"
-# define LD "ld"
-#else
-# define LU "llu"
-# define LD "lld"
-#endif
-
-/* endian-neutral reading of little-endian data */
-#define __egi32(a,n) ( ((((unsigned char *)(a))[n+3]) << 24) |          \
-                       ((((unsigned char *)(a))[n+2]) << 16) |          \
-                       ((((unsigned char *)(a))[n+1]) <<  8) |          \
-                       ((((unsigned char *)(a))[n+0])      ) )
-#define EndGetI64(a) ((((unsigned long long int) __egi32(a,4)) << 32) | \
-                      ((unsigned int)            __egi32(a,0)))
-#define EndGetI32(a) __egi32(a,0)
-
-
 unsigned char *load_sys_data(struct mschm_decompressor *chmd,
-                             struct mschmd_header *chm, char *filename)
+                             struct mschmd_header *chm,
+			     const char *filename)
 {
   struct mschmd_file *file;
   unsigned char *data;
@@ -144,7 +125,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         p = &chunk[20];
         for (j = 0; j < num_entries; j++) {
           unsigned int name_len = 0, section = 0, offset = 0, length = 0;
-          printf("    %4d: ", p - &chunk[0]);
+          printf("    %4d: ", (int) (p - &chunk[0]));
 	  READ_ENCINT(name_len, PGML_end); name = p; p += name_len;
 	  READ_ENCINT(section, PGML_end);
 	  READ_ENCINT(offset, PGML_end);
@@ -177,7 +158,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         p = &chunk[8];
         for (j = 0; j < num_entries; j++) {
           unsigned int name_len, section;
-          printf("    %4d: ", p - &chunk[0]);
+          printf("    %4d: ", (int) (p - &chunk[0]));
           READ_ENCINT(name_len, PGMI_end); name = p; p += name_len;
           READ_ENCINT(section, PGMI_end);
           printf("chunk=%-4u name=\"",section);
@@ -217,9 +198,9 @@ int main(int argc, char *argv[]) {
 	printf("  chmhead_Version     %u\n",      chm->version);
 	printf("  chmhead_Timestamp   %u\n",      chm->timestamp);
 	printf("  chmhead_LanguageID  %u\n", 	 chm->language);
-	printf("  chmhs0_FileLen      %" LU "\n", chm->length);
-	printf("  chmhst_OffsetHS1    %" LU "\n", chm->dir_offset);
-	printf("  chmhst3_OffsetCS0   %" LU "\n", chm->sec0.offset);
+	printf("  chmhs0_FileLen      %" LD "\n", chm->length);
+	printf("  chmhst_OffsetHS1    %" LD "\n", chm->dir_offset);
+	printf("  chmhst3_OffsetCS0   %" LD "\n", chm->sec0.offset);
 
 	print_dir(chm, *argv);
 

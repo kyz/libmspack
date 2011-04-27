@@ -625,7 +625,7 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
   off_t caboff, offset, foffset, cablen, length;
   struct mspack_system *sys = self->system;
   unsigned char *p, *pend, state = 0;
-  unsigned int cablen_u32, foffset_u32;
+  unsigned int cablen_u32 = 0, foffset_u32 = 0;
   int false_cabs = 0;
 
   /* search through the full file length */
@@ -931,6 +931,7 @@ static int cabd_can_merge_folders(struct mspack_system *sys,
                                   struct mscabd_folder_p *rfol)
 {
     struct mscabd_file *lfi, *rfi, *l, *r;
+    int matching = 1;
 
     /* check that both folders use the same compression method/settings */
     if (lfol->base.comp_type != rfol->base.comp_type) {
@@ -947,7 +948,6 @@ static int cabd_can_merge_folders(struct mspack_system *sys,
      * only has files to merge), compare them to the files from rfol. They
      * should be identical in number and order. to verify this, check the
      * offset and length of each file. */
-    int matching = 1;
     for (l=lfi, r=rfi; l; l=l->next, r=r->next) {
 	if (!r || (l->offset != r->offset) || (l->length != r->length)) {
 	    matching = 0;

@@ -1,3 +1,16 @@
+2011-04-27:  Stuart Caie <kyzer@4u.net>
+
+	* test/cabrip.c, test/chminfo.c: used macros from system.h for
+	printing offsets and reading 64-bit values, rather than
+	reinvent the wheel.
+
+	* cabd_can_merge_folders(): declare variables at the start of
+	a block so older C compilers won't choke.
+
+	* cabd_find(): avoid compiler complaints about non-initialised
+	variables. We know they'll get initialised before use, but the
+	compiler can't reverse a state machine to draw the same conclusion.
+
 2011-04-26:  Stuart Caie <kyzer@4u.net>
 
 	* configure.ac, mspack/system.h: Added a configure test to get
