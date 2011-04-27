@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <mspack.h>
+#include <system.h>
 
 #define BUF_SIZE (1024*4096)
 char buf[BUF_SIZE];
@@ -20,7 +21,7 @@ void rip(char *fname, off_t offset, unsigned int length) {
     snprintf(outname, 13, "%08u.cab", counter++);
   } while (stat(outname, &st_buf) == 0);
 
-  printf("ripping %s offset %lld length %u to %s\n",
+  printf("ripping %s offset %" LD " length %u to %s\n",
 	 fname, offset, length, outname);
 
   if ((in = fopen(fname, "rb"))) {
