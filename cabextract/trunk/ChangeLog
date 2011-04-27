@@ -1,3 +1,8 @@
+2011-04-27  Stuart Caie <kyzer@4u.net>
+
+	* src/cabextract.c: changed char* to const char* in line with changes
+	in libmspack. See mspack/ChangeLog for more details.
+
 2011-04-25  Stuart Caie <kyzer@4u.net>
 
 	* load_spanning_cabinets(): Print the error code caused by a failed
