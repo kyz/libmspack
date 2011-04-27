@@ -1,6 +1,6 @@
 #define ERROR(base) error_msg(base->last_error(base))
 
-char *error_msg(int error) {
+const char *error_msg(int error) {
     static char buf[32];
     switch (error) {
     case MSPACK_ERR_OK:         return "no error";

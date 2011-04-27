@@ -24,12 +24,12 @@
 #define MTYPE_MEMORY    (0x04)
 
 struct m_filename {
-  unsigned char type; /* one of MTYPE_DISKFILE, STDIOFH, FILEDESC or MEMORY */
-  char *filename;     /* the user-friendly printable filename (may be NULL) */
+  unsigned char type;   /* one of MTYPE_DISKFILE, STDIOFH, FILEDESC or MEMORY */
+  const char *filename; /* the user-friendly printable filename (may be NULL) */
   union {
-    char *diskfile;   /* char *filename      for MTYPE_DISKFILE */
-    FILE *stdiofh;    /* FILE *existing_fh   for MTYPE_STDIOFH */
-    int filedesc;     /* int file_descriptor for MTYPE_FILEDESC */
+    const char *diskfile; /* char *filename      for MTYPE_DISKFILE */
+    FILE *stdiofh;        /* FILE *existing_fh   for MTYPE_STDIOFH */
+    int filedesc;         /* int file_descriptor for MTYPE_FILEDESC */
     struct {
       unsigned char *data;
       size_t length;
@@ -61,7 +61,7 @@ static void m_copy(void *src, void *dest, size_t bytes) {
 }
 
 /* A message printer that prints to stderr */
-static void m_msg(struct m_file *file, char *format, ...) {
+static void m_msg(struct m_file *file, const char *format, ...) {
   va_list ap;
   if (file && file->file && file->file->filename) {
     fprintf(stderr, "%s: ", file->file->filename);
@@ -95,7 +95,7 @@ static struct m_file *m_open_file(struct mspack_system *self,
 				  struct m_filename *fn, int mode)
 {
   struct m_file *fh;
-  char *fmode;
+  const char *fmode;
   int fd;
 
   switch (mode) {
@@ -260,13 +260,13 @@ static off_t m_tell(struct m_file *fh) {
 
 
 static struct mspack_system multi_system = {
-  (struct mspack_file * (*)(struct mspack_system *, char *, int)) &m_open,
+  (struct mspack_file * (*)(struct mspack_system *, const char *, int)) &m_open,
   (void (*)(struct mspack_file *)) &m_close,
   (int (*)(struct mspack_file *, void *, int)) &m_read, 
   (int (*)(struct mspack_file *, void *, int)) &m_write,
   (int (*)(struct mspack_file *, off_t, int)) &m_seek, 
   (off_t (*)(struct mspack_file *)) &m_tell,
-  (void (*)(struct mspack_file *, char *, ...))  &m_msg,
+  (void (*)(struct mspack_file *, const char *, ...))  &m_msg,
   &m_alloc,
   &m_free,
   &m_copy,
@@ -276,7 +276,7 @@ static struct mspack_system multi_system = {
 /* ------------------------------------------------------------------------ */
 /* constructors and destructor */
 
-char *create_filename(char *filename) {
+const char *create_filename(const char *filename) {
   struct m_filename *fn;
 
   if (!filename) return NULL; /* filename must not be null */
@@ -286,10 +286,10 @@ char *create_filename(char *filename) {
     fn->filename = filename; /* pretty-printable filename */
     fn->x.diskfile = filename;
   }
-  return (char *) fn;
+  return (const char *) fn;
 }
 
-char *create_filename_from_handle(FILE *fh) {
+const char *create_filename_from_handle(FILE *fh) {
   struct m_filename *fn;
 
   if (!fh) return NULL; /* file handle must not be null */
@@ -299,10 +299,10 @@ char *create_filename_from_handle(FILE *fh) {
     fn->filename = NULL; /* pretty-printable filename */
     fn->x.stdiofh = fh;
   }
-  return (char *) fn;
+  return (const char *) fn;
 }
 
-char *create_filename_from_descriptor(int fd) {
+const char *create_filename_from_descriptor(int fd) {
   struct m_filename *fn;
 
   if (fd < 0) return NULL; /* file descriptor must be valid */
@@ -312,10 +312,10 @@ char *create_filename_from_descriptor(int fd) {
     fn->filename = NULL; /* pretty-printable filename */
     fn->x.filedesc = fd;
   }
-  return (char *) fn;
+  return (const char *) fn;
 }
 
-char *create_filename_from_memory(void *data, size_t length) {
+const char *create_filename_from_memory(void *data, size_t length) {
   struct m_filename *fn;
 
   if (!data) return NULL; /* data pointer must not be NULL */
@@ -327,10 +327,10 @@ char *create_filename_from_memory(void *data, size_t length) {
     fn->x.memory.data   = (unsigned char *) data;
     fn->x.memory.length = length;
   }
-  return (char *) fn;
+  return (const char *) fn;
 }
 
-void set_filename_printable_name(char *filename, char *name) {
+void set_filename_printable_name(const char *filename, const char *name) {
   struct m_filename *fn = (struct m_filename *) filename;
   if (!fn) return;
   /* very basic validation of structure */
@@ -338,8 +338,8 @@ void set_filename_printable_name(char *filename, char *name) {
   fn->filename = name;
 }
 
-void free_filename(char *filename) {
-  free(filename);
+void free_filename(const char *filename) {
+  free((void *) filename);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -367,7 +367,7 @@ static unsigned char memory_cab[] = {
 };
 
 int main() {
-  char *mem_cab, *std_out, *std_err, *example;
+  const char *mem_cab, *std_out, *std_err, *example;
   struct mscab_decompressor *cabd;
   struct mscabd_cabinet *cab;
   struct mscabd_file *file;

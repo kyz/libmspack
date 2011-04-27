@@ -18,7 +18,7 @@
 
 /* prototypes */
 static struct msszddd_header *szddd_open(
-    struct msszdd_decompressor *base, char *filename);
+    struct msszdd_decompressor *base, const char *filename);
 static void szddd_close(
     struct msszdd_decompressor *base, struct msszddd_header *hdr);
 static int szddd_read_headers(
@@ -26,9 +26,9 @@ static int szddd_read_headers(
     struct msszddd_header *hdr);
 static int szddd_extract(
     struct msszdd_decompressor *base, struct msszddd_header *hdr,
-    char *filename);
+    const char *filename);
 static int szddd_decompress(
-    struct msszdd_decompressor *base, char *input, char *output);
+    struct msszdd_decompressor *base, const char *input, const char *output);
 static int szddd_error(
     struct msszdd_decompressor *base);
 
@@ -77,7 +77,7 @@ void mspack_destroy_szdd_decompressor(struct msszdd_decompressor *base)
  * opens an SZDD file without decompressing, reads header
  */
 static struct msszddd_header *szddd_open(struct msszdd_decompressor *base,
-					 char *filename)
+					 const char *filename)
 {
     struct msszdd_decompressor_p *self = (struct msszdd_decompressor_p *) base;
     struct msszddd_header *hdr;
@@ -179,7 +179,7 @@ static int szddd_read_headers(struct mspack_system *sys,
  * decompresses an SZDD file
  */
 static int szddd_extract(struct msszdd_decompressor *base,
-			 struct msszddd_header *hdr, char *filename)
+			 struct msszddd_header *hdr, const char *filename)
 {
     struct msszdd_decompressor_p *self = (struct msszdd_decompressor_p *) base;
     struct mspack_file *fh, *outfh;
@@ -221,7 +221,7 @@ static int szddd_extract(struct msszdd_decompressor *base,
  * unpacks directly from input to output
  */
 static int szddd_decompress(struct msszdd_decompressor *base,
-			    char *input, char *output)
+			    const char *input, const char *output)
 {
     struct msszdd_decompressor_p *self = (struct msszdd_decompressor_p *) base;
     struct msszddd_header *hdr;

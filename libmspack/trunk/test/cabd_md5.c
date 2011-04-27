@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* free all resources */
-	for (c2 = cab->prevcab; c2; c2 = c2->prevcab) free(c2->filename);
-	for (c2 = cab->nextcab; c2; c2 = c2->nextcab) free(c2->filename);
+	for (c2 = cab->prevcab; c2; c2 = c2->prevcab) free((void*)c2->filename);
+	for (c2 = cab->nextcab; c2; c2 = c2->nextcab) free((void*)c2->filename);
 	cabd->close(cabd, cab);
     }
     mspack_destroy_cab_decompressor(cabd);

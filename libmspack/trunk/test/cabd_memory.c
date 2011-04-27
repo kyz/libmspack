@@ -35,7 +35,7 @@ static void mem_copy(void *src, void *dest, size_t bytes) {
   memcpy(dest, src, bytes);
 }
 
-static void mem_msg(struct mem_file *file, char *format, ...) {
+static void mem_msg(struct mem_file *file, const char *format, ...) {
   /* put your own printf-type routine here, or leave it empty */
 }
 
@@ -92,13 +92,13 @@ static off_t mem_tell(struct mem_file *fh) {
 }
 
 static struct mspack_system mem_system = {
-  (struct mspack_file * (*)(struct mspack_system *, char *, int)) &mem_open,
+  (struct mspack_file * (*)(struct mspack_system *, const char *, int)) &mem_open,
   (void (*)(struct mspack_file *)) &mem_close,
   (int (*)(struct mspack_file *, void *, int)) &mem_read, 
   (int (*)(struct mspack_file *, void *, int)) &mem_write,
   (int (*)(struct mspack_file *, off_t, int)) &mem_seek, 
   (off_t (*)(struct mspack_file *)) &mem_tell,
-  (void (*)(struct mspack_file *, char *, ...)) &mem_msg,
+  (void (*)(struct mspack_file *, const char *, ...)) &mem_msg,
   &mem_alloc,
   &mem_free,
   &mem_copy,

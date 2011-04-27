@@ -1,5 +1,19 @@
 2011-04-27:  Stuart Caie <kyzer@4u.net>
 
+	* many files: Made C++ compilers much happier with libmspack.
+	Changed char * to const char * where possible.
+
+	* mspack.h: Changed user-supplied char * to const char *.
+	Unless you've written your own mspack_system implementation,
+	you will likely be unaffected.
+	If you have written your own mspack_system implementation:
+	1: change open()    so it takes a const char *filename
+	2: change message() so it takes a const char *format
+	If you cast your function into the mspack_system struct,
+	you can change the cast instead of the function.
+
+2011-04-27:  Stuart Caie <kyzer@4u.net>
+
 	* Makefile.am: changed CFLAGS from "-Wsign-compare -Wconversion
 	-pedantic" to "-W -Wno-unused". This enables more warnings, and
 	disables these specific warnings which are now a hinderance.

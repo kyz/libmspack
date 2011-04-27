@@ -67,7 +67,7 @@
 
 /* prototypes */
 static struct mscabd_cabinet * cabd_open(
-  struct mscab_decompressor *base, char *filename);
+  struct mscab_decompressor *base, const char *filename);
 static void cabd_close(
   struct mscab_decompressor *base, struct mscabd_cabinet *origcab);
 static int cabd_read_headers(
@@ -78,10 +78,10 @@ static char *cabd_read_string(
   struct mscabd_cabinet_p *cab, int *error);
 
 static struct mscabd_cabinet *cabd_search(
-  struct mscab_decompressor *base, char *filename);
+  struct mscab_decompressor *base, const char *filename);
 static int cabd_find(
   struct mscab_decompressor_p *self, unsigned char *buf,
-  struct mspack_file *fh, char *filename, off_t flen,
+  struct mspack_file *fh, const char *filename, off_t flen,
   off_t *firstlen, struct mscabd_cabinet_p **firstcab);
 
 static int cabd_prepend(
@@ -98,7 +98,8 @@ static int cabd_can_merge_folders(
   struct mscabd_folder_p *rfol);
 
 static int cabd_extract(
-  struct mscab_decompressor *base, struct mscabd_file *file, char *filename);
+  struct mscab_decompressor *base, struct mscabd_file *file,
+  const char *filename);
 static int cabd_init_decomp(
   struct mscab_decompressor_p *self, unsigned int ct);
 static void cabd_free_decomp(
@@ -186,7 +187,7 @@ void mspack_destroy_cab_decompressor(struct mscab_decompressor *base) {
  * opens a file and tries to read it as a cabinet file
  */
 static struct mscabd_cabinet *cabd_open(struct mscab_decompressor *base,
-					char *filename)
+					const char *filename)
 {
   struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_cabinet_p *cab = NULL;
@@ -564,7 +565,7 @@ static char *cabd_read_string(struct mspack_system *sys,
  * break out of the loop and be sure that all resources are freed
  */
 static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
-					  char *filename)
+					  const char *filename)
 {
   struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_cabinet_p *cab = NULL;
@@ -618,7 +619,7 @@ static struct mscabd_cabinet *cabd_search(struct mscab_decompressor *base,
 }
 
 static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
-		     struct mspack_file *fh, char *filename, off_t flen,
+		     struct mspack_file *fh, const char *filename, off_t flen,
 		     off_t *firstlen, struct mscabd_cabinet_p **firstcab)
 {
   struct mscabd_cabinet_p *cab, *link = NULL;
@@ -978,7 +979,7 @@ static int cabd_can_merge_folders(struct mspack_system *sys,
  * extracts a file from a cabinet
  */
 static int cabd_extract(struct mscab_decompressor *base,
-                        struct mscabd_file *file, char *filename)
+                        struct mscabd_file *file, const char *filename)
 {
   struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_folder_p *fol;

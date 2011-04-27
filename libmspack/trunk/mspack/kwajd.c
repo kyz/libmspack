@@ -17,7 +17,7 @@
 
 /* prototypes */
 static struct mskwajd_header *kwajd_open(
-    struct mskwaj_decompressor *base, char *filename);
+    struct mskwaj_decompressor *base, const char *filename);
 static void kwajd_close(
     struct mskwaj_decompressor *base, struct mskwajd_header *hdr);
 static int kwajd_read_headers(
@@ -25,9 +25,9 @@ static int kwajd_read_headers(
     struct mskwajd_header *hdr);
 static int kwajd_extract(
     struct mskwaj_decompressor *base, struct mskwajd_header *hdr,
-    char *filename);
+    const char *filename);
 static int kwajd_decompress(
-    struct mskwaj_decompressor *base, char *input, char *output);
+    struct mskwaj_decompressor *base, const char *input, const char *output);
 static int kwajd_error(
     struct mskwaj_decompressor *base);
 
@@ -90,7 +90,7 @@ void mspack_destroy_kwaj_decompressor(struct mskwaj_decompressor *base)
  * opens a KWAJ file without decompressing, reads header
  */
 static struct mskwajd_header *kwajd_open(struct mskwaj_decompressor *base,
-					 char *filename)
+					 const char *filename)
 {
     struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
     struct mskwajd_header *hdr;
@@ -244,7 +244,7 @@ static int kwajd_read_headers(struct mspack_system *sys,
  * decompresses a KWAJ file
  */
 static int kwajd_extract(struct mskwaj_decompressor *base,
-			 struct mskwajd_header *hdr, char *filename)
+			 struct mskwajd_header *hdr, const char *filename)
 {
     struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
     struct mspack_system *sys;
@@ -317,7 +317,7 @@ static int kwajd_extract(struct mskwaj_decompressor *base,
  * unpacks directly from input to output
  */
 static int kwajd_decompress(struct mskwaj_decompressor *base,
-			    char *input, char *output)
+			    const char *input, const char *output)
 {
     struct mskwaj_decompressor_p *self = (struct mskwaj_decompressor_p *) base;
     struct mskwajd_header *hdr;

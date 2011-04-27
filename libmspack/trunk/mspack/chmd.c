@@ -14,21 +14,22 @@
 
 /* prototypes */
 static struct mschmd_header * chmd_open(
-  struct mschm_decompressor *base, char *filename);
+  struct mschm_decompressor *base, const char *filename);
 static struct mschmd_header * chmd_fast_open(
-  struct mschm_decompressor *base, char *filename);
+  struct mschm_decompressor *base, const char *filename);
 static struct mschmd_header *chmd_real_open(
-  struct mschm_decompressor *base, char *filename, int entire);
+  struct mschm_decompressor *base, const char *filename, int entire);
 static void chmd_close(
   struct mschm_decompressor *base, struct mschmd_header *chm);
 static int chmd_read_headers(
   struct mspack_system *sys, struct mspack_file *fh,
   struct mschmd_header *chm, int entire);
 static int chmd_fast_find(
-  struct mschm_decompressor *base, struct mschmd_header *chm, char *filename,
-  struct mschmd_file *f_ptr, int f_size);
+  struct mschm_decompressor *base, struct mschmd_header *chm,
+  const char *filename, struct mschmd_file *f_ptr, int f_size);
 static int chmd_extract(
-  struct mschm_decompressor *base, struct mschmd_file *file, char *filename);
+  struct mschm_decompressor *base, struct mschmd_file *file,
+  const char *filename);
 static int chmd_sys_write(
   struct mspack_file *file, void *buffer, int bytes);
 static int chmd_init_decomp(
@@ -41,7 +42,7 @@ static int read_spaninfo(
   off_t *length_ptr);
 static int find_sys_file(
   struct mschm_decompressor_p *self, struct mschmd_sec_mscompressed *sec,
-  struct mschmd_file **f_ptr, char *name);
+  struct mschmd_file **f_ptr, const char *name);
 static unsigned char *read_sys_file(
   struct mschm_decompressor_p *self, struct mschmd_file *file);
 static int chmd_error(
@@ -54,10 +55,10 @@ static int read_off64(
  * Content and ControlData are essential.
  * ResetTable is preferred, but SpanInfo can be used if not available
  */
-static char *content_name  = "::DataSpace/Storage/MSCompressed/Content";
-static char *control_name  = "::DataSpace/Storage/MSCompressed/ControlData";
-static char *spaninfo_name = "::DataSpace/Storage/MSCompressed/SpanInfo";
-static char *rtable_name   = "::DataSpace/Storage/MSCompressed/Transform/"
+static const char *content_name  = "::DataSpace/Storage/MSCompressed/Content";
+static const char *control_name  = "::DataSpace/Storage/MSCompressed/ControlData";
+static const char *spaninfo_name = "::DataSpace/Storage/MSCompressed/SpanInfo";
+static const char *rtable_name   = "::DataSpace/Storage/MSCompressed/Transform/"
   "{7FC28940-9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable";
 
 /***************************************
@@ -112,7 +113,7 @@ void mspack_destroy_chm_decompressor(struct mschm_decompressor *base) {
  * Calls chmd_real_open() with entire=1.
  */
 static struct mschmd_header *chmd_open(struct mschm_decompressor *base,
-				       char *filename)
+				       const char *filename)
 {
   return chmd_real_open(base, filename, 1);
 }
@@ -124,7 +125,7 @@ static struct mschmd_header *chmd_open(struct mschm_decompressor *base,
  * the file headers. Calls chmd_real_open() with entire=0
  */
 static struct mschmd_header *chmd_fast_open(struct mschm_decompressor *base,
-					    char *filename)
+					    const char *filename)
 {
   return chmd_real_open(base, filename, 0);
 }
@@ -137,7 +138,7 @@ static struct mschmd_header *chmd_fast_open(struct mschm_decompressor *base,
  * either read all headers, or a bare mininum.
  */
 static struct mschmd_header *chmd_real_open(struct mschm_decompressor *base,
-					    char *filename, int entire)
+					    const char *filename, int entire)
 {
   struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mschmd_header *chm = NULL;
@@ -224,7 +225,7 @@ static void chmd_close(struct mschm_decompressor *base,
  */
 
 /* The GUIDs found in CHM headers */
-static unsigned char guids[32] = {
+static const unsigned char guids[32] = {
   /* {7C01FD10-7BAA-11D0-9E0C-00A0-C922-E6EC} */
   0x10, 0xFD, 0x01, 0x7C, 0xAA, 0x7B, 0xD0, 0x11,
   0x9E, 0x0C, 0x00, 0xA0, 0xC9, 0x22, 0xE6, 0xEC,
@@ -463,7 +464,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
  * directly from the on-disk index.
  */
 static int chmd_fast_find(struct mschm_decompressor *base,
-			  struct mschmd_header *chm, char *filename,
+			  struct mschmd_header *chm, const char *filename,
 			  struct mschmd_file *f_ptr, int f_size)
 {
   struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
@@ -544,7 +545,7 @@ static int chmd_fast_find(struct mschm_decompressor *base,
  * extracts a file from a CHM helpfile
  */
 static int chmd_extract(struct mschm_decompressor *base,
-			struct mschmd_file *file, char *filename)
+			struct mschmd_file *file, const char *filename)
 {
   struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mspack_system *sys;
@@ -926,7 +927,7 @@ static int read_spaninfo(struct mschm_decompressor_p *self,
  */
 static int find_sys_file(struct mschm_decompressor_p *self,
 			 struct mschmd_sec_mscompressed *sec,
-			 struct mschmd_file **f_ptr, char *name)
+			 struct mschmd_file **f_ptr, const char *name)
 {
     struct mspack_system *sys = self->system;
     struct mschmd_file result;
@@ -948,7 +949,7 @@ static int find_sys_file(struct mschm_decompressor_p *self,
 
     /* copy result */
     *(*f_ptr) = result;
-    (*f_ptr)->filename = name;
+    (*f_ptr)->filename = (char *) name;
 
     /* link file into sysfiles list */
     (*f_ptr)->next = sec->base.chm->sysfiles;
