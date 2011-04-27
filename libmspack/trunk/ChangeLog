@@ -1,5 +1,11 @@
 2011-04-27:  Stuart Caie <kyzer@4u.net>
 
+	* Makefile.am: changed CFLAGS from "-Wsign-compare -Wconversion
+	-pedantic" to "-W -Wno-unused". This enables more warnings, and
+	disables these specific warnings which are now a hinderance.
+
+2011-04-27:  Stuart Caie <kyzer@4u.net>
+
 	* test/cabrip.c, test/chminfo.c: used macros from system.h for
 	printing offsets and reading 64-bit values, rather than
 	reinvent the wheel.
