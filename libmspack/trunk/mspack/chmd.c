@@ -504,15 +504,15 @@ static int chmd_fast_find(struct mschm_decompressor *base,
       return MSPACK_ERR_READ;
     }
 
-    /* check the signature. Is is PGML or PGMI? */
-    if (!((chunk[0] == 'P') && (chunk[1] == 'G') && (chunk[2] == 'M') &&
+    /* check the signature. Is is PMGL or PMGI? */
+    if (!((chunk[0] == 'P') && (chunk[1] == 'M') && (chunk[2] == 'G') &&
 	  ((chunk[3] == 'L') || (chunk[3] == 'I'))))
     {
       sys->free(chunk);
       sys->close(fh);
       return MSPACK_ERR_DATAFORMAT;
     }
-    /* if PGML, we have found the listing page! */
+    /* if PMGL, we have found the listing page! */
     if (chunk[3] == 'L') {
       /* LOOP EXIT POINT */
       break;
