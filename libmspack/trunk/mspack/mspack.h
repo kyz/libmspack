@@ -1255,7 +1255,7 @@ struct mschmd_header {
   unsigned int depth;
 
   /**
-   * The number of the root PGMI chunk.
+   * The number of the root PMGI chunk.
    *
    * If there is no index in the CHM helpfile, this will be 0xFFFFFFFF.
    */

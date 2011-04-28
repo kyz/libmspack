@@ -108,7 +108,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
 		   quickref_size, chm->chunk_size - 20);
 	    quickref_size = chm->chunk_size - 20;
 	}
-        printf("    PGML entries=%u qrsize=%u zero=%u prev=%d next=%d\n",
+        printf("    PMGL entries=%u qrsize=%u zero=%u prev=%d next=%d\n",
                num_entries, quickref_size, EndGetI32(&chunk[8]),
                EndGetI32(&chunk[12]), EndGetI32(&chunk[16]));
 
@@ -126,15 +126,15 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         for (j = 0; j < num_entries; j++) {
           unsigned int name_len = 0, section = 0, offset = 0, length = 0;
           printf("    %4d: ", (int) (p - &chunk[0]));
-	  READ_ENCINT(name_len, PGML_end); name = p; p += name_len;
-	  READ_ENCINT(section, PGML_end);
-	  READ_ENCINT(offset, PGML_end);
-	  READ_ENCINT(length, PGML_end);
+	  READ_ENCINT(name_len, PMGL_end); name = p; p += name_len;
+	  READ_ENCINT(section, PMGL_end);
+	  READ_ENCINT(offset, PMGL_end);
+	  READ_ENCINT(length, PMGL_end);
           printf("sec=%u off=%-10u len=%-10u name=\"",section,offset,length);
           if (name_len) fwrite(name, 1, name_len, stdout);
           printf("\"\n");
 	}
-      PGML_end:
+      PMGL_end:
 	if (j != num_entries) printf("premature end of chunk\n");
 
       }
@@ -144,7 +144,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
 	k = chm->chunk_size - 2;
 	num_entries = chunk[k] | (chunk[k+1] << 8);
 	quickref_size = EndGetI32(&chunk[4]);
-	printf("    PGMI entries=%u free=%u\n", num_entries, quickref_size);
+	printf("    PMGI entries=%u free=%u\n", num_entries, quickref_size);
 
         printf("    QR: entry %4u = offset %u\n", 0, 8);
         j = (1 << chm->density) + 1;
@@ -159,13 +159,13 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         for (j = 0; j < num_entries; j++) {
           unsigned int name_len, section;
           printf("    %4d: ", (int) (p - &chunk[0]));
-          READ_ENCINT(name_len, PGMI_end); name = p; p += name_len;
-          READ_ENCINT(section, PGMI_end);
+          READ_ENCINT(name_len, PMGI_end); name = p; p += name_len;
+          READ_ENCINT(section, PMGI_end);
           printf("chunk=%-4u name=\"",section);
           if (name_len) fwrite(name, 1, name_len, stdout);
           printf("\"\n");
 	}
-      PGMI_end: 
+      PMGI_end: 
 	if (j != num_entries) printf("premature end of chunk\n");
       }
       else {
