@@ -186,26 +186,15 @@ int main(int argc, char *argv[]) {
       printf("%s\n", *argv);
       if ((chm = chmd->open(chmd, *argv))) {
 
-	/* EXTRACT OUT OF ORDER */
-	for (file = chm->files; file; file = file->next) {
-	  char *outname = create_output_name((unsigned char *) file->filename,NULL,0,1,0);
-	  printf("EOO %s\n", outname);
-	  ensure_filepath(outname);
-	  if (chmd->extract(chmd, file, outname)) {
-	    printf("%s: extract error on \"%s\": %s\n",
-		   *argv, file->filename, ERROR(chmd));
-	  }
-	  free(outname);
-	}
-
-	/* EXTRACT IN ORDER [ordered by offset into content section] */
+	/* build an ordered list of files for maximum extraction speed */
 	for (numf=0, file=chm->files; file; file = file->next) numf++;
 	if ((f = (struct mschmd_file **) calloc(numf, sizeof(struct mschmd_file *)))) {
 	  for (i=0, file=chm->files; file; file = file->next) f[i++] = file;
 	  qsort(f, numf, sizeof(struct mschmd_file *), &sortfunc);
+
 	  for (i = 0; i < numf; i++) {
 	    char *outname = create_output_name((unsigned char *)f[i]->filename,NULL,0,1,0);
-	    printf("EIO %s\n", outname);
+	    printf("Extracting %s\n", outname);
 	    ensure_filepath(outname);
 	    if (chmd->extract(chmd, f[i], outname)) {
 	      printf("%s: extract error on \"%s\": %s\n",

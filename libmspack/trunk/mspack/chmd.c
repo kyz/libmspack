@@ -27,6 +27,14 @@ static int chmd_read_headers(
 static int chmd_fast_find(
   struct mschm_decompressor *base, struct mschmd_header *chm,
   const char *filename, struct mschmd_file *f_ptr, int f_size);
+static unsigned char *read_chunk(
+  struct mschm_decompressor_p *self, struct mschmd_header *chm,
+  struct mspack_file *fh, unsigned int chunk);
+static int search_chunk(
+  struct mschmd_header *chm, const unsigned char *chunk, const char *filename,
+  const unsigned char **result, const unsigned char **result_end);
+static inline int compare(
+  const char *s1, const char *s2, int l1, int l2);
 static int chmd_extract(
   struct mschm_decompressor *base, struct mschmd_file *file,
   const char *filename);
@@ -189,6 +197,7 @@ static void chmd_close(struct mschm_decompressor *base,
   struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mschmd_file *fi, *nfi;
   struct mspack_system *sys;
+  unsigned int i;
 
   if (!base) return;
   sys = self->system;
@@ -211,6 +220,12 @@ static void chmd_close(struct mschm_decompressor *base,
     if (self->d->state) lzxd_free(self->d->state);
     sys->free(self->d);
     self->d = NULL;
+  }
+
+  /* if this CHM had a chunk cache, free it and contents */
+  if (chm->chunk_cache) {
+      for (i = 0; i < chm->num_chunks; i++) sys->free(chm->chunk_cache[i]);
+      sys->free(chm->chunk_cache);
   }
 
   sys->free(chm);
@@ -256,6 +271,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   /* initialise pointers */
   chm->files         = NULL;
   chm->sysfiles      = NULL;
+  chm->chunk_cache   = NULL;
   chm->sec0.base.chm = chm;
   chm->sec0.base.id  = 0;
   chm->sec1.base.chm = chm;
@@ -264,7 +280,6 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   chm->sec1.control  = NULL;
   chm->sec1.spaninfo = NULL;
   chm->sec1.rtable   = NULL;
-
 
   /* read the first header */
   if (sys->read(fh, &buf[0], chmhead_SIZEOF) != chmhead_SIZEOF) {
@@ -333,6 +348,8 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   chm->depth      = EndGetI32(&buf[chmhs1_Depth]);
   chm->index_root = EndGetI32(&buf[chmhs1_IndexRoot]);
   chm->num_chunks = EndGetI32(&buf[chmhs1_NumChunks]);
+  chm->first_pmgl = EndGetI32(&buf[chmhs1_FirstPMGL]);
+  chm->last_pmgl  = EndGetI32(&buf[chmhs1_LastPMGL]);
 
   if (chm->version < 3) {
     /* versions before 3 don't have chmhst3_OffsetCS0 */
@@ -350,12 +367,12 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   }
 
   /* seek to the first PMGL chunk, and reduce the number of chunks to read */
-  if ((x = EndGetI32(&buf[chmhs1_FirstPMGL]))) {
+  if ((x = chm->first_pmgl) != 0) {
     if (sys->seek(fh,(off_t) (x * chm->chunk_size), MSPACK_SYS_SEEK_CUR)) {
       return MSPACK_ERR_SEEK;
     }
   }
-  num_chunks = EndGetI32(&buf[chmhs1_LastPMGL]) - x + 1;
+  num_chunks = chm->last_pmgl - x + 1;
 
   if (!(chunk = (unsigned char *) sys->alloc(sys, (size_t)chm->chunk_size))) {
     return MSPACK_ERR_NOMEMORY;
@@ -458,89 +475,388 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
 }
 
 /***************************************
- * CABD_FAST_FIND
+ * CHMD_FAST_FIND
  ***************************************
  * uses PMGI index chunks and quickref data to quickly locate a file
  * directly from the on-disk index.
+ *
+ * TODO: protect against infinite loops in chunks (where pgml_NextChunk
+ * or a PGMI index entry point to an already visited chunk)
  */
 static int chmd_fast_find(struct mschm_decompressor *base,
 			  struct mschmd_header *chm, const char *filename,
 			  struct mschmd_file *f_ptr, int f_size)
 {
-  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
-  struct mspack_system *sys;
-  struct mspack_file *fh;
-  unsigned int block;
-  unsigned char *chunk;
+    struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
+    struct mspack_system *sys;
+    struct mspack_file *fh;
+    const unsigned char *chunk, *p, *end;
+    int err = MSPACK_ERR_OK, result = -1;
+    unsigned int n, sec;
 
-  if (!self || !chm || !f_ptr || (f_size != sizeof(struct mschmd_file))) {
-    return MSPACK_ERR_ARGS;
-  }
-  sys = self->system;
-
-  if (!(chunk = (unsigned char *) sys->alloc(sys, (size_t)chm->chunk_size))) {
-    return MSPACK_ERR_NOMEMORY;
-  }
-
-  if (!(fh = sys->open(sys, chm->filename, MSPACK_SYS_OPEN_READ))) {
-    sys->free(chunk);
-    return MSPACK_ERR_OPEN;
-  }
-
-  /* go through all PMGI blocks (if there are any present) */
-  block = (chm->index_root >= 0) ? chm->index_root : 0;
-  do {
-    /* seek to block and read it */
-    if (sys->seek(fh, (off_t) (chm->dir_offset + (block * chm->chunk_size)),
-		  MSPACK_SYS_SEEK_CUR))
-    {
-      sys->free(chunk);
-      sys->close(fh);
-      return MSPACK_ERR_SEEK;
+    if (!self || !chm || !f_ptr || (f_size != sizeof(struct mschmd_file))) {
+	return MSPACK_ERR_ARGS;
     }
-    if (sys->read(fh, chunk, (int)chm->chunk_size) != (int)chm->chunk_size) {
-      sys->free(chunk);
-      sys->close(fh);
-      return MSPACK_ERR_READ;
+    sys = self->system;
+
+    /* clear the results structure */
+    memset(f_ptr, 0, f_size);
+
+    if (!(fh = sys->open(sys, chm->filename, MSPACK_SYS_OPEN_READ))) {
+	return MSPACK_ERR_OPEN;
+    }
+
+    /* go through PMGI chunk hierarchy to reach PMGL chunk */
+    if (chm->index_root < chm->num_chunks) {
+	n = chm->index_root;
+	for (;;) {
+	    if (!(chunk = read_chunk(self, chm, fh, n))) {
+		sys->close(fh);
+		return self->error;
+	    }
+
+	    /* search PMGI/PMGL chunk. exit early if no entry found */
+	    if ((result = search_chunk(chm, chunk, filename, &p, &end)) <= 0) {
+		break;
+	    }
+
+	    /* found result. loop around for next chunk if this is PMGI */
+	    if (chunk[3] == 0x4C) break; else READ_ENCINT(n);
+	}
+    }
+    else {
+	/* PMGL chunks only, search from first_pmgl to last_pmgl */
+	for (n = chm->first_pmgl; n <= chm->last_pmgl;
+	     n = EndGetI32(&chunk[pmgl_NextChunk]))
+	{
+	    if (!(chunk = read_chunk(self, chm, fh, n))) {
+		err = self->error;
+		break;
+	    }
+
+	    /* search PMGL chunk. exit if file found */
+	    if ((result = search_chunk(chm, chunk, filename, &p, &end)) > 0) {
+		break;
+	    }
+	}
+    }
+
+    /* if we found a file, read it */
+    if (result > 0) {
+	READ_ENCINT(sec);
+	f_ptr->section  = (sec == 0) ? (struct mschmd_section *) &chm->sec0
+	                             : (struct mschmd_section *) &chm->sec1;
+	READ_ENCINT(f_ptr->offset);
+	READ_ENCINT(f_ptr->length);
+    }
+    else if (result < 0) {
+	err = MSPACK_ERR_DATAFORMAT;
+    }
+
+    sys->close(fh);
+    return self->error = err;
+
+ chunk_end:
+    D(("read beyond end of chunk entries"))
+    sys->close(fh);
+    return self->error = MSPACK_ERR_DATAFORMAT;
+}
+
+/* reads the given chunk into memory, storing it in a chunk cache
+ * so it doesn't need to be read from disk more than once
+ */
+static unsigned char *read_chunk(struct mschm_decompressor_p *self,
+				 struct mschmd_header *chm,
+				 struct mspack_file *fh,
+				 unsigned int chunk_num)
+{
+    struct mspack_system *sys = self->system;
+    unsigned char *buf;
+
+    /* check arguments - most are already checked by chmd_fast_find */
+    if (chunk_num > chm->num_chunks) return NULL;
+    
+    /* ensure chunk cache is available */
+    if (!chm->chunk_cache) {
+	size_t size = sizeof(unsigned char *) * chm->num_chunks;
+	if (!(chm->chunk_cache = (unsigned char **) sys->alloc(sys, size))) {
+	    self->error = MSPACK_ERR_NOMEMORY;
+	    return NULL;
+	}
+	memset(chm->chunk_cache, 0, size);
+    }
+
+    /* try to answer out of chunk cache */
+    if (chm->chunk_cache[chunk_num]) return chm->chunk_cache[chunk_num];
+
+    /* need to read chunk - allocate memory for it */
+    if (!(buf = (unsigned char *) sys->alloc(sys, chm->chunk_size))) {
+	self->error = MSPACK_ERR_NOMEMORY;
+	return NULL;
+    }
+
+    /* seek to block and read it */
+    if (sys->seek(fh, (off_t) (chm->dir_offset + (chunk_num * chm->chunk_size)),
+		      MSPACK_SYS_SEEK_START))
+    {
+	self->error = MSPACK_ERR_SEEK;
+	sys->free(buf);
+	return NULL;
+    }
+    if (sys->read(fh, buf, (int)chm->chunk_size) != (int)chm->chunk_size) {
+	self->error = MSPACK_ERR_READ;
+	sys->free(buf);
+	return NULL;
     }
 
     /* check the signature. Is is PMGL or PMGI? */
-    if (!((chunk[0] == 'P') && (chunk[1] == 'M') && (chunk[2] == 'G') &&
-	  ((chunk[3] == 'L') || (chunk[3] == 'I'))))
+    if (!((buf[0] == 0x50) && (buf[1] == 0x4D) && (buf[2] == 0x47) &&
+	  ((buf[3] == 0x4C) || (buf[3] == 0x49))))
     {
-      sys->free(chunk);
-      sys->close(fh);
-      return MSPACK_ERR_DATAFORMAT;
-    }
-    /* if PMGL, we have found the listing page! */
-    if (chunk[3] == 'L') {
-      /* LOOP EXIT POINT */
-      break;
+	self->error = MSPACK_ERR_SEEK;
+	sys->free(buf);
+	return NULL;
     }
 
-    /* perform binary search on quickrefs */
-    /* perform linear search on quickref segment */
+    /* all OK. Store chunk in cache and return it */
+    return chm->chunk_cache[chunk_num] = buf;
+}
 
-  } while (1); /* see LOOP EXIT POINT above */
+/* searches a PMGI/PMGL chunk for a given filename entry. Returns -1 on
+ * data format error, 0 if entry definitely not found, 1 if entry
+ * found. In the latter case, *result and *result_end are set pointing
+ * to that entry's data (either the "next chunk" ENCINT for a PMGI or
+ * the section, offset and length ENCINTs for a PMGL).
+ *
+ * In the case of PMGL chunks, the entry has definitely been
+ * found. In the case of PMGI chunks, the entry which points to the
+ * chunk that may eventually contain that entry has been found.
+ */
+static int search_chunk(struct mschmd_header *chm,
+			const unsigned char *chunk,
+			const char *filename,
+			const unsigned char **result,
+			const unsigned char **result_end)
+{
+    const unsigned char *start, *end, *p;
+    unsigned int qr_size, num_entries, qr_entries, qr_density, name_len;
+    unsigned int L, R, M, sec, fname_len, entries_off, is_pmgl;
+    int cmp;
 
-  /* a loop through all blocks, if chm->index_root < 0 */
-  /* otherwise just this block */
+    fname_len = strlen(filename);
 
-  /* perform binary search on quickrefs */
-  /* perform linear search on quickref segment */
-  sys->close(fh);
-  sys->free(chunk);
+    /* PMGL chunk or PMGI chunk? (note: read_chunk() has already
+     * checked the rest of the characters in the chunk signature) */
+    if (chunk[3] == 0x4C) {
+	is_pmgl = 1;
+	entries_off = pmgl_Entries;
+    }
+    else {
+	is_pmgl = 0;
+	entries_off = pmgi_Entries;
+    }
 
-  /* for now - no results */
-  f_ptr->section = NULL;
-  f_ptr->offset = 0;
-  f_ptr->length = 0;
-  return MSPACK_ERR_OK;
+    /*  Step 1: binary search first filename of each QR entry
+     *  - target filename == entry
+     *    found file
+     *  - target filename < all entries
+     *    file not found
+     *  - target filename > all entries
+     *    proceed to step 2 using final entry
+     *  - target filename between two searched entries
+     *    proceed to step 2
+     */
+    qr_size     = EndGetI32(&chunk[pmgl_QuickRefSize]);
+    start       = &chunk[chm->chunk_size - 2];
+    end         = &chunk[chm->chunk_size - qr_size];
+    num_entries = EndGetI16(start);
+    qr_density  = 1 + (1 << chm->density);
+    qr_entries  = (num_entries + qr_density-1) / qr_density;
+
+    if (num_entries == 0) {
+	D(("chunk has no entries"))
+	return -1;
+    }
+
+    if (qr_size > chm->chunk_size) {
+	D(("quickref size > chunk size"))
+	return -1;
+    }
+
+    *result_end = end;
+
+    if ((qr_entries * 2) > (start - end)) {
+	D(("WARNING; more quickrefs than quickref space"))
+	qr_entries = 0; /* but we can live with it */
+    }
+
+    if (qr_entries > 0) {
+	L = 0;
+	R = qr_entries - 1;
+	do {
+	    /* pick new midpoint */
+	    M = (L + R) >> 1;
+
+	    /* compare filename with entry QR points to */
+	    p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
+	    READ_ENCINT(name_len);
+	    if (p + name_len > end) goto chunk_end;
+	    cmp = compare(filename, (char *)p, fname_len, name_len);
+
+	    if (cmp == 0) break;
+	    else if (cmp < 0) if (M) R = M - 1; else return 0;
+	    else if (cmp > 0) L = M + 1;
+	} while (L <= R);
+	M = (L + R) >> 1;
+
+	if (cmp == 0) {
+	    /* exact match! */
+	    p += name_len;
+	    *result = p;
+	    return 1;
+	}
+
+	/* otherwise, read the group of entries for QR entry M */
+	p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
+	num_entries -= (M * qr_density);
+	if (num_entries > qr_density) num_entries = qr_density;
+    }
+    else {
+	p = &chunk[entries_off];
+    }
+
+    /* Step 2: linear search through the set of entries reached in step 1.
+     * - filename == any entry
+     *   found entry
+     * - filename < all entries (PMGI) or any entry (PMGL)
+     *   entry not found, stop now
+     * - filename > all entries
+     *   entry not found (PMGL) / maybe found (PMGI)
+     * - 
+     */
+    *result = NULL;
+    while (num_entries-- > 0) {
+	READ_ENCINT(name_len);
+	if (p + name_len > end) goto chunk_end;
+	cmp = compare(filename, (char *)p, fname_len, name_len);
+	p += name_len;
+
+	if (cmp == 0) {
+	    /* entry found */
+	    *result = p;
+	    return 1;
+	}
+
+	if (cmp < 0) {
+	    /* entry not found (PMGL) / maybe found (PMGI) */
+	    break;
+	}
+
+	/* read and ignore the rest of this entry */
+	if (is_pmgl) {
+	    READ_ENCINT(R); /* skip section */
+	    READ_ENCINT(R); /* skip offset */
+	    READ_ENCINT(R); /* skip length */
+	}
+	else {
+	    *result = p; /* store potential final result */
+	    READ_ENCINT(R); /* skip chunk number */
+	}
+    }
+
+     /* PMGL? not found. PMGI? maybe found */
+     return (is_pmgl) ? 0 : (*result ? 1 : 0);
+
+ chunk_end:
+    D(("reached end of chunk data while searching"))
+    return -1;
+}
+
+#if HAVE_TOWLOWER
+# if HAVE_WCTYPE_H
+#  include <wctype.h>
+# endif
+# define TOLOWER(x) towlower(x)
+#elif HAVE_TOLOWER
+# if HAVE_CTYPE_H
+#  include <ctype.h>
+# endif
+# define TOLOWER(x) tolower(x)
+#else
+# define TOLOWER(x) (((x)<0||(x)>256)?(x):mspack_tolower_map[(x)])
+/* Map of char -> lowercase char for the first 256 chars. Generated with:
+ * LC_CTYPE=en_GB.utf-8 perl -Mlocale -le 'print map{ord(lc chr).","} 0..255'
+ */
+static const unsigned char mspack_tolower_map[256] = {
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,
+    28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,
+    53,54,55,56,57,58,59,60,61,62,63,64,97,98,99,100,101,102,103,104,105,106,
+    107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,91,92,93,94,
+    95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,
+    115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,
+    134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,
+    153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,
+    172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,
+    191,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,
+    242,243,244,245,246,215,248,249,250,251,252,253,254,223,224,225,226,227,228,
+    229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,
+    248,249,250,251,252,253,254,255
+};
+#endif
+
+/* decodes a UTF-8 character from s[] into c. Will not read past e. */
+#define GET_UTF8_CHAR(s, e, c) do {					\
+    unsigned char x = *s++;						\
+    if (x < 0x80) c = x;						\
+    else if (x < 0xC0) c = -1;						\
+    else if (x < 0xE0) {						\
+	c = (s >= e) ? -1 : ((x & 0x1F) << 6) | (*s++ & 0x3F);		\
+    }									\
+    else if (x < 0xF0) {						\
+        c = (s+2 > e) ? -1 : ((x & 0x0F) << 12)	| ((s[0] & 0x3F) <<  6)	\
+	    | (s[1] & 0x3F);						\
+	s += 2;								\
+    }									\
+    else if (x < 0xF8) {						\
+	c = (s+3 > e) ? -1 : ((x & 0x07) << 18) | ((s[0] & 0x3F) << 12) \
+	    | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);			\
+	s += 3;								\
+    }									\
+    else if (x < 0xFC) {						\
+	c = (s+4 > e) ? -1 : ((x & 0x03) << 24) | ((s[0] & 0x3F) << 18) \
+	    | ((s[1] & 0x3F) << 12)|((s[2] & 0x3F) << 6)|(s[3] & 0x3F);	\
+	s += 4;								\
+    }									\
+    else if (x < 0xFE) {						\
+        c = (s+5>e)?-1:((x&1)<<30)|((s[0]&0x3F)<<24)|((s[1]&0x3F)<<18)| \
+	    ((s[2] & 0x3F) << 12) | ((s[3] & 0x3F) << 6)|(s[4] & 0x3F);	\
+	s += 5;								\
+    }									\
+    else c = -1;							\
+} while (0)
+
+/* case-insensitively compares two UTF8 encoded strings. String length for
+ * both strings must be provided, null bytes are not terminators */
+static inline int compare(const char *s1, const char *s2, int l1, int l2) {
+    register const unsigned char *p1 = (const unsigned char *) s1;
+    register const unsigned char *p2 = (const unsigned char *) s2;
+    register const unsigned char *e1 = p1 + l1, *e2 = p2 + l2;
+    int c1, c2;
+
+    while (p1 < e1 && p2 < e2) {
+	GET_UTF8_CHAR(p1, e1, c1);
+	GET_UTF8_CHAR(p2, e2, c2);
+	if (c1 == c2) continue;
+	c1 = TOLOWER(c1);
+	c2 = TOLOWER(c2);
+	if (c1 != c2) return c1 - c2;
+    }
+    return l1 - l2;
 }
 
 
 /***************************************
- * CABD_EXTRACT
+ * CHMD_EXTRACT
  ***************************************
  * extracts a file from a CHM helpfile
  */

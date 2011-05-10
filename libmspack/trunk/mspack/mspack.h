@@ -1178,7 +1178,9 @@ struct mschmd_sec_mscompressed {
   /** A pointer to the file which contains the LZX reset table. */
   struct mschmd_file *rtable;
 
-  /** A pointer to the file which contains the LZX span information. */
+  /** A pointer to the file which contains the LZX span information.
+   * Available only in CHM decoder version 2 and above.
+   */
   struct mschmd_file *spaninfo;
 };
 
@@ -1260,6 +1262,24 @@ struct mschmd_header {
    * If there is no index in the CHM helpfile, this will be 0xFFFFFFFF.
    */
   unsigned int index_root;
+
+  /**
+   * The number of the first PMGL chunk. Usually zero.
+   * Available only in CHM decoder version 2 and above.
+   */
+  unsigned int first_pmgl;
+
+  /**
+   * The number of the last PMGL chunk. Usually num_chunks-1.
+   * Available only in CHM decoder version 2 and above.
+   */
+  unsigned int last_pmgl;
+
+  /**
+   * A cache of loaded chunks, filled in by mschm_decoder::fast_find().
+   * Available only in CHM decoder version 2 and above.
+   */
+  unsigned char **chunk_cache;
 };
 
 /**

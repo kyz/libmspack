@@ -1,3 +1,28 @@
+2011-05-10:  Stuart Caie <kyzer@4u.net>
+
+	* chmd.c: implemented fast_find()
+
+	* test/chmx.c: removed the multiple extraction orders, now it just
+	extracts in the fastest order
+
+	* test/chmd_order.c: new program added to test that different
+	extraction orders don't affect the results of extraction
+
+	* test/chmd_find.c: new program to test that fast_find() works.
+	Either supply your own filename to find, or it will try finding
+	every file in the CHM.
+
+	* configure.ac: because CHM fast find requires case-insensitive
+	comparisons, tolower() or towlower() are used where possible.
+	These functions and their headers are checked for.
+
+	* mspack.h: exposed struct mschmd_sec_mscompressed's spaninfo
+	and struct mschmd_header's first_pmgl, last_pmgl and chunk_cache
+	to the world. Check that the CHM decoder version is v2 or higher
+	before using them.
+
+	* system.c: set CHM decoder version to v2
+
 2011-04-27:  Stuart Caie <kyzer@4u.net>
 
 	* many files: Made C++ compilers much happier with libmspack.

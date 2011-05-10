@@ -29,8 +29,7 @@ AC_EXEEXT
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([limits.h stdlib.h])
-AC_CHECK_SIZEOF([off_t])
+AC_CHECK_HEADERS([ctype.h limits.h stdlib.h wctype.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -38,6 +37,8 @@ AC_C_INLINE
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
+AC_CHECK_SIZEOF([off_t])
+AC_CHECK_FUNCS([tolower towlower])
 
 # largefile support
 AC_SYS_LARGEFILE
