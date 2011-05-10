@@ -685,7 +685,7 @@ static int search_chunk(struct mschmd_header *chm,
 
     *result_end = end;
 
-    if ((qr_entries * 2) > (start - end)) {
+    if (((int)qr_entries * 2) > (start - end)) {
 	D(("WARNING; more quickrefs than quickref space"))
 	qr_entries = 0; /* but we can live with it */
     }
@@ -704,7 +704,7 @@ static int search_chunk(struct mschmd_header *chm,
 	    cmp = compare(filename, (char *)p, fname_len, name_len);
 
 	    if (cmp == 0) break;
-	    else if (cmp < 0) if (M) R = M - 1; else return 0;
+	    else if (cmp < 0) { if (M) R = M - 1; else return 0; }
 	    else if (cmp > 0) L = M + 1;
 	} while (L <= R);
 	M = (L + R) >> 1;
