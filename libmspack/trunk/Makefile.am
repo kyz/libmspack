@@ -13,7 +13,6 @@ dist-hook:
 ACLOCAL_AMFLAGS =	-I m4
 AM_CFLAGS =		-Wall -W -Wno-unused $(MSPACK_FLAGS)
 AM_CPPFLAGS =		-I$(top_srcdir)/mspack -I$(top_srcdir)/test 
-CLEANFILES =		test/.libs/expand
 
 lib_LTLIBRARIES =	libmspack.la
 include_HEADERS =	mspack/mspack.h
