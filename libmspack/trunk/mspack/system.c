@@ -20,10 +20,17 @@ const char *largefile_msg = "library not compiled to support large files.";
 
 int mspack_version(int entity) {
   switch (entity) {
+   /* CHM decoder version 1 -> 2 changes:
+    * - added mschmd_sec_mscompressed::spaninfo
+    * - added mschmd_header::first_pmgl
+    * - added mschmd_header::last_pmgl
+    * - added mschmd_header::chunk_cache;
+    */
+  case MSPACK_VER_MSCHMD:
+    return 2;
   case MSPACK_VER_LIBRARY:
   case MSPACK_VER_SYSTEM:
   case MSPACK_VER_MSCABD:
-  case MSPACK_VER_MSCHMD:
   case MSPACK_VER_MSSZDDD:
   case MSPACK_VER_MSKWAJD:
     return 1;
