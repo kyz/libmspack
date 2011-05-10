@@ -1,8 +1,8 @@
 libmspack 0.2alpha
 
 The purpose of libmspack is to provide compressors and decompressors,
-archivers and dearchivers for Microsoft compression formats: CAB, CHM,
-HLP, KWAJ, LIT and SZDD. It is also designed to be easily embeddable,
+archivers and dearchivers for Microsoft compression formats: CAB, CHM, WIM,
+LIT, HLP, KWAJ and SZDD. It is also designed to be easily embeddable,
 stable, robust and resource-efficient.
 
 The library is not intended as a generalised "any archiver" interface.
@@ -88,7 +88,9 @@ cabd_memory    - An mspack_system implementation that reads/writes to memory.
 cabd_test      - Regression tests for libmspack's CAB decompression.
 cabrip         - Extracts any CAB files embedded in another file.
 chmd_compare   - Compares the CHM decompressor to Microsoft's HH.EXE
+chmd_find      - Fast-finds a file within a CHM file.
 chmd_md5       - Prints the MD5 checksums of all files within a CHM file.
+chmd_order     - Tests extracting files in a CHM file in four different ways.
 chminfo        - Prints verbose information about CHM file structures.
 chmx           - Extracts all files in a CHM file to disk.
 expand         - Extracts an SZDD or KWAJ file.
