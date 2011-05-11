@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2004 Stuart Caie.
+ * (C) 2003-2011 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -623,11 +623,19 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
 		     off_t *firstlen, struct mscabd_cabinet_p **firstcab)
 {
   struct mscabd_cabinet_p *cab, *link = NULL;
-  off_t caboff, offset, foffset, cablen, length;
+  off_t caboff, offset, length;
   struct mspack_system *sys = self->system;
   unsigned char *p, *pend, state = 0;
   unsigned int cablen_u32 = 0, foffset_u32 = 0;
   int false_cabs = 0;
+
+#ifndef LARGEFILE_SUPPORT
+  /* detect 32-bit off_t overflow */
+  if (flen < 0) {
+    sys->message(fh, largefile_msg);
+    return MSPACK_ERR_OK;
+  }
+#endif
 
   /* search through the full file length */
   for (offset = 0; offset < flen; offset += length) {
@@ -689,34 +697,17 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
 	/* should reading cabinet fail, restart search just after 'MSCF' */
 	offset = caboff + 4;
 
-	/* if off_t is only 32-bits signed, there will be overflow problems
-	 * with cabinets reaching past the 2GB barrier (or just claiming to)
-	 */
-#ifndef LARGEFILE_SUPPORT
-	if (cablen_u32 & ~0x7FFFFFFF) {
-	  sys->message(fh, largefile_msg);
-	  cablen_u32 = 0x7FFFFFFF;
-	}
-	if (foffset_u32 & ~0x7FFFFFFF) {
-	  sys->message(fh, largefile_msg);
-	  foffset_u32 = 0x7FFFFFFF;
-	}
-#endif
-	/* copy the unsigned 32-bit offsets to signed off_t variables */
-	foffset = (off_t) foffset_u32;
-	cablen  = (off_t) cablen_u32;
-
 	/* capture the "length of cabinet" field if there is a cabinet at
 	 * offset 0 in the file, regardless of whether the cabinet can be
 	 * read correctly or not */
-	if (caboff == 0) *firstlen = cablen;
+	if (caboff == 0) *firstlen = (off_t) cablen_u32;
 
 	/* check that the files offset is less than the alleged length of
 	 * the cabinet, and that the offset + the alleged length are
 	 * 'roughly' within the end of overall file length */
-	if ((foffset < cablen) &&
-	    ((caboff + foffset) < (flen + 32)) &&
-	    ((caboff + cablen)  < (flen + 32)) )
+	if ((foffset_u32 < cablen_u32) &&
+	    ((caboff + (off_t) foffset_u32) < (flen + 32)) &&
+	    ((caboff + (off_t) cablen_u32)  < (flen + 32)) )
 	{
 	  /* likely cabinet found -- try reading it */
 	  if (!(cab = (struct mscabd_cabinet_p *) sys->alloc(sys, sizeof(struct mscabd_cabinet_p)))) {
@@ -732,13 +723,21 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
 	  else {
 	    /* cabinet read correctly! */
 
-	    /* cause the search to restart after this cab's data. */
-	    offset = caboff + cablen;
-	      
 	    /* link the cab into the list */
 	    if (!link) *firstcab = cab;
 	    else link->base.next = (struct mscabd_cabinet *) cab;
 	    link = cab;
+
+	    /* cause the search to restart after this cab's data. */
+	    offset = caboff + (off_t) cablen_u32;
+
+#ifndef LARGEFILE_SUPPORT
+	    /* detect 32-bit off_t overflow */
+	    if (offset < caboff) {
+	      sys->message(fh, largefile_msg);
+	      return MSPACK_ERR_OK;
+	    }
+#endif	      
 	  }
 	}
 
