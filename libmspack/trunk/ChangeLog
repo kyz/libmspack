@@ -1,3 +1,10 @@
+2011-05-11  Stuart Caie <kyzer@4u.net>
+
+	* cabd_find(): rethought how large vs small file support is
+	handled, as users were getting "library not compiled to support
+	large files" message on some small files. Now checks for actual
+	off_t overflow, rather than trying to preempt it.
+
 2011-05-10:  Stuart Caie <kyzer@4u.net>
 
 	* chmd.c: implemented fast_find()
