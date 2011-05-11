@@ -43,13 +43,13 @@
 # define FILELEN long
 #endif
 
-#ifndef _FILE_OFFSET_BITS
-# define _FILE_OFFSET_BITS 32
-#endif
-#if _FILE_OFFSET_BITS < 64
-# define FL "d"
-#else
+#if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
+     (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
+     (defined(SIZEOF_OFF_T)      && SIZEOF_OFF_T      >= 8)  || \
+     defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE))
 # define FL "lld"
+#else
+# define FL "ld"
 #endif
 
 

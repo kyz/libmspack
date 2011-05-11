@@ -1,3 +1,8 @@
+2011-05-11  Stuart Caie <kyzer@4u.net>
+
+	* src/cabinfo.c: changed the largefile detection header to the same
+	as mspack/system.h
+
 2011-04-27  Stuart Caie <kyzer@4u.net>
 
 	* src/cabextract.c: changed char* to const char* in line with changes
