@@ -113,6 +113,41 @@
  * - #MSPACK_ERR_CHECKSUM indicates that a data checksum has failed.
  * - #MSPACK_ERR_CRUNCH indicates an error occured during compression.
  * - #MSPACK_ERR_DECRUNCH indicates an error occured during decompression.
+ *
+ * \section threading Multi-threading
+ *
+ * libmspack methods are reentrant and multithreading-safe when each
+ * thread has its own compressor or decompressor.
+
+ * You should not call multiple methods simultaneously on a single
+ * compressor or decompressor instance.
+ *
+ * If this may happen, you can either use one compressor or
+ * decompressor per thread, or you can use your preferred lock,
+ * semaphore or mutex library to ensure no more than one method on a
+ * compressor/decompressor is called simultaneously. libmspack will
+ * not do this locking for you.
+ *
+ * Example of incorrect behaviour:
+ * - thread 1 calls mspack_create_cab_decompressor()
+ * - thread 1 calls open()
+ * - thread 1 calls extract() for one file
+ * - thread 2 simultaneously calls extract() for another file
+ *
+ * Correct behaviour:
+ * - thread 1 calls mspack_create_cab_decompressor()
+ * - thread 2 calls mspack_create_cab_decompressor()
+ * - thread 1 calls its own open() / extract()
+ * - thread 2 simultaneously calls its own open() / extract()
+ *
+ * Also correct behaviour:
+ * - thread 1 calls mspack_create_cab_decompressor()
+ * - thread 1 locks a mutex for with the decompressor before
+ *   calling any methods on it, and unlocks the mutex after each
+ *   method returns.
+ * - thread 1 can share the results of open() with thread 2, and both
+ *   can call extract(), provided they both guard against simultaneous
+ *   use of extract(), and any other methods, with the mutex
  */
 
 #ifndef LIB_MSPACK_H
