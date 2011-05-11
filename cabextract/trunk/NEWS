@@ -1,3 +1,13 @@
+New in 1.4:
+* A bug in the LZX decompressor was fixed.
+* cabextract is now more tolerant when processing cabinet sets.
+* cabextract is now compatible with even more compilers, and
+  now supports 64-bit file I/O on platforms where it's completely
+  native, like Mac OS X 10.6 and Fedora x86_64.
+* cabextract will no longer print "library not compiled to support
+  large files" while reading small files.
+* The Windows CE installation format document was improved.
+
 New in 1.3:
 * Bugs in the MS-ZIP and Quantum decompressors have been fixed.
 * MS-ZIP recovery has been improved.
