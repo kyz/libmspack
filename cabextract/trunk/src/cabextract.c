@@ -1,5 +1,5 @@
-/* cabextract 1.3 - a program to extract Microsoft Cabinet files
- * (C) 2000-2010 Stuart Caie <kyzer@4u.net>
+/* cabextract 1.4 - a program to extract Microsoft Cabinet files
+ * (C) 2000-2011 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
       "  -s   --single      restrict search to cabs on the command line\n"
       "  -F   --filter      extract only files that match the given pattern\n"
       "  -d   --directory   extract all files to the given directory\n\n"
-      "cabextract %s (C) 2000-2010 Stuart Caie <kyzer@4u.net>\n"
+      "cabextract %s (C) 2000-2011 Stuart Caie <kyzer@4u.net>\n"
       "This is free software with ABSOLUTELY NO WARRANTY.\n",
       VERSION);
     return EXIT_FAILURE;
