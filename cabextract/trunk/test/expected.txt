@@ -1,0 +1,60 @@
+Viewing cabinet: huge-mszip.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+2147450880 | 18.06.2010 00:51:24 | 2GB.dat
+Viewing cabinet: huge-lzx15.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+2147450880 | 20.07.2010 14:51:36 | empty.dat
+Viewing cabinet: huge-lzx21.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+2147450880 | 20.07.2010 14:51:36 | empty.dat
+Viewing cabinet: small-none.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+     32768 | 12.03.1997 11:13:52 | test1.bin
+     32768 | 12.03.1997 11:13:52 | test2.bin
+Viewing cabinet: huge-none.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+2147450880 | 12.03.1997 11:13:52 | test1.bin
+2146467840 | 12.03.1997 11:13:52 | test2.bin
+Viewing cabinet: search.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+     32768 | 12.03.1997 11:13:52 | test1.bin
+     32768 | 12.03.1997 11:13:52 | test2.bin
+2147450880 | 12.03.1997 11:13:52 | test1.bin
+2146467840 | 12.03.1997 11:13:52 | test2.bin
+2147450880 | 18.06.2010 00:51:24 | 2GB.dat
+2147450880 | 20.07.2010 14:51:36 | empty.dat
+2147450880 | 12.03.1997 11:13:52 | test1.bin
+2146467840 | 12.03.1997 11:13:52 | test2.bin
+2147450880 | 20.07.2010 14:51:36 | empty.dat
+
+All done, no errors.
+Testing cabinet: huge-mszip.cab
+  2GB.dat  OK                                  7c036213bc35a8ebd036281662d46c6e
+Testing cabinet: huge-lzx15.cab
+  empty.dat  OK                                751f58608abee94e7d0689126122f93b
+Testing cabinet: huge-lzx21.cab
+  empty.dat  OK                                751f58608abee94e7d0689126122f93b
+Testing cabinet: small-none.cab
+  test1.bin  OK                                315a5931d0f93fd1f62a15d77cb234ef
+  test2.bin  OK                                315a5931d0f93fd1f62a15d77cb234ef
+Testing cabinet: huge-none.cab
+  test1.bin  OK                                7c036213bc35a8ebd036281662d46c6e
+  test2.bin  OK                                4c35c4d355a9470f53b1406d6401f59a
+Testing cabinet: search.cab
+  test1.bin  OK                                315a5931d0f93fd1f62a15d77cb234ef
+  test2.bin  OK                                315a5931d0f93fd1f62a15d77cb234ef
+  test1.bin  OK                                7c036213bc35a8ebd036281662d46c6e
+  test2.bin  OK                                4c35c4d355a9470f53b1406d6401f59a
+  2GB.dat  OK                                  7c036213bc35a8ebd036281662d46c6e
+  empty.dat  OK                                751f58608abee94e7d0689126122f93b
+  test1.bin  OK                                7c036213bc35a8ebd036281662d46c6e
+  test2.bin  OK                                4c35c4d355a9470f53b1406d6401f59a
+  empty.dat  OK                                751f58608abee94e7d0689126122f93b
+
+All done, no errors.
