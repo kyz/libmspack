@@ -1,21 +1,7 @@
-CAB
-- compression: everything
-
-CHM
-- compression: implementation
-- decompression: implement fast_find()
-
-HLP
-- everything
-
-LIT
-- everything
-
-SZDD
-- compression: implementation
-
-KWAJ
-- compression: implementation
-
-WIM
-- everything
+* CAB compression
+* cabd_find(): if many bytes are missing from the end of a cabinet, it should still find it
+* CHM compression
+* HLP: everything
+* LIT: everything
+* SZDD/KWAJ: compression
+* WIM: everything
