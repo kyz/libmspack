@@ -4,8 +4,8 @@ REAL_CABS=huge-mszip.cab huge-lzx15.cab huge-lzx21.cab
 ALL_CABS=$(REAL_CABS) $(GENERATED_CABS)
 
 test: $(ALL_CABS)
-	$(CABX) -l $(ALL_CABS) >output.txt
-	$(CABX) -t $(ALL_CABS) >>output.txt
+	-$(CABX) -l $(ALL_CABS) >output.txt
+	-$(CABX) -t $(ALL_CABS) >>output.txt
 	diff expected.txt output.txt 
 
 clean:
