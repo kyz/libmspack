@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2010 Stuart Caie.
+ * (C) 2003-2011 Stuart Caie.
  *
  * KWAJ is a format very similar to SZDD. KWAJ method 3 (LZH) was
  * written by Jeff Johnson.
@@ -14,6 +14,7 @@
 
 #include <system.h>
 #include <kwaj.h>
+#include <mszip.h>
 
 /* prototypes */
 static struct mskwajd_header *kwajd_open(
@@ -300,6 +301,11 @@ static int kwajd_extract(struct mskwaj_decompressor *base,
 	struct kwajd_stream *lzh = lzh_init(sys, fh, outfh);
 	self->error = (lzh) ? lzh_decompress(lzh) : MSPACK_ERR_NOMEMORY;
 	lzh_free(lzh);
+    }
+    else if (hdr->comp_type == MSKWAJ_COMP_MSZIP) {
+        struct mszipd_stream *zip = mszipd_init(sys,fh,outfh,KWAJ_INPUT_SIZE,0);
+        self->error = (zip) ? mszipd_decompress_kwaj(zip) : MSPACK_ERR_NOMEMORY;
+        mszipd_free(zip);
     }
     else {
 	self->error = MSPACK_ERR_DATAFORMAT;

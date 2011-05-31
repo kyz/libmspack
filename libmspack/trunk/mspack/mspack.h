@@ -1937,6 +1937,8 @@ struct msszdd_decompressor {
 #define MSKWAJ_COMP_SZDD (2)
 /** KWAJ compression type: LZ+Huffman compression */
 #define MSKWAJ_COMP_LZH (3)
+/** KWAJ compression type: MSZIP */
+#define MSKWAJ_COMP_MSZIP (4)
 
 /** KWAJ optional header flag: decompressed file length is included */
 #define MSKWAJ_HDR_HASLENGTH (0x01)

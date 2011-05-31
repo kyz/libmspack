@@ -160,7 +160,7 @@ compression used:</p>
 <li>No compression, data is XORed with byte 0xFF</li>
 <li>The same compression method as regular SZDD</li>
 <li>LZ + Huffman "Jeff Johnson" compression</li>
-<li>unknown</li>
+<li>MS-ZIP</li>
 </ol>
 
 <a name="Header_extensions"><h3>Header extensions</h3></a>
@@ -304,4 +304,28 @@ window.</p>
          if x != 31, selected table = MATCHLEN2
          read {x+1} literals using LITERAL huffman table, copy as output and into the ring buffer
 </pre>
+
+<a name="MSZIP"><h2>MS-ZIP</h2></a>
+
+KWAJ type 4 compression is called MS-ZIP, because it is almost
+identical to the MS-ZIP compression found in Microsoft Cabinet files.
+
+Each 32768 bytes of data is compressed independently using Phil
+Katz's DEFLATE algorithm. However, the history window is shared
+between blocks, so they must be unpacked in order.
+The format of each block is as follows:
+
+<table class="wikitable">
+<caption>KWAJ MS-ZIP block format</caption>
+<tr><th>Offset</th><th>Length</th><th>Description</th></tr>
+<tr><td>0</td><td>2</td><td>Compressed length of this block (n).
+  Stored in Intel byte order.
+  Doesn't include these two bytes.</td></tr>
+<tr><td>2</td><td>2</td><td>"CK" in ASCII (0x43, 0x4B)</td></tr>
+<tr><td>4</td><td>n-2</td><td>Data compressed in DEFLATE format</td></tr>
+</table>
+
+The final block will unpack to 1-32768 bytes. It will be followed by two
+zero bytes.
+
 </body></html>

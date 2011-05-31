@@ -108,6 +108,11 @@ extern struct mszipd_stream *mszipd_init(struct mspack_system *system,
  */
 extern int mszipd_decompress(struct mszipd_stream *zip, off_t out_bytes);
 
+/* decompresses an entire MS-ZIP stream in a KWAJ file. Acts very much
+ * like mszipd_decompress(), but doesn't take an out_bytes parameter
+ */
+extern int mszipd_decompress_kwaj(struct mszipd_stream *zip);
+
 /* frees all stream associated with an MS-ZIP data stream
  *
  * - calls system->free() using the system pointer given in mszipd_init()

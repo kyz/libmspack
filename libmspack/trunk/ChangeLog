@@ -1,3 +1,11 @@
+2011-05-31  Stuart Caie <kyzer@4u.net>
+
+	* kwajd.c, mszipd.c: KWAJ type 4 files (MSZIP) are now supported.
+	Thanks to Clive Turvey for sending me the format details.
+
+	* doc/szdd_kwaj_format.html: Updated documentation to cover
+	KWAJ's MSZIP compression.
+
 2011-05-11  Stuart Caie <kyzer@4u.net>
 
 	* cabd_find(): rethought how large vs small file support is
