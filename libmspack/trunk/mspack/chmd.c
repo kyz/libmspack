@@ -1160,7 +1160,7 @@ static int read_reset_table(struct mschm_decompressor_p *self,
     }
 
     /* get the uncompressed length of the LZX stream */
-    if (read_off64(length_ptr, data, sys, self->d->infh)) {
+    if (read_off64(length_ptr, &data[lzxrt_UncompLen], sys, self->d->infh)) {
 	sys->free(data);
 	return 0;
     }
