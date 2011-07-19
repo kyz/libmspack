@@ -1,3 +1,8 @@
+2011-07-19  Stuart Caie <kyzer@4u.net>
+
+	* doc/ja/cabextract.1: Katsumi Saito updated the Japanese translation
+	of cabextract's manpage to include the -t option. Thanks again!
+
 2011-05-11  Stuart Caie <kyzer@4u.net>
 
 	* src/cabinfo.c: changed the largefile detection header to the same
