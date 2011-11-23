@@ -1,3 +1,9 @@
+2011-11-23  Stuart Caie <kyzer@4u.net>
+
+	* chmd_fast_find(): add a simple check against infinite PGML
+	loops. Thanks to Sergei Trofimovich for finding sample files.
+	Multi-step PGML or PGMI infinite loops remain possible.
+
 2011-06-17  Stuart Caie <kyzer@4u.net>
 
 	* read_reset_table(): wasn't reading the right offset for getting

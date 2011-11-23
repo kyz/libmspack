@@ -538,6 +538,11 @@ static int chmd_fast_find(struct mschm_decompressor *base,
 	    if ((result = search_chunk(chm, chunk, filename, &p, &end)) > 0) {
 		break;
 	    }
+
+            /* stop simple infinite loops: can't visit the same chunk twice */
+            if (n == EndGetI32(&chunk[pmgl_NextChunk])) {
+                break;
+            }
 	}
     }
 
