@@ -1,3 +1,10 @@
+2011-11-25  Stuart Caie <kyzer@4u.net>
+
+	* lzxd_decompress(): Prevent matches that go beyond the start
+	of the LZX stream. Thanks to Sergei Trofimovich for testing
+	with valgrind and finding a corrupt sample file that exercises
+	this scenario.
+
 2011-11-23  Stuart Caie <kyzer@4u.net>
 
 	* chmd_fast_find(): add a simple check against infinite PGML
