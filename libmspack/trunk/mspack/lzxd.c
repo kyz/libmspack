@@ -489,6 +489,10 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    i = match_length;
 	    /* does match offset wrap the window? */
 	    if (match_offset > window_posn) {
+	      if (match_offset > lzx->offset) {
+		D(("match offset beyond LZX stream"))
+		return lzx->error = MSPACK_ERR_DECRUNCH;
+	      }
 	      /* j = length from match offset to end of window */
 	      j = match_offset - window_posn;
 	      if (j > (int) lzx->window_size) {
@@ -582,6 +586,10 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    i = match_length;
 	    /* does match offset wrap the window? */
 	    if (match_offset > window_posn) {
+	      if (match_offset > lzx->offset) {
+		D(("match offset beyond LZX stream"))
+		return lzx->error = MSPACK_ERR_DECRUNCH;
+	      }
 	      /* j = length from match offset to end of window */
 	      j = match_offset - window_posn;
 	      if (j > (int) lzx->window_size) {
