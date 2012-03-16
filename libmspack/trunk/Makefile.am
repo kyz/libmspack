@@ -1,8 +1,3 @@
-# add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system
-if DEBUG
-MSPACK_FLAGS = -DDEBUG
-endif
-
 EXTRA_DIST =		$(srcdir)/debian/* $(srcdir)/doc/* $(srcdir)/test/test_files/*/*
 pkgconfigdir =		$(libdir)/pkgconfig
 pkgconfig_DATA = 	libmspack.pc
@@ -11,7 +6,14 @@ dist-hook:
 	-rm -f $(distdir)/*.la
 
 ACLOCAL_AMFLAGS =	-I m4
-AM_CFLAGS =		-Wall -W -Wno-unused $(MSPACK_FLAGS)
+AM_CFLAGS =
+# add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system
+if DEBUG
+AM_CFLAGS +=		-DDEBUG
+endif
+if GCC
+AM_CFLAGS +=		-Wall -W -Wno-unused
+endif
 AM_CPPFLAGS =		-I$(top_srcdir)/mspack -I$(top_srcdir)/test 
 
 lib_LTLIBRARIES =	libmspack.la
