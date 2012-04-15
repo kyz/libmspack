@@ -5,3 +5,4 @@
 * LIT: everything
 * SZDD/KWAJ: compression
 * WIM: everything
+* chm: make chunk cache size user-controllable
