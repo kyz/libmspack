@@ -1176,7 +1176,7 @@ static int read_reset_table(struct mschm_decompressor_p *self,
 {
     struct mspack_system *sys = self->system;
     unsigned char *data;
-    int pos, entrysize;
+    unsigned int pos, entrysize;
 
     /* do we have a ResetTable file? */
     int err = find_sys_file(self, sec, &sec->rtable, rtable_name);
@@ -1210,7 +1210,7 @@ static int read_reset_table(struct mschm_decompressor_p *self,
 
     /* ensure reset table entry for this offset exists */
     if (entry < EndGetI32(&data[lzxrt_NumEntries]) &&
-	((pos + entrysize) <= sec->rtable->length))
+	pos <= (sec->rtable->length - entrysize))
     {
 	switch (entrysize) {
 	case 4:

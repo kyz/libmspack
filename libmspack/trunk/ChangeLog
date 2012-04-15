@@ -3,6 +3,9 @@
 	* chmd_read_headers(): More thorough validation of CHM header values.
 	Thanks to Sergei Trofimovich for finding sample files.
 
+	* read_reset_table(): Better test for overflow. Thanks again to
+	Sergei Trofimovich for generating a good example.
+
 2012-03-16  Stuart Caie <kyzer@4u.net>
 
 	* Makefile.am, configure.ac: make the GCC warning flags conditional
