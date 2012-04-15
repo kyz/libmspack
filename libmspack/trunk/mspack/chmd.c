@@ -355,17 +355,10 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     /* versions before 3 don't have chmhst3_OffsetCS0 */
     chm->sec0.offset = chm->dir_offset + (chm->chunk_size * chm->num_chunks);
   }
-  else {
-    /* validate chunk_size/num_chunks by comparing to real OffsetCS0 */
-    if ((off_t)chm->chunk_size * (off_t)chm->num_chunks > chm->sec0.offset) {
-      D(("chunks are larger than header section"))
-      return MSPACK_ERR_DATAFORMAT;
-    }
-  }
 
-  /* check if header size or file size is wrong */
+  /* check if content offset or file size is wrong */
   if (chm->sec0.offset > chm->length) {
-    D(("header is larger than entire file"))
+    D(("content section begins after file has ended"))
     return MSPACK_ERR_DATAFORMAT;
   }
   
@@ -380,21 +373,34 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     return MSPACK_ERR_DATAFORMAT;
   }
 
- /* common sense checks on header section 1 fields */
- if ((chm->chunk_size & (chm->chunk_size - 1)) != 0) {
-   sys->message(fh, "WARNING; chunk size is not a power of two");
- }
- if (chm->first_pmgl != 0) {
-   sys->message(fh, "WARNING; first PMGL chunk is not zero");
- }
- if (chm->first_pmgl > chm->last_pmgl) {
-   D(("first pmgl chunk is after last pmgl chunk"))
-   return MSPACK_ERR_DATAFORMAT;
- }
- if (chm->index_root != 0xFFFFFFFF && chm->index_root > chm->num_chunks) {
-   D(("index_root outside valid range"))
-   return MSPACK_ERR_DATAFORMAT;
- }
+  /* The chunk_cache data structure is not great; large values for num_chunks
+   * or num_chunks*chunk_size can exhaust all memory. Until a better chunk
+   * cache is implemented, put arbitrary limits on num_chunks and chunk size.
+   */
+  if (chm->num_chunks > 100000) {
+    D(("more than 100,000 chunks"))
+    return MSPACK_ERR_DATAFORMAT;
+  }   
+  if ((off_t)chm->chunk_size * (off_t)chm->num_chunks > chm->length) {
+    D(("chunks larger than entire file"))
+    return MSPACK_ERR_DATAFORMAT;
+  }
+
+  /* common sense checks on header section 1 fields */
+  if ((chm->chunk_size & (chm->chunk_size - 1)) != 0) {
+    sys->message(fh, "WARNING; chunk size is not a power of two");
+  }
+  if (chm->first_pmgl != 0) {
+    sys->message(fh, "WARNING; first PMGL chunk is not zero");
+  }
+  if (chm->first_pmgl > chm->last_pmgl) {
+    D(("first pmgl chunk is after last pmgl chunk"))
+    return MSPACK_ERR_DATAFORMAT;
+  }
+  if (chm->index_root != 0xFFFFFFFF && chm->index_root > chm->num_chunks) {
+    D(("index_root outside valid range"))
+    return MSPACK_ERR_DATAFORMAT;
+  }
 
   /* if we are doing a quick read, stop here! */
   if (!entire) {
