@@ -266,7 +266,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   unsigned char buf[0x54], *chunk = NULL, *name, *p, *end;
   struct mschmd_file *fi, *link = NULL;
   off_t offset, length;
-  int num_entries;
+  int num_entries, i;
 
   /* initialise pointers */
   chm->files         = NULL;
@@ -355,11 +355,46 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     /* versions before 3 don't have chmhst3_OffsetCS0 */
     chm->sec0.offset = chm->dir_offset + (chm->chunk_size * chm->num_chunks);
   }
+  else {
+    /* validate chunk_size/num_chunks by comparing to real OffsetCS0 */
+    if ((off_t)chm->chunk_size * (off_t)chm->num_chunks > chm->sec0.offset) {
+      D(("chunks are larger than header section"))
+      return MSPACK_ERR_DATAFORMAT;
+    }
+  }
 
-  /* ensure chunk size is large enough for signature and num_entries */
-  if (chm->chunk_size < (pmgl_Entries + 2)) {
+  /* check if header size or file size is wrong */
+  if (chm->sec0.offset > chm->length) {
+    D(("header is larger than entire file"))
     return MSPACK_ERR_DATAFORMAT;
   }
+  
+  /* ensure there are chunks and that chunk size is
+   * large enough for signature and num_entries */
+  if (chm->chunk_size < (pmgl_Entries + 2)) {
+    D(("chunk size not large enough"))
+    return MSPACK_ERR_DATAFORMAT;
+  }
+  if (chm->num_chunks == 0) {
+    D(("no chunks"))
+    return MSPACK_ERR_DATAFORMAT;
+  }
+
+ /* common sense checks on header section 1 fields */
+ if ((chm->chunk_size & (chm->chunk_size - 1)) != 0) {
+   sys->message(fh, "WARNING; chunk size is not a power of two");
+ }
+ if (chm->first_pmgl != 0) {
+   sys->message(fh, "WARNING; first PMGL chunk is not zero");
+ }
+ if (chm->first_pmgl > chm->last_pmgl) {
+   D(("first pmgl chunk is after last pmgl chunk"))
+   return MSPACK_ERR_DATAFORMAT;
+ }
+ if (chm->index_root != 0xFFFFFFFF && chm->index_root > chm->num_chunks) {
+   D(("index_root outside valid range"))
+   return MSPACK_ERR_DATAFORMAT;
+ }
 
   /* if we are doing a quick read, stop here! */
   if (!entire) {
@@ -540,7 +575,7 @@ static int chmd_fast_find(struct mschm_decompressor *base,
 	    }
 
             /* stop simple infinite loops: can't visit the same chunk twice */
-            if (n == EndGetI32(&chunk[pmgl_NextChunk])) {
+            if ((int)n == EndGetI32(&chunk[pmgl_NextChunk])) {
                 break;
             }
 	}

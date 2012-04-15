@@ -1,3 +1,8 @@
+2012-04-15  Stuart Caie <kyzer@4u.net>
+
+	* chmd_read_headers(): More thorough validation of CHM header values.
+	Thanks to Sergei Trofimovich for finding sample files.
+
 2012-03-16  Stuart Caie <kyzer@4u.net>
 
 	* Makefile.am, configure.ac: make the GCC warning flags conditional
