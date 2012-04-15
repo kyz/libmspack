@@ -13,7 +13,8 @@
 
 unsigned char *load_sys_data(struct mschm_decompressor *chmd,
                              struct mschmd_header *chm,
-			     const char *filename)
+			     const char *filename,
+			     off_t *length_ptr)
 {
   struct mschmd_file *file;
   unsigned char *data;
@@ -24,6 +25,7 @@ unsigned char *load_sys_data(struct mschm_decompressor *chmd,
   }
   if (!file || file->section->id != 0) return NULL;
   if (chmd->extract(chmd, file, FILENAME)) return NULL;
+  if (length_ptr) *length_ptr = file->length;
   if (!(data = (unsigned char *) malloc((size_t) file->length))) return NULL;
   if ((fh = fopen(FILENAME, "rb"))) {
     fread(data, (size_t) file->length, 1, fh);
@@ -184,6 +186,7 @@ int main(int argc, char *argv[]) {
   struct mschmd_file *file;
   unsigned int numf, i;
   unsigned char *data;
+  off_t pos, len;
 
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
@@ -205,7 +208,7 @@ int main(int argc, char *argv[]) {
 	print_dir(chm, *argv);
 
 	if ((data = load_sys_data(chmd, chm,
-	     "::DataSpace/Storage/MSCompressed/ControlData")))
+	     "::DataSpace/Storage/MSCompressed/ControlData", &len)))
         {
 	  printf("  lzxcd_Length        %u\n",    EndGetI32(&data[0]));
 	  printf("  lzxcd_Signature     %4.4s\n", &data[4]);
@@ -219,7 +222,7 @@ int main(int argc, char *argv[]) {
 
 	if ((data = load_sys_data(chmd, chm,
 	     "::DataSpace/Storage/MSCompressed/Transform/{7FC28940-"
-	     "9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable")))
+	     "9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable", &len)))
         {
 	  off_t contents = chm->sec0.offset;
 	  printf("  lzxrt_Unknown1      %u\n",      EndGetI32(&data[0]));
@@ -243,30 +246,29 @@ int main(int argc, char *argv[]) {
 		 "[real offset, length in file]\n");
 
 	  numf = EndGetI32(&data[4]);
+	  pos = ((unsigned int) EndGetI32(&data[12]));
 	  switch (EndGetI32(&data[8])) {
 	  case 4:
-	    for (i = 0; i < numf; i++) {
-	      unsigned int tablepos = EndGetI32(&data[12]) + (i * 4);
-	      unsigned int rtdata = EndGetI32(&data[tablepos]);
+	    for (i = 0; i < numf && pos < len; i++, pos += 4) {
+	      unsigned int rtdata = EndGetI32(&data[pos]);
 	      printf("    %-10u -> %-10u [ %" LU " %u ]\n",
 		     i * EndGetI32(&data[32]),
 		     rtdata,
 		     contents + rtdata,
 		     (i == (numf-1))
 		     ? (EndGetI32(&data[24]) - rtdata)
-		     : (EndGetI32(&data[tablepos + 4]) - rtdata)
+		     : (EndGetI32(&data[pos + 4]) - rtdata)
 		     );
 	    }
 	    break;
 	  case 8:
-	    for (i = 0; i < numf; i++) {
-	      unsigned int tablepos = EndGetI32(&data[12]) + (i * 8);
-	      unsigned long long int rtdata = EndGetI64(&data[tablepos]);
+	    for (i = 0; i < numf && pos < len; i++, pos += 8) {
+	      unsigned long long int rtdata = EndGetI64(&data[pos]);
 	      printf("    %-10" LU " -> %-10" LU " [ %" LU " %" LU " ]\n",
 		     i * EndGetI64(&data[32]), rtdata, contents + rtdata,
 		     (i == (numf-1))
 		     ? (EndGetI64(&data[24]) - rtdata)
-		     : (EndGetI64(&data[tablepos + 8]) - rtdata)
+		     : (EndGetI64(&data[pos + 8]) - rtdata)
 		     );
 	    }
 	    break;
