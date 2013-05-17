@@ -1164,7 +1164,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
   self->d->state = lzxd_init(&self->d->sys, self->d->infh,
 			     (struct mspack_file *) self, window_bits,
 			     reset_interval / LZX_FRAME_SIZE,
-			     4096, length);
+			     4096, length, 0);
   if (!self->d->state) self->error = MSPACK_ERR_NOMEMORY;
   return self->error;
 }

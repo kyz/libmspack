@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2004 Stuart Caie.
+ * (C) 2003-2013 Stuart Caie.
  *
  * The LZX method was created by Jonathan Forbes and Tomi Poutanen, adapted
  * by Microsoft Corporation.
@@ -69,6 +69,10 @@
  *
  * The maximum window size has increased from 2MB to 32MB. This also
  * increases the maximum number of position slots, etc.
+ *
+ * If the match length is 257 (the maximum possible), this signals
+ * a further length decoding step, that allows for matches up to
+ * 33024 bytes long.
  *
  * The format now allows for "reference data", supplied by the caller.
  * If match offsets go further back than the number of bytes
@@ -189,27 +193,70 @@ static int lzxd_read_lens(struct lzxd_stream *lzx, unsigned char *lens,
  * a small 'position slot' number and a small offset from that slot are
  * encoded instead of one large offset.
  *
+ * The number of slots is decided by how many are needed to encode the
+ * largest offset for a given window size. This is easy when the gap between
+ * slots is less than 128Kb, it's a linear relationship. But when extra_bits
+ * reaches its limit of 17 (because LZX can only ensure reading 17 bits of
+ * data at a time), we can only jump 128Kb at a time and have to start
+ * using more and more position slots as each window size doubles.
+ *
  * position_base[] is an index to the position slot bases
  *
  * extra_bits[] states how many bits of offset-from-base data is needed.
  *
- * They are generated like so:
- * for (i = 0;        i < 4;  i++)  extra_bits[i] = 0;
- * for (i = 4, j = 0; i < 36; i+=2) extra_bits[i] = extra_bits[i+1] = j++;
- * for (i = 36;       i < 51; i++)  extra_bits[i] = 17;
- * for (i = 0, j = 0; i < 51; j += 1 << extra_bits[i++]) position_base[i] = j;
+ * They are calculated as follows:
+ * extra_bits[i] = 0 where i < 4
+ * extra_bits[i] = floor(i/2)-1 where i >= 4 && i < 36
+ * extra_bits[i] = 17 where i >= 36
+ * position_base[0] = 0
+ * position_base[i] = position_base[i-1] + (1 << extra_bits[i-1])
  */
-static const unsigned int position_base[51] = {
-  0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256,
-  384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288,
-  16384, 24576, 32768, 49152, 65536, 98304, 131072, 196608, 262144,
-  393216, 524288, 655360, 786432, 917504, 1048576, 1179648, 1310720,
-  1441792, 1572864, 1703936, 1835008, 1966080, 2097152
+static const unsigned int position_slots[11] = {
+    30, 32, 34, 36, 38, 42, 50, 66, 98, 162, 290
 };
-static const unsigned char extra_bits[51] = {
-  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
-  9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16,
-  17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17
+static const unsigned char extra_bits[36] = {
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
+    9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16
+};
+static const unsigned int position_base[290] = {
+    0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512,
+    768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768,
+    49152, 65536, 98304, 131072, 196608, 262144, 393216, 524288, 655360,
+    786432, 917504, 1048576, 1179648, 1310720, 1441792, 1572864, 1703936,
+    1835008, 1966080, 2097152, 2228224, 2359296, 2490368, 2621440, 2752512,
+    2883584, 3014656, 3145728, 3276800, 3407872, 3538944, 3670016, 3801088,
+    3932160, 4063232, 4194304, 4325376, 4456448, 4587520, 4718592, 4849664,
+    4980736, 5111808, 5242880, 5373952, 5505024, 5636096, 5767168, 5898240,
+    6029312, 6160384, 6291456, 6422528, 6553600, 6684672, 6815744, 6946816,
+    7077888, 7208960, 7340032, 7471104, 7602176, 7733248, 7864320, 7995392,
+    8126464, 8257536, 8388608, 8519680, 8650752, 8781824, 8912896, 9043968,
+    9175040, 9306112, 9437184, 9568256, 9699328, 9830400, 9961472, 10092544,
+    10223616, 10354688, 10485760, 10616832, 10747904, 10878976, 11010048,
+    11141120, 11272192, 11403264, 11534336, 11665408, 11796480, 11927552,
+    12058624, 12189696, 12320768, 12451840, 12582912, 12713984, 12845056,
+    12976128, 13107200, 13238272, 13369344, 13500416, 13631488, 13762560,
+    13893632, 14024704, 14155776, 14286848, 14417920, 14548992, 14680064,
+    14811136, 14942208, 15073280, 15204352, 15335424, 15466496, 15597568,
+    15728640, 15859712, 15990784, 16121856, 16252928, 16384000, 16515072,
+    16646144, 16777216, 16908288, 17039360, 17170432, 17301504, 17432576,
+    17563648, 17694720, 17825792, 17956864, 18087936, 18219008, 18350080,
+    18481152, 18612224, 18743296, 18874368, 19005440, 19136512, 19267584,
+    19398656, 19529728, 19660800, 19791872, 19922944, 20054016, 20185088,
+    20316160, 20447232, 20578304, 20709376, 20840448, 20971520, 21102592,
+    21233664, 21364736, 21495808, 21626880, 21757952, 21889024, 22020096,
+    22151168, 22282240, 22413312, 22544384, 22675456, 22806528, 22937600,
+    23068672, 23199744, 23330816, 23461888, 23592960, 23724032, 23855104,
+    23986176, 24117248, 24248320, 24379392, 24510464, 24641536, 24772608,
+    24903680, 25034752, 25165824, 25296896, 25427968, 25559040, 25690112,
+    25821184, 25952256, 26083328, 26214400, 26345472, 26476544, 26607616,
+    26738688, 26869760, 27000832, 27131904, 27262976, 27394048, 27525120,
+    27656192, 27787264, 27918336, 28049408, 28180480, 28311552, 28442624,
+    28573696, 28704768, 28835840, 28966912, 29097984, 29229056, 29360128,
+    29491200, 29622272, 29753344, 29884416, 30015488, 30146560, 30277632,
+    30408704, 30539776, 30670848, 30801920, 30932992, 31064064, 31195136,
+    31326208, 31457280, 31588352, 31719424, 31850496, 31981568, 32112640,
+    32243712, 32374784, 32505856, 32636928, 32768000, 32899072, 33030144,
+    33161216, 33292288, 33423360
 };
 
 static void lzxd_reset_state(struct lzxd_stream *lzx) {
@@ -235,15 +282,23 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
 			      int window_bits,
 			      int reset_interval,
 			      int input_buffer_size,
-			      off_t output_length)
+			      off_t output_length,
+			      char is_delta)
 {
   unsigned int window_size = 1 << window_bits;
   struct lzxd_stream *lzx;
 
   if (!system) return NULL;
 
-  /* LZX supports window sizes of 2^15 (32Kb) through 2^21 (2Mb) */
-  if (window_bits < 15 || window_bits > 21) return NULL;
+  /* LZX DELTA window sizes are between 2^17 (128KiB) and 2^25 (32MiB),
+   * regular LZX windows are between 2^15 (32KiB) and 2^21 (2MiB)
+   */
+  if (is_delta) {
+      if (window_bits < 17 || window_bits > 25) return NULL;
+  }
+  else {
+      if (window_bits < 15 || window_bits > 21) return NULL;
+  }
 
   input_buffer_size = (input_buffer_size + 1) & -2;
   if (!input_buffer_size) return NULL;
@@ -272,6 +327,7 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
 
   lzx->inbuf_size      = input_buffer_size;
   lzx->window_size     = 1 << window_bits;
+  lzx->ref_data_size   = 0;
   lzx->window_posn     = 0;
   lzx->frame_posn      = 0;
   lzx->frame           = 0;
@@ -280,16 +336,48 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
   lzx->intel_curpos    = 0;
   lzx->intel_started   = 0;
   lzx->error           = MSPACK_ERR_OK;
-
-  /* window bits:    15  16  17  18  19  20  21
-   * position slots: 30  32  34  36  38  42  50  */
-  lzx->posn_slots      = ((window_bits == 21) ? 50 :
-			  ((window_bits == 20) ? 42 : (window_bits << 1)));
+  lzx->num_offsets     = position_slots[window_bits - 15] << 3;
+  lzx->is_delta        = is_delta;
 
   lzx->o_ptr = lzx->o_end = &lzx->e8_buf[0];
   lzxd_reset_state(lzx);
   INIT_BITS;
   return lzx;
+}
+
+int lzxd_set_reference_data(struct lzxd_stream *lzx,
+			    struct mspack_system *system,
+			    struct mspack_file *input,
+			    unsigned int length)
+{
+    if (!lzx) return MSPACK_ERR_ARGS;
+
+    if (!lzx->is_delta) {
+        D(("only LZX DELTA streams support reference data"))
+        return MSPACK_ERR_ARGS;
+    }
+    if (lzx->offset) {
+	D(("too late to set reference data after decoding starts"))
+	return MSPACK_ERR_ARGS;
+    }
+    if (length > lzx->window_size) {
+	D(("reference length (%u) is longer than the window", length))
+	return MSPACK_ERR_ARGS;
+    }
+    if (length > 0 && (!system || !input)) {
+        D(("length > 0 but no system or input"))
+        return MSPACK_ERR_ARGS;
+    }
+
+    lzx->ref_data_size = length;
+    if (length > 0) {
+        /* copy reference data */
+        unsigned char *pos = &lzx->window[lzx->window_size - length];
+	int bytes = system->read(input, pos, length);
+	if (bytes < length) return MSPACK_ERR_READ;
+    }
+    lzx->ref_data_size = length;
+    return MSPACK_ERR_OK;
 }
 
 void lzxd_set_output_length(struct lzxd_stream *lzx, off_t out_bytes) {
@@ -351,6 +439,12 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
       R2 = lzx->R2;
     }
 
+    /* LZX DELTA format has chunk_size, not present in LZX format */
+    if (lzx->is_delta) {
+      ENSURE_BITS(16);
+      REMOVE_BITS(16);
+    }
+
     /* read header if necessary */
     if (!lzx->header_read) {
       /* read 1 bit. if bit=0, intel filesize = 0.
@@ -397,7 +491,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	case LZX_BLOCKTYPE_VERBATIM:
 	  /* read lengths of and build main huffman decoding tree */
 	  READ_LENGTHS(MAINTREE, 0, 256);
-	  READ_LENGTHS(MAINTREE, 256, LZX_NUM_CHARS + (lzx->posn_slots << 3));
+	  READ_LENGTHS(MAINTREE, 256, LZX_NUM_CHARS + lzx->num_offsets);
 	  BUILD_TABLE(MAINTREE);
 	  /* if the literal 0xE8 is anywhere in the block... */
 	  if (lzx->MAINTREE_len[0xE8] != 0) lzx->intel_started = 1;
@@ -465,7 +559,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	      match_length += length_footer;
 	    }
 	    match_length += LZX_MIN_MATCH;
-	  
+
 	    /* get match offset */
 	    switch ((match_offset = (main_element >> 3))) {
 	    case 0: match_offset = R0;                                  break;
@@ -473,10 +567,35 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    case 2: match_offset = R2; R2=R0;        R0 = match_offset; break;
 	    case 3: match_offset = 1;  R2=R1; R1=R0; R0 = match_offset; break;
 	    default:
-	      extra = extra_bits[match_offset];
+	      extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
 	      READ_BITS(verbatim_bits, extra);
 	      match_offset = position_base[match_offset] - 2 + verbatim_bits;
 	      R2 = R1; R1 = R0; R0 = match_offset;
+	    }
+
+	    /* LZX DELTA uses max match length to signal even longer match */
+	    if (match_length == LZX_MAX_MATCH && lzx->is_delta) {
+		int extra_len = 0;
+		ENSURE_BITS(3); /* 4 entry huffman tree */
+		if (PEEK_BITS(1) == 0) {
+		    REMOVE_BITS(1); /* '0' -> 8 extra length bits */
+		    READ_BITS(extra_len, 8);
+		}
+		else if (PEEK_BITS(2) == 2) {
+		    REMOVE_BITS(2); /* '10' -> 10 extra length bits + 0x100 */
+		    READ_BITS(extra_len, 10);
+		    extra_len += 0x100;
+		}
+		else if (PEEK_BITS(3) == 6) {
+		    REMOVE_BITS(3); /* '110' -> 12 extra length bits + 0x500 */
+		    READ_BITS(extra_len, 12);
+		    extra_len += 0x500;
+		}
+		else {
+		    REMOVE_BITS(3); /* '111' -> 15 extra length bits */
+		    READ_BITS(extra_len, 15);
+		}
+		match_length += extra_len;
 	    }
 
 	    if ((window_posn + match_length) > lzx->window_size) {
@@ -489,7 +608,9 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    i = match_length;
 	    /* does match offset wrap the window? */
 	    if (match_offset > window_posn) {
-	      if (match_offset > lzx->offset) {
+	      if (match_offset > lzx->offset &&
+		  (match_offset - window_posn) > lzx->ref_data_size)
+	      {
 		D(("match offset beyond LZX stream"))
 		return lzx->error = MSPACK_ERR_DECRUNCH;
 	      }
@@ -548,7 +669,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    case 1: match_offset = R1; R1 = R0; R0 = match_offset; break;
 	    case 2: match_offset = R2; R2 = R0; R0 = match_offset; break;
 	    default:
-	      extra = extra_bits[match_offset];
+	      extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
 	      match_offset = position_base[match_offset] - 2;
 	      if (extra > 3) {
 		/* verbatim and aligned bits */
@@ -576,6 +697,31 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	      R2 = R1; R1 = R0; R0 = match_offset;
 	    }
 
+	    /* LZX DELTA uses max match length to signal even longer match */
+	    if (match_length == LZX_MAX_MATCH && lzx->is_delta) {
+		int extra_len = 0;
+		ENSURE_BITS(3); /* 4 entry huffman tree */
+		if (PEEK_BITS(1) == 0) {
+		    REMOVE_BITS(1); /* '0' -> 8 extra length bits */
+		    READ_BITS(extra_len, 8);
+		}
+		else if (PEEK_BITS(2) == 2) {
+		    REMOVE_BITS(2); /* '10' -> 10 extra length bits + 0x100 */
+		    READ_BITS(extra_len, 10);
+		    extra_len += 0x100;
+		}
+		else if (PEEK_BITS(3) == 6) {
+		    REMOVE_BITS(3); /* '110' -> 12 extra length bits + 0x500 */
+		    READ_BITS(extra_len, 12);
+		    extra_len += 0x500;
+		}
+		else {
+		    REMOVE_BITS(3); /* '111' -> 15 extra length bits */
+		    READ_BITS(extra_len, 15);
+		}
+		match_length += extra_len;
+	    }
+
 	    if ((window_posn + match_length) > lzx->window_size) {
 	      D(("match ran over window wrap"))
 	      return lzx->error = MSPACK_ERR_DECRUNCH;
@@ -586,7 +732,9 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	    i = match_length;
 	    /* does match offset wrap the window? */
 	    if (match_offset > window_posn) {
-	      if (match_offset > lzx->offset) {
+	      if (match_offset > lzx->offset &&
+		  (match_offset - window_posn) > lzx->ref_data_size)
+	      {
 		D(("match offset beyond LZX stream"))
 		return lzx->error = MSPACK_ERR_DECRUNCH;
 	      }
