@@ -1124,7 +1124,7 @@ static int cabd_init_decomp(struct mscab_decompressor_p *self, unsigned int ct)
   case cffoldCOMPTYPE_LZX:
     self->d->decompress = (int (*)(void *, off_t)) &lzxd_decompress;
     self->d->state = lzxd_init(&self->d->sys, fh, fh, (int) (ct >> 8) & 0x1f, 0,
-			       self->param[MSCABD_PARAM_DECOMPBUF], (off_t) 0);
+			       self->param[MSCABD_PARAM_DECOMPBUF], (off_t)0,0);
     break;
   default:
     return self->error = MSPACK_ERR_DATAFORMAT;

@@ -33,6 +33,7 @@ int mspack_version(int entity) {
   case MSPACK_VER_MSCABD:
   case MSPACK_VER_MSSZDDD:
   case MSPACK_VER_MSKWAJD:
+  case MSPACK_VER_MSOABD:
     return 1;
   case MSPACK_VER_MSCABC:
   case MSPACK_VER_MSCHMC:
@@ -42,6 +43,7 @@ int mspack_version(int entity) {
   case MSPACK_VER_MSHLPC:
   case MSPACK_VER_MSSZDDC:
   case MSPACK_VER_MSKWAJC:
+  case MSPACK_VER_MSOABC:
     return 0;
   }
   return -1;

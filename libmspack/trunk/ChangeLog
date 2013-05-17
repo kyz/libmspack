@@ -1,3 +1,9 @@
+2013-05-17  Stuart Caie <kyzer@4u.net>
+
+	* mspack.h: Support for decompressing a new file format, the Exchange
+	Offline Address Book (OAB). Thanks to David Woodhouse for writing
+	the implementation. I've bumped the version to 0.4alpha in celebration.
+
 2012-04-15  Stuart Caie <kyzer@4u.net>
 
 	* chmd_read_headers(): More thorough validation of CHM header values.
@@ -5,6 +11,9 @@
 
 	* read_reset_table(): Better test for overflow. Thanks again to
 	Sergei Trofimovich for generating a good example.
+
+	* test/chminfo.c: this test program reads the reset table by itself
+	and was also susceptible to the same overflow problems.
 
 2012-03-16  Stuart Caie <kyzer@4u.net>
 

@@ -32,12 +32,14 @@ libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/lit.h mspack/litc.c mspack/litd.c \
 			mspack/kwaj.h mspack/kwajc.c mspack/kwajd.c \
 			mspack/szdd.h mspack/szddc.c mspack/szddd.c \
+			mspack/oab.h mspack/oabc.c mspack/oabd.c \
 			mspack/lzx.h mspack/lzxc.c mspack/lzxd.c \
 			mspack/mszip.h mspack/mszipc.c mspack/mszipd.c \
 			mspack/qtm.h mspack/qtmd.c \
 			mspack/readbits.h mspack/readhuff.h \
 			mspack/lzss.h mspack/lzssd.c \
-			mspack/des.h mspack/sha.h
+			mspack/des.h mspack/sha.h \
+			mspack/crc32.c mspack/crc32.h
 libmspack_la_LDFLAGS =	-export-symbols-regex '^mspack_' -version-info 1:0:1
 
 libmscabd_la_SOURCES =	mspack/mspack.h \

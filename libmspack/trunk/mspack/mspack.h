@@ -30,6 +30,7 @@
  * - .CAB (MS Cabinet) files, which use deflate, LZX or Quantum compression
  * - .CHM (HTML Help) files, which use LZX compression
  * - .LIT (MS EBook) files, which use LZX compression and DES encryption
+ * - .LZX (Exchange Offline Addressbook) files, which use LZX compression
  *
  * To determine the capabilities of the library, and the binary
  * compatibility version of any particular compressor or decompressor, use
@@ -60,6 +61,7 @@
  * - mspack_create_hlp_compressor() creates a mshlp_compressor
  * - mspack_create_szdd_compressor() creates a msszdd_compressor
  * - mspack_create_kwaj_compressor() creates a mskwaj_compressor
+ * - mspack_create_oab_compressor() creates a msoab_compressor
  *
  * For decompression:
  * - mspack_create_cab_decompressor() creates a mscab_decompressor
@@ -68,6 +70,7 @@
  * - mspack_create_hlp_decompressor() creates a mshlp_decompressor
  * - mspack_create_szdd_decompressor() creates a msszdd_decompressor
  * - mspack_create_kwaj_decompressor() creates a mskwaj_decompressor
+ * - mspack_create_oab_decompressor() creates a msoab_decompressor
  *
  * Once finished working with a format, each kind of
  * compressor/decompressor has its own specific destructor:
@@ -83,6 +86,8 @@
  * - mspack_destroy_szdd_decompressor()
  * - mspack_destroy_kwaj_compressor()
  * - mspack_destroy_kwaj_decompressor()
+ * - mspack_destroy_oab_compressor()
+ * - mspack_destroy_oab_decompressor()
  *
  * Destroying a compressor or decompressor does not destroy any objects,
  * structures or handles that have been created using that compressor or
@@ -208,6 +213,8 @@ extern int mspack_sys_selftest_internal(int);
  * - #MSPACK_VER_MSSZDDC: the msszdd_compressor interface
  * - #MSPACK_VER_MSKWAJD: the mskwaj_decompressor interface
  * - #MSPACK_VER_MSKWAJC: the mskwaj_compressor interface
+ * - #MSPACK_VER_MSOABD: the mskwaj_decompressor interface
+ * - #MSPACK_VER_MSOABC: the mskwaj_compressor interface
  *
  * The result of the function should be interpreted as follows:
  * - -1: this interface is completely unknown to the library
@@ -249,6 +256,10 @@ extern int mspack_version(int entity);
 #define MSPACK_VER_MSKWAJD   (12)
 /** Pass to mspack_version() to get the mskwaj_compressor version */
 #define MSPACK_VER_MSKWAJC   (13)
+/** Pass to mspack_version() to get the msoab_decompressor version */
+#define MSPACK_VER_MSOABD    (14)
+/** Pass to mspack_version() to get the msoab_compressor version */
+#define MSPACK_VER_MSOABC    (15)
 
 /* --- file I/O abstraction ------------------------------------------------ */
 
@@ -643,6 +654,31 @@ extern void mspack_destroy_kwaj_compressor(struct mskwaj_compressor *self);
  * @param self the #mskwaj_decompressor to destroy
  */
 extern void mspack_destroy_kwaj_decompressor(struct mskwaj_decompressor *self);
+
+
+/** Creates a new OAB compressor.
+ * @param sys a custom mspack_system structure, or NULL to use the default
+ * @return a #msoab_compressor or NULL
+ */
+extern struct msoab_compressor *
+  mspack_create_oab_compressor(struct mspack_system *sys);
+
+/** Creates a new OAB decompressor.
+ * @param sys a custom mspack_system structure, or NULL to use the default
+ * @return a #msoab_decompressor or NULL
+ */
+extern struct msoab_decompressor *
+  mspack_create_oab_decompressor(struct mspack_system *sys);
+
+/** Destroys an existing OAB compressor.
+ * @param self the #msoab_compressor to destroy
+ */
+extern void mspack_destroy_oab_compressor(struct msoab_compressor *self);
+
+/** Destroys an existing OAB decompressor.
+ * @param self the #msoab_decompressor to destroy
+ */
+extern void mspack_destroy_oab_decompressor(struct msoab_decompressor *self);
 
 
 /* --- support for .CAB (MS Cabinet) file format --------------------------- */
@@ -2196,6 +2232,109 @@ struct mskwaj_decompressor {
    * @see open(), search()
    */
   int (*last_error)(struct mskwaj_decompressor *self);
+};
+
+/* --- support for OAB file format ----------------------------------------- */
+
+/** TODO */
+struct msoab_compressor {
+  /**
+   * Compress a full OAB file.
+   *
+   * The input file will be read and the compressed contents written to the
+   * @output file.
+   *
+   * @param  self     a self-referential pointer to the msoab_decompressor
+   *                  instance being called
+   * @param  input    the filename of the input file. This is passed
+   *                  directly to mspack_system::open().
+   * @param  output   the filename of the output file. This is passed
+   *                  directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*compress) (struct msoab_decompressor *self,
+		   const char *input,
+		   const char *output);
+
+
+  /**
+   * Generate a compressed incremental OAB patch file.
+   *
+   * The two uncompressed files @input and @base will be read, and an
+   * incremental patch to generate @input from @base will be written to
+   * the @output file.
+   *
+   * @param  self     a self-referential pointer to the msoab_decompressor
+   *                  instance being called
+   * @param  input    the filename of the input file containing the new
+   *                  version of its contents. This is passed directly
+   *                  to mspack_system::open().
+   * @param  base     the filename of the original base file containing
+   *                  the old version of its contents, against which the
+   *                  incremental patch shall generated. This is passed
+   *                  directly to mspack_system::open().
+   * @param  output   the filename of the output file. This is passed
+   *                  directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*compress_incremental) (struct msoab_decompressor *self,
+			       const char *input,
+			       const char *base,
+			       const char *output);
+};
+
+/**
+ * A decompressor for .OAB (Microsoft Oabinet) files
+ *
+ * All fields are READ ONLY.
+ *
+ * @see mspack_create_oab_decompressor(), mspack_destroy_oab_decompressor()
+ */
+struct msoab_decompressor {
+  /**
+   * Decompress a full OAB file.
+   *
+   * If the @input file is a valid OAB .LZX file, it will be read and the
+   * decompressed contents will be written to the @output file.
+   *
+   * @param  self     a self-referential pointer to the msoab_decompressor
+   *                  instance being called
+   * @param  input    the filename of the input file. This is passed
+   *                  directly to mspack_system::open().
+   * @param  output   the filename of the output file. This is passed
+   *                  directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*decompress) (struct msoab_decompressor *self,
+		     const char *input,
+		     const char *output);
+
+
+  /**
+   * Decompress and apply an incremental OAB patch file.
+   *
+   * If the @input file is a valid OAB .LZX file, it will be read and the
+   * decompressed contents will be written to the @output file.
+   *
+   * The @base file must be the correct uncompressed OAB file against
+   * which the @input file was generated, or an #MSPACK_ERR_CHECKSUM
+   * error will be returned.
+   *
+   * @param  self     a self-referential pointer to the msoab_decompressor
+   *                  instance being called
+   * @param  input    the filename of the input file. This is passed
+   *                  directly to mspack_system::open().
+   * @param  base     the filename of the base file to which the
+   *                  incremental patch shall be applied. This is passed
+   *                  directly to mspack_system::open().
+   * @param  output   the filename of the output file. This is passed
+   *                  directly to mspack_system::open().
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*decompress_incremental) (struct msoab_decompressor *self,
+				 const char *input,
+				 const char *base,
+				 const char *output);
 };
 
 #ifdef __cplusplus
