@@ -1,0 +1,53 @@
+cabextract
+------------------------------------------
+Free Software to extract Microsoft Cabinet (.CAB) files.
+
+Runtime requirements:
+  cygwin-1.7.5-1 or newer
+
+Build requirements:
+  binutils-20050610-1
+  cygport-0.1.6-1
+  gcc-core-3.4.4-1
+  make-3.80-1 
+
+Canonical homepage:
+  http://www.cabextract.org.uk/
+
+Canonical download:
+  http://www.cabextract.org.uk/
+
+License:
+  GPL
+
+Language:
+  C
+
+------------------------------------
+
+Build instructions:
+  unpack cabextract-1.4-1-src.tar.bz2
+    if you use setup to install this src package, it will be
+	 unpacked under /usr/src automatically
+  cd /usr/src
+  cygport ./cabextract-1.4-1.cygport all
+
+This will create:
+  /usr/src/cabextract-1.4-1.tar.bz2
+  /usr/src/cabextract-1.4-1-src.tar.bz2
+
+------------------
+
+Port Notes:
+
+----------  cabextract-1.4-1 -- 2011-05-11 -----------
+Update to latest upstream release
+
+----------  cabextract-1.3-1 -- 2010-07-27 -----------
+Initial release
+
+For more information about this package, see the upstream documentation in
+/usr/share/doc/cabextract-1.4.
+
+Cygwin port maintained by: Stuart Caie <kyzer@4u.net>
+Please address all questions to the Cygwin mailing list at <cygwin@cygwin.com>
