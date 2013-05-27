@@ -1,5 +1,5 @@
 /* libmspack -- a library for working with Microsoft compression formats.
- * (C) 2003-2011 Stuart Caie <kyzer@4u.net>
+ * (C) 2003-2013 Stuart Caie <kyzer@4u.net>
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -213,8 +213,8 @@ extern int mspack_sys_selftest_internal(int);
  * - #MSPACK_VER_MSSZDDC: the msszdd_compressor interface
  * - #MSPACK_VER_MSKWAJD: the mskwaj_decompressor interface
  * - #MSPACK_VER_MSKWAJC: the mskwaj_compressor interface
- * - #MSPACK_VER_MSOABD: the mskwaj_decompressor interface
- * - #MSPACK_VER_MSOABC: the mskwaj_compressor interface
+ * - #MSPACK_VER_MSOABD: the msoab_decompressor interface
+ * - #MSPACK_VER_MSOABC: the msoab_compressor interface
  *
  * The result of the function should be interpreted as follows:
  * - -1: this interface is completely unknown to the library
@@ -2234,15 +2234,21 @@ struct mskwaj_decompressor {
   int (*last_error)(struct mskwaj_decompressor *self);
 };
 
-/* --- support for OAB file format ----------------------------------------- */
+/* --- support for .LZX (Offline Address Book) file format ----------------- */
 
-/** TODO */
+/**
+ * A compressor for the Offline Address Book (OAB) format.
+ *
+ * All fields are READ ONLY.
+ *
+ * @see mspack_create_oab_compressor(), mspack_destroy_oab_compressor()
+ */
 struct msoab_compressor {
   /**
    * Compress a full OAB file.
    *
    * The input file will be read and the compressed contents written to the
-   * @output file.
+   * output file.
    *
    * @param  self     a self-referential pointer to the msoab_decompressor
    *                  instance being called
@@ -2252,19 +2258,18 @@ struct msoab_compressor {
    *                  directly to mspack_system::open().
    * @return an error code, or MSPACK_ERR_OK if successful
    */
-  int (*compress) (struct msoab_decompressor *self,
+  int (*compress) (struct msoab_compressor *self,
 		   const char *input,
 		   const char *output);
-
 
   /**
    * Generate a compressed incremental OAB patch file.
    *
-   * The two uncompressed files @input and @base will be read, and an
-   * incremental patch to generate @input from @base will be written to
-   * the @output file.
+   * The two uncompressed files "input" and "base" will be read, and an
+   * incremental patch to generate "input" from "base" will be written to
+   * the output file.
    *
-   * @param  self     a self-referential pointer to the msoab_decompressor
+   * @param  self     a self-referential pointer to the msoab_compressor
    *                  instance being called
    * @param  input    the filename of the input file containing the new
    *                  version of its contents. This is passed directly
@@ -2277,14 +2282,14 @@ struct msoab_compressor {
    *                  directly to mspack_system::open().
    * @return an error code, or MSPACK_ERR_OK if successful
    */
-  int (*compress_incremental) (struct msoab_decompressor *self,
+  int (*compress_incremental) (struct msoab_compressor *self,
 			       const char *input,
 			       const char *base,
 			       const char *output);
 };
 
 /**
- * A decompressor for .OAB (Microsoft Oabinet) files
+ * A decompressor for .LZX (Offline Address Book) files
  *
  * All fields are READ ONLY.
  *
@@ -2292,10 +2297,11 @@ struct msoab_compressor {
  */
 struct msoab_decompressor {
   /**
-   * Decompress a full OAB file.
+   * Decompresses a full Offline Address Book file.
    *
-   * If the @input file is a valid OAB .LZX file, it will be read and the
-   * decompressed contents will be written to the @output file.
+   * If the input file is a valid compressed Offline Address Book file, 
+   * it will be read and the decompressed contents will be written to
+   * the output file.
    *
    * @param  self     a self-referential pointer to the msoab_decompressor
    *                  instance being called
@@ -2309,16 +2315,19 @@ struct msoab_decompressor {
 		     const char *input,
 		     const char *output);
 
-
   /**
-   * Decompress and apply an incremental OAB patch file.
+   * Decompresses an Offline Address Book with an incremental patch file.
    *
-   * If the @input file is a valid OAB .LZX file, it will be read and the
-   * decompressed contents will be written to the @output file.
+   * This requires both a full UNCOMPRESSED Offline Address Book file to
+   * act as the "base", and a compressed incremental patch file as input.
+   * If the input file is valid, it will be decompressed with reference to
+   * the base file, and the decompressed contents will be written to the
+   * output file.
    *
-   * The @base file must be the correct uncompressed OAB file against
-   * which the @input file was generated, or an #MSPACK_ERR_CHECKSUM
-   * error will be returned.
+   * There is no way to tell what the right base file is for the given
+   * incremental patch, but if you get it wrong, this will usually result
+   * in incorrect data being decompressed, which will then fail a checksum
+   * test.
    *
    * @param  self     a self-referential pointer to the msoab_decompressor
    *                  instance being called
