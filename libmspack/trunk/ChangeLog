@@ -1,3 +1,7 @@
+2013-05-27  Stuart Caie <kyzer@4u.net>
+
+	* test/oabx.c: added new example command for unpacking OAB files.
+
 2013-05-17  Stuart Caie <kyzer@4u.net>
 
 	* mspack.h: Support for decompressing a new file format, the Exchange
