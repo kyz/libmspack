@@ -22,7 +22,8 @@ include_HEADERS =	mspack/mspack.h
 noinst_LTLIBRARIES =	libmscabd.la libmschmd.la
 noinst_PROGRAMS =	test/cabd_md5 test/cabd_memory test/cabd_test \
 			test/cabrip test/chmd_md5 test/chmx test/chminfo \
-			test/multifh test/expand test/chmd_find test/chmd_order
+			test/multifh test/expand test/chmd_find \
+			test/chmd_order test/oabx
 
 libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
@@ -93,3 +94,7 @@ test_chmd_find_LDADD =	libmschmd.la
 test_chmd_order_SOURCES = test/chmd_order.c test/md5.c test/md5.h test/md5_fh.h \
 			test/error.h libmschmd.la
 test_chmd_order_LDADD = libmschmd.la
+
+test_oabx_SOURCES =	test/oabx.c test/md5.c test/md5.h test/md5_fh.h \
+			test/error.h libmspack.la
+test_oabx_LDADD =	libmspack.la
