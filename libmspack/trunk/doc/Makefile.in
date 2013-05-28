@@ -1,5 +1,6 @@
 DOCS =	annotated.html classes.html files.html functions*.html globals*.html \
-	index.html mspack*.html struct*.html doxygen.* tab* search
+	jquery.js index.html mspack*.html struct*.html doxygen.* tab* search \
+	*.png
 
 all: index.html
 
