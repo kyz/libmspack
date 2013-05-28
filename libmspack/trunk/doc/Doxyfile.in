@@ -9,8 +9,6 @@ OPTIMIZE_OUTPUT_FOR_C  = YES
 SHOW_USED_FILES        = YES
 INPUT                  = @top_srcdir@/mspack/mspack.h
 FULL_PATH_NAMES        = NO
-OPTIMIZE_FOR_C         = YES
-12a15
 GENERATE_HTML          = YES
 HTML_OUTPUT            = .
 HTML_FILE_EXTENSION    = .html
