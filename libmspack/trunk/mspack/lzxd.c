@@ -374,7 +374,8 @@ int lzxd_set_reference_data(struct lzxd_stream *lzx,
         /* copy reference data */
         unsigned char *pos = &lzx->window[lzx->window_size - length];
 	int bytes = system->read(input, pos, length);
-	if (bytes < length) return MSPACK_ERR_READ;
+        /* length can't be more than 2^25, so no signedness problem */
+	if (bytes < (int)length) return MSPACK_ERR_READ;
     }
     lzx->ref_data_size = length;
     return MSPACK_ERR_OK;
