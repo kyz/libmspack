@@ -259,7 +259,7 @@ static int oabd_decompress_incremental(struct msoab_decompressor *_self,
   struct mspack_file *outfh = NULL;
   unsigned char *buf = NULL;
   unsigned char hdrbuf[patchhead_SIZEOF];
-  unsigned int block_max, source_size, target_size, source_crc, target_crc;
+  unsigned int block_max, target_size;
   struct lzxd_stream *lzx = NULL;
   struct mspack_system oabd_sys;
   struct oabd_file in_ofh, out_ofh;
@@ -287,10 +287,7 @@ static int oabd_decompress_incremental(struct msoab_decompressor *_self,
   }
 
   block_max = EndGetI32(&hdrbuf[patchhead_BlockMax]);
-  source_size = EndGetI32(&hdrbuf[patchhead_SourceSize]);
   target_size = EndGetI32(&hdrbuf[patchhead_TargetSize]);
-  source_crc = EndGetI32(&hdrbuf[patchhead_SourceCRC]);
-  target_crc = EndGetI32(&hdrbuf[patchhead_TargetCRC]);
 
   /* We use it for reading block headers too */
   if (block_max < patchblk_SIZEOF)

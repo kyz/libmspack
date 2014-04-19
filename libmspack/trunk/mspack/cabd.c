@@ -74,8 +74,7 @@ static int cabd_read_headers(
   struct mspack_system *sys, struct mspack_file *fh,
   struct mscabd_cabinet_p *cab, off_t offset, int quiet);
 static char *cabd_read_string(
-  struct mspack_system *sys, struct mspack_file *fh,
-  struct mscabd_cabinet_p *cab, int *error);
+  struct mspack_system *sys, struct mspack_file *fh, int *error);
 
 static struct mscabd_cabinet *cabd_search(
   struct mscab_decompressor *base, const char *filename);
@@ -391,14 +390,14 @@ static int cabd_read_headers(struct mspack_system *sys,
 
   /* read name and info of preceeding cabinet in set, if present */
   if (cab->base.flags & cfheadPREV_CABINET) {
-    cab->base.prevname = cabd_read_string(sys, fh, cab, &x); if (x) return x;
-    cab->base.previnfo = cabd_read_string(sys, fh, cab, &x); if (x) return x;
+    cab->base.prevname = cabd_read_string(sys, fh, &x); if (x) return x;
+    cab->base.previnfo = cabd_read_string(sys, fh, &x); if (x) return x;
   }
 
   /* read name and info of next cabinet in set, if present */
   if (cab->base.flags & cfheadNEXT_CABINET) {
-    cab->base.nextname = cabd_read_string(sys, fh, cab, &x); if (x) return x;
-    cab->base.nextinfo = cabd_read_string(sys, fh, cab, &x); if (x) return x;
+    cab->base.nextname = cabd_read_string(sys, fh, &x); if (x) return x;
+    cab->base.nextinfo = cabd_read_string(sys, fh, &x); if (x) return x;
   }
 
   /* read folders */
@@ -502,7 +501,7 @@ static int cabd_read_headers(struct mspack_system *sys,
     file->date_y = (x >> 9) + 1980;
 
     /* get filename */
-    file->filename = cabd_read_string(sys, fh, cab, &x);
+    file->filename = cabd_read_string(sys, fh, &x);
     if (x) { 
       sys->free(file);
       return x;
@@ -518,8 +517,7 @@ static int cabd_read_headers(struct mspack_system *sys,
 }
 
 static char *cabd_read_string(struct mspack_system *sys,
-			      struct mspack_file *fh,
-			      struct mscabd_cabinet_p *cab, int *error)
+			      struct mspack_file *fh, int *error)
 {
   off_t base = sys->tell(fh);
   char buf[256], *str;
@@ -1264,7 +1262,7 @@ static int cabd_sys_read_block(struct mspack_system *sys,
     /* blocks must not be over CAB_INPUTMAX in size */
     len = EndGetI16(&hdr[cfdata_CompressedSize]);
     if (((d->i_end - d->i_ptr) + len) > CAB_INPUTMAX) {
-      D(("block size > CAB_INPUTMAX (%ld + %d)", d->i_end - d->i_ptr, len))
+      D(("block size > CAB_INPUTMAX (%d + %d)", d->i_end - d->i_ptr, len))
       return MSPACK_ERR_DATAFORMAT;
     }
 

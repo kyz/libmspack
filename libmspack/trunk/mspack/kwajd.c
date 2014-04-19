@@ -41,7 +41,7 @@ static void lzh_free(
 static int lzh_read_lens(
     struct kwajd_stream *kwaj,
     unsigned int type, unsigned int numsyms,
-    unsigned char *lens, unsigned short *table);
+    unsigned char *lens);
 static int lzh_read_input(
     struct kwajd_stream *kwaj);
 
@@ -399,14 +399,13 @@ static int kwajd_error(struct mskwaj_decompressor *base)
 	return MSPACK_ERR_OK;				\
 } while (0)
 
-#define BUILD_TREE(tbl, type)					\
-    STORE_BITS;							\
-    err = lzh_read_lens(lzh, type, MAXSYMBOLS(tbl),		\
-			 &HUFF_LEN(tbl,0), &HUFF_TABLE(tbl,0));	\
-    if (err) return err;					\
-    RESTORE_BITS;						\
-    if (make_decode_table(MAXSYMBOLS(tbl), TABLEBITS(tbl),	\
-	&HUFF_LEN(tbl,0), &HUFF_TABLE(tbl,0)))			\
+#define BUILD_TREE(tbl, type)						\
+    STORE_BITS;								\
+    err = lzh_read_lens(lzh, type, MAXSYMBOLS(tbl), &HUFF_LEN(tbl,0));	\
+    if (err) return err;						\
+    RESTORE_BITS;							\
+    if (make_decode_table(MAXSYMBOLS(tbl), TABLEBITS(tbl),		\
+	&HUFF_LEN(tbl,0), &HUFF_TABLE(tbl,0)))				\
 	return MSPACK_ERR_DATAFORMAT;
 
 #define WRITE_BYTE do {							\
@@ -494,7 +493,7 @@ static void lzh_free(struct kwajd_stream *lzh)
 
 static int lzh_read_lens(struct kwajd_stream *lzh,
 			 unsigned int type, unsigned int numsyms,
-			 unsigned char *lens, unsigned short *table)
+			 unsigned char *lens)
 {
     register unsigned int bit_buffer;
     register int bits_left;
