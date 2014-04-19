@@ -12,7 +12,7 @@ if DEBUG
 AM_CFLAGS +=		-DDEBUG
 endif
 if GCC
-AM_CFLAGS +=		-Wall -W -Wno-unused
+AM_CFLAGS +=		-Wall -Wextra -Wno-unused-parameter -Wno-unused-result
 endif
 AM_CPPFLAGS =		-I$(top_srcdir)/mspack -I$(top_srcdir)/test 
 
