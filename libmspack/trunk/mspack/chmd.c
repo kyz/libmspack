@@ -266,7 +266,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   unsigned char buf[0x54], *chunk = NULL, *name, *p, *end;
   struct mschmd_file *fi, *link = NULL;
   off_t offset, length;
-  int num_entries, i;
+  int num_entries;
 
   /* initialise pointers */
   chm->files         = NULL;
@@ -686,7 +686,7 @@ static int search_chunk(struct mschmd_header *chm,
 {
     const unsigned char *start, *end, *p;
     unsigned int qr_size, num_entries, qr_entries, qr_density, name_len;
-    unsigned int L, R, M, sec, fname_len, entries_off, is_pmgl;
+    unsigned int L, R, M, fname_len, entries_off, is_pmgl;
     int cmp;
 
     fname_len = strlen(filename);
