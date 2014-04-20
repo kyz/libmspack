@@ -1,3 +1,10 @@
+2014-04-20  Stuart Caie <kyzer@4u.net>
+
+	* readhuff.h: fixed the table overflow check, which allowed one more
+	code after capacity had been reached, resulting in a read of
+	uninitialized data inside the decoding table. Thanks to Denis Kroshin
+	for identifying the problem and providing a sample file.
+
 2013-05-27  Stuart Caie <kyzer@4u.net>
 
 	* test/oabx.c: added new example command for unpacking OAB files.
