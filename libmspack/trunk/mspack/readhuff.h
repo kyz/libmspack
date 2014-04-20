@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2010 Stuart Caie.
+ * (C) 2003-2014 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -10,8 +10,7 @@
 #ifndef MSPACK_READHUFF_H
 #define MSPACK_READHUFF_H 1
 
-/* This implements a fast Huffman tree decoding system.
- */
+/* This implements a fast Huffman tree decoding system. */
 
 #if !(defined(BITS_ORDER_MSB) || defined(BITS_ORDER_LSB))
 # error "readhuff.h is used in conjunction with readbits.h, include that first"
@@ -140,6 +139,7 @@ static int make_decode_table(unsigned int nsyms, unsigned int nbits,
     for (bit_num = nbits+1; bit_num <= HUFF_MAXBITS; bit_num++) {
 	for (sym = 0; sym < nsyms; sym++) {
 	    if (length[sym] != bit_num) continue;
+            if (pos >= table_mask) return 1; /* table overflow */
 
 #ifdef BITS_ORDER_MSB
 	    leaf = pos >> 16;
@@ -161,8 +161,7 @@ static int make_decode_table(unsigned int nsyms, unsigned int nbits,
 		if ((pos >> (15-fill)) & 1) leaf++;
 	    }
 	    table[leaf] = sym;
-
-	    if ((pos += bit_mask) > table_mask) return 1; /* table overflow */
+	    pos += bit_mask;
 	}
 	bit_mask >>= 1;
     }
