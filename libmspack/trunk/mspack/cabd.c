@@ -1262,7 +1262,8 @@ static int cabd_sys_read_block(struct mspack_system *sys,
     /* blocks must not be over CAB_INPUTMAX in size */
     len = EndGetI16(&hdr[cfdata_CompressedSize]);
     if (((d->i_end - d->i_ptr) + len) > CAB_INPUTMAX) {
-      D(("block size > CAB_INPUTMAX (%d + %d)", d->i_end - d->i_ptr, len))
+      D(("block size > CAB_INPUTMAX (%ld + %d)",
+          (long)(d->i_end - d->i_ptr), len))
       return MSPACK_ERR_DATAFORMAT;
     }
 

@@ -811,7 +811,8 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
     /* check that we've used all of the previous frame first */
     if (lzx->o_ptr != lzx->o_end) {
-      D(("%d avail bytes, new %d frame", lzx->o_end-lzx->o_ptr, frame_size))
+      D(("%ld avail bytes, new %d frame",
+          (long)(lzx->o_end - lzx->o_ptr), frame_size))
       return lzx->error = MSPACK_ERR_DECRUNCH;
     }
 
