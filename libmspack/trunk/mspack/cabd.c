@@ -937,6 +937,12 @@ static int cabd_can_merge_folders(struct mspack_system *sys,
         return 0;
     }
 
+    /* check there are not too many data blocks after merging */
+    if ((lfol->base.num_blocks + rfol->base.num_blocks) > CAB_FOLDERMAX) {
+        D(("folder merge: too many data blocks in merged folders"))
+        return 0;
+    }
+
     if (!(lfi = lfol->merge_next) || !(rfi = rfol->merge_prev)) {
         D(("folder merge: one cabinet has no files to merge"))
         return 0;
@@ -988,6 +994,13 @@ static int cabd_extract(struct mscab_decompressor *base,
 
   sys = self->system;
   fol = (struct mscabd_folder_p *) file->folder;
+
+  /* validate the file's offset and length */
+  if ( (file->offset > CAB_LENGTHMAX) || (file->length > CAB_LENGTHMAX) ||
+      ((file->offset + file->length) > CAB_LENGTHMAX))
+  {
+    return self->error = MSPACK_ERR_DATAFORMAT;
+  }
 
   /* check if file can be extracted */
   if ((!fol) || (fol->merge_prev) ||
