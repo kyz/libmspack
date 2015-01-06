@@ -1,3 +1,13 @@
+2015-01-05  Stuart Caie <kyzer@4u.net>
+
+	* cabd_can_merge_folders(): disallow folder merging if the combined
+	folder would have more than 65535 data blocks.
+
+	* cabd_decompress(): disallow files if their offset, length or
+	offset+length is more than 65535*32768, the maximum size of any
+	folder. Thanks to Jakub Wilk for identifying the problem and providing
+	a sample file.
+
 2014-04-20  Stuart Caie <kyzer@4u.net>
 
 	* readhuff.h: fixed the table overflow check, which allowed one more
