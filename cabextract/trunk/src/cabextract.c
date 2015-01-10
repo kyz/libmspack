@@ -739,15 +739,15 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
                          int lower, int isunix, int utf8)
 {
   unsigned char *p, *name, c, *fe, sep, slash;
-  unsigned int x;
+  int x;
 
   sep   = (isunix) ? '/'  : '\\'; /* the path-seperator */
   slash = (isunix) ? '\\' : '/';  /* the other slash */
 
   /* length of filename */
   x = strlen((char *) fname);
-  /* UTF-8 worst case scenario: tolower() expands all chars from 1 to 6 bytes */
-  if (utf8) x *= 6;
+  /* UTF-8 worst case scenario: tolower() expands all chars from 1 to 4 bytes */
+  if (utf8) x *= 4;
   /* length of output directory */
   if (dir) x += strlen((char *) dir);
   x += 2;
@@ -776,74 +776,43 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
   fe = &fname[strlen((char *)fname)]; /* fe = end of input filename */
 
   if (utf8) {
-    /* UTF-8 translates unicode characters into 1 to 6 bytes.
-     * In binary:
-     * 000000000000000000000000000000sssssss
-     * ->  0sssssss
-     * 00000000000000000000000000ssssstttttt
-     * ->  110sssss 10tttttt
-     * 000000000000000000000ssssttttttuuuuuu
-     * ->  1110ssss 10tttttt 10uuuuuu
-     * 0000000000000000sssttttttuuuuuuvvvvvv
-     * ->  11110sss 10tttttt 10uuuuuu 10vvvvvv
-     * 00000000000ssttttttuuuuuuvvvvvvwwwwww
-     * ->  111110ss 10tttttt 10uuuuuu 10vvvvvv 10wwwwww
-     * 000000sttttttuuuuuuvvvvvvwwwwwwxxxxxx
-     * ->  1111110s 10tttttt 10uuuuuu 10vvvvvv 10wwwwww 10xxxxxx
-     *
-     * Therefore, the inverse is as follows:
-     * First char:
-     *  0x00 - 0x7F = one byte char
-     *  0x80 - 0xBF = invalid
-     *  0xC0 - 0xDF = 2 byte char (next char only 0x80-0xBF is valid)
-     *  0xE0 - 0xEF = 3 byte char (next 2 chars only 0x80-0xBF is valid)
-     *  0xF0 - 0xF7 = 4 byte char (next 3 chars only 0x80-0xBF is valid)
-     *  0xF8 - 0xFB = 5 byte char (next 4 chars only 0x80-0xBF is valid)
-     *  0xFC - 0xFD = 6 byte char (next 5 chars only 0x80-0xBF is valid)
-     *  0xFE - 0xFF = invalid
+    /* handle UTF-8 encoded filenames (see RFC 3629). This doesn't reject bad
+     * UTF-8 with overlong encodings, but does re-encode it as valid UTF-8.
      */
-    do {
-      if (fname > fe) {
-        fprintf(stderr, "error in UTF-8 decode\n");
-        free(name);
-        return NULL;    
+    while (fname < fe) {
+      /* get next UTF-8 character */
+      if ((c = *fname++) < 0x80) {
+        x = c;
+      }
+      else if (c >= 0xC2 && c < 0xE0 && fname <= fe &&
+        (fname[0] & 0xC0) == 0x80)
+     {
+        x = (c & 0x1F) << 6;
+        x |= *fname++ & 0x3F;
+      }
+      else if (c >= 0xE0 && c < 0xF0 && fname+1 <= fe &&
+        (fname[0] & 0xC0) == 0x80 && (fname[1] & 0xC0) == 0x80)
+      {
+        x = (c & 0x0F) << 12;
+        x |= (*fname++ & 0x3F) << 6;
+        x |= *fname++ & 0x3F;
+      }
+      else if (c >= 0xF0 && c < 0xF5 && fname+2 <= fe &&
+        (fname[0] & 0xC0) == 0x80 &&
+        (fname[1] & 0xC0) == 0x80 &&
+        (fname[2] & 0xC0) == 0x80)
+      {
+        x = (c & 0x07) << 18;
+        x |= (*fname++ & 0x3F) << 12;
+        x |= (*fname++ & 0x3F) << 6;
+        x |= *fname++ & 0x3F;
+      }
+      else {
+        x = 0xFFFD; /* unicode replacement character */
       }
 
-      /* get next UTF-8 character */
-      if ((c = *fname++) < 0x80) x = c;
-      else {
-        if ((c >= 0xC0) && (c <= 0xDF)) {
-          x = (c & 0x1F) << 6;
-          x |= *fname++ & 0x3F;
-        }
-        else if ((c >= 0xE0) && (c <= 0xEF)) {
-          x = (c & 0x0F) << 12;
-          x |= (*fname++ & 0x3F) << 6;
-          x |= *fname++ & 0x3F;
-        }
-        else if ((c >= 0xF0) && (c <= 0xF7)) {
-          x = (c & 0x07) << 18;
-          x |= (*fname++ & 0x3F) << 12;
-          x |= (*fname++ & 0x3F) << 6;
-          x |= *fname++ & 0x3F;
-        }
-        else if ((c >= 0xF8) && (c <= 0xFB)) {
-          x = (c & 0x03) << 24;
-          x |= (*fname++ & 0x3F) << 18;
-          x |= (*fname++ & 0x3F) << 12;
-          x |= (*fname++ & 0x3F) << 6;
-          x |= *fname++ & 0x3F;
-        }
-        else if ((c >= 0xFC) && (c <= 0xFD)) {
-          x = (c & 0x01) << 30;
-          x |= (*fname++ & 0x3F) << 24;
-          x |= (*fname++ & 0x3F) << 18;
-          x |= (*fname++ & 0x3F) << 12;
-          x |= (*fname++ & 0x3F) << 6;
-          x |= *fname++ & 0x3F;
-        }
-
-        else x = '?';
+      if (x <= 0 || x > 0x10FFFF) {
+        x = 0xFFFD; /* invalid code point or cheeky null byte */
       }
 
       /* whatever is the path seperator -> '/'
@@ -851,14 +820,14 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
        * otherwise, if lower is set, the lowercase version */
       if      (x == sep)   x = '/';
       else if (x == slash) x = '\\';
-      else if (lower)      x = (unsigned int) tolower((int) x);
+      else if (lower)      x = tolower(x);
 
       /* convert unicode character back to UTF-8 */
       if (x < 0x80) {
         *p++ = (unsigned char) x;
       }
       else if (x < 0x800) {
-        *p++ = 0xC0 | (x >> 6);   
+        *p++ = 0xC0 | (x >> 6);
         *p++ = 0x80 | (x & 0x3F);
       }
       else if (x < 0x10000) {
@@ -866,28 +835,19 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
         *p++ = 0x80 | ((x >> 6) & 0x3F);
         *p++ = 0x80 | (x & 0x3F);
       }
-      else if (x < 0x200000) {
+      else if (x <= 0x10FFFF) {
         *p++ = 0xF0 | (x >> 18);
         *p++ = 0x80 | ((x >> 12) & 0x3F);
         *p++ = 0x80 | ((x >> 6) & 0x3F);
         *p++ = 0x80 | (x & 0x3F);
       }
-      else if (x < 0x4000000) {
-        *p++ = 0xF8 | (x >> 24);
-        *p++ = 0x80 | ((x >> 18) & 0x3F);
-        *p++ = 0x80 | ((x >> 12) & 0x3F);
-        *p++ = 0x80 | ((x >> 6) & 0x3F);
-        *p++ = 0x80 | (x & 0x3F);
-      }
       else {
-        *p++ = 0xFC | (x >> 30);
-        *p++ = 0x80 | ((x >> 24) & 0x3F);
-        *p++ = 0x80 | ((x >> 18) & 0x3F);
-        *p++ = 0x80 | ((x >> 12) & 0x3F);
-        *p++ = 0x80 | ((x >> 6) & 0x3F);
-        *p++ = 0x80 | (x & 0x3F);
+        *p++ = 0xEF; /* unicode replacement character in UTF-8 */
+        *p++ = 0xBF;
+        *p++ = 0xBD;
       }
-    } while (x);
+    }
+    *p++ = 0;
   }
   else {
     /* regular non-utf8 version */

@@ -1,3 +1,12 @@
+2014-01-08  Stuart Caie <kyzer@4u.net>
+
+	* create_output_name: avoid invalid memory reads because of invalid
+	UTF-8 encodings. Use the Unicode substitution character for most
+	bad UTF-8 or Unicode encodings. Thanks to Hanno Böck.
+
+	* src/cabinfo.c: stop trying to convert UTF-8 to ASCII in filename.
+	Instead, prepend "UTF: " and print it to the terminal verbatim.
+
 2011-07-19  Stuart Caie <kyzer@4u.net>
 
 	* doc/ja/cabextract.1: Katsumi Saito updated the Japanese translation
