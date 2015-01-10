@@ -259,57 +259,7 @@ void search() {
   } /* while offset < filelen */
 }
 
-
-
-
-
 #define CAB_NAMEMAX (1024)
-
-/* UTF translates two-byte unicode characters into 1, 2 or 3 bytes.
- * %000000000xxxxxxx -> %0xxxxxxx
- * %00000xxxxxyyyyyy -> %110xxxxx %10yyyyyy
- * %xxxxyyyyyyzzzzzz -> %1110xxxx %10yyyyyy %10zzzzzz
- *
- * Therefore, the inverse is as follows:
- * First char:
- *  0x00 - 0x7F = one byte char
- *  0x80 - 0xBF = invalid
- *  0xC0 - 0xDF = 2 byte char (next char only 0x80-0xBF is valid)
- *  0xE0 - 0xEF = 3 byte char (next 2 chars only 0x80-0xBF is valid)
- *  0xF0 - 0xFF = invalid
- */
-
-/* translate UTF -> ASCII */
-int convertUTF(unsigned char *in) {
-  unsigned char c, *out = in, *end = in + strlen((char *) in) + 1;
-  unsigned int x;
-
-  do {
-    /* read unicode character */
-    if ((c = *in++) < 0x80) x = c;
-    else {
-      if (c < 0xC0) return 0;
-      else if (c < 0xE0) {
-        x = (c & 0x1F) << 6;
-        if ((c = *in++) < 0x80 || c > 0xBF) return 0; else x |= (c & 0x3F);
-      }
-      else if (c < 0xF0) {
-        x = (c & 0xF) << 12;
-        if ((c = *in++) < 0x80 || c > 0xBF) return 0; else x |= (c & 0x3F)<<6;
-        if ((c = *in++) < 0x80 || c > 0xBF) return 0; else x |= (c & 0x3F);
-      }
-      else return 0;
-    }
-
-    /* terrible unicode -> ASCII conversion */
-    if (x > 127) x = '_';
-
-    if (in > end) return 0; /* just in case */
-  } while ((*out++ = (unsigned char) x));
-  return 1;
-}
-
-
 
 void getinfo() {
   unsigned char buf[64];
@@ -484,20 +434,16 @@ void getinfo() {
     SEEK(base + strlen((char *) namebuf) + 1);
     if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
 
-    /* convert filename */
-    if (x & cffile_A_NAME_IS_UTF) {
-      if (!convertUTF(namebuf)) printf("WARNING: invalid UTF filename");
-    }
-
     printf(
       "\n[New file at offset %" FL "]\n"
-      "File name              = %s\n"
+      "File name              = %s%s\n"
       "File size              = %u bytes\n"
       "Offset within folder   = %u\n"
       "Folder index           = 0x%04x [%s]\n"
       "Date / time            = %02d/%02d/%4d %02d:%02d:%02d\n"
       "File attributes        = 0x%02x %s%s%s%s%s%s\n",
       offset,
+      x & cffile_A_NAME_IS_UTF ? "UTF: " : "",
       namebuf,
       GETLONG(cffile_UncompressedSize),
       GETLONG(cffile_FolderOffset),
