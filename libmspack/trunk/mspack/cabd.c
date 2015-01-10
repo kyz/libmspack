@@ -526,8 +526,8 @@ static char *cabd_read_string(struct mspack_system *sys,
   /* read up to 256 bytes */
   len = sys->read(fh, &buf[0], 256);
 
-  /* search for a null terminator in the buffer */
-  for (i = 0, ok = 0; i < len; i++) if (!buf[i]) { ok = 1; break; }
+  /* search for a null terminator in the buffer. reject empty strings */
+  for (i = 1, ok = 0; i < len; i++) if (!buf[i]) { ok = 1; break; }
   if (!ok) {
     *error = MSPACK_ERR_DATAFORMAT;
     return NULL;

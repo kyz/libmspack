@@ -1,3 +1,8 @@
+2015-01-08  Stuart Caie <kyzer@4u.net>
+
+	* cabd_read_string: reject empty strings. They are not found in any
+	valid CAB files. Thanks to Hanno Böck for sending me an example.
+
 2015-01-05  Stuart Caie <kyzer@4u.net>
 
 	* cabd_can_merge_folders(): disallow folder merging if the combined
