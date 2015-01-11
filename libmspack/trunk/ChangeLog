@@ -1,5 +1,9 @@
 2015-01-08  Stuart Caie <kyzer@4u.net>
 
+	* cabd_extract(): No longer uses broken state data if extracting from
+	folder 1, 2, 1 and setting up folder 2 fails. This prevents a jump to
+	null and thus segfault. Thanks to Jakub Wilk again.
+
 	* cabd_read_string: reject empty strings. They are not found in any
 	valid CAB files. Thanks to Hanno Böck for sending me an example.
 

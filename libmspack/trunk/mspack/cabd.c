@@ -170,9 +170,9 @@ void mspack_destroy_cab_decompressor(struct mscab_decompressor *base) {
   struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   if (self) {
     struct mspack_system *sys = self->system;
-    cabd_free_decomp(self);
     if (self->d) {
       if (self->d->infh) sys->close(self->d->infh);
+      cabd_free_decomp(self);
       sys->free(self->d);
     }
     sys->free(self);
@@ -1026,7 +1026,12 @@ static int cabd_extract(struct mscab_decompressor *base,
   }
 
   /* do we need to change folder or reset the current folder? */
-  if ((self->d->folder != fol) || (self->d->offset > file->offset)) {
+  if ((self->d->folder != fol) || (self->d->offset > file->offset) ||
+      !self->d->state)
+  {
+    /* free any existing decompressor */
+    cabd_free_decomp(self);
+
     /* do we need to open a new cab file? */
     if (!self->d->infh || (fol->data.cab != self->d->incab)) {
       /* close previous file handle if from a different cab */
@@ -1110,9 +1115,6 @@ static int cabd_init_decomp(struct mscab_decompressor_p *self, unsigned int ct)
 
   assert(self && self->d);
 
-  /* free any existing decompressor */
-  cabd_free_decomp(self);
-
   self->d->comp_type = ct;
 
   switch (ct & cffoldCOMPTYPE_MASK) {
@@ -1144,7 +1146,7 @@ static int cabd_init_decomp(struct mscab_decompressor_p *self, unsigned int ct)
 }
 
 static void cabd_free_decomp(struct mscab_decompressor_p *self) {
-  if (!self || !self->d || !self->d->folder || !self->d->state) return;
+  if (!self || !self->d || !self->d->state) return;
 
   switch (self->d->comp_type & cffoldCOMPTYPE_MASK) {
   case cffoldCOMPTYPE_NONE:    noned_free((struct noned_state *) self->d->state);   break;
