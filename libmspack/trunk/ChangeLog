@@ -1,3 +1,13 @@
+2015-01-15  Stuart Caie <kyzer@4u.net>
+
+	* chmd_read_headers(): add a bounds check to prevent over-reading data,
+	which caused a segfault on 32-bit architectures. Thanks to Jakub Wilk.
+
+	* search_chunk(): change the order of pointer arithmetic operations to
+	avoid overflow during bounds checks, which lead to segfaults on 32-bit
+	architectures. Again, thanks to Jakub Wilk for finding this issue,
+	providing sample files and a patch.
+
 2015-01-08  Stuart Caie <kyzer@4u.net>
 
 	* cabd_extract(): No longer uses broken state data if extracting from
