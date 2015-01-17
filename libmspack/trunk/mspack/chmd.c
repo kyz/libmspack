@@ -859,10 +859,10 @@ static const unsigned char mspack_tolower_map[256] = {
 #define GET_UTF8_CHAR(s, e, c) do {					\
     unsigned char x = *s++;						\
     if (x < 0x80) c = x;						\
-    else if (x >= 0xC2 && c < 0xE0 && s < e) {				\
+    else if (x >= 0xC2 && x < 0xE0 && s < e) {				\
 	c = (x & 0x1F) << 6 | (*s++ & 0x3F);				\
     }									\
-    else if (x >= 0xE0 && x < 0xF0 && s+1 < e)				\
+    else if (x >= 0xE0 && x < 0xF0 && s+1 < e) {			\
 	c = (x & 0x0F) << 12 | (s[0] & 0x3F) << 6 | (s[1] & 0x3F);	\
 	s += 2;								\
     }									\
