@@ -1117,7 +1117,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
   }
 
   /* validate reset_interval */
-  if (reset_interval % LZX_FRAME_SIZE) {
+  if (reset_interval == 0 || reset_interval % LZX_FRAME_SIZE) {
     D(("bad controldata reset interval"))
     return self->error = MSPACK_ERR_DATAFORMAT;
   }

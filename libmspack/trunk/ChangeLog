@@ -3,6 +3,9 @@
 	* GET_UTF8_CHAR(): Remove 5/6-byte encoding support and check decoded
 	chars are no more than U+10FFFF.
 
+	* chmd_init_decomp(): A reset interval of 0 is invalid. Thanks to
+	Jakub Wilk for finding the issue and providing a sample and patch.
+
 2015-01-15  Stuart Caie <kyzer@4u.net>
 
 	* chmd_read_headers(): add a bounds check to prevent over-reading data,
