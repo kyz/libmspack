@@ -852,35 +852,27 @@ static const unsigned char mspack_tolower_map[256] = {
 };
 #endif
 
-/* decodes a UTF-8 character from s[] into c. Will not read past e. */
+/* decodes a UTF-8 character from s[] into c. Will not read past e. 
+ * doesn't test that extension bytes are %10xxxxxx.
+ * allows some overlong encodings.
+ */
 #define GET_UTF8_CHAR(s, e, c) do {					\
     unsigned char x = *s++;						\
     if (x < 0x80) c = x;						\
-    else if (x < 0xC0) c = -1;						\
-    else if (x < 0xE0) {						\
-	c = (s >= e) ? -1 : ((x & 0x1F) << 6) | (*s++ & 0x3F);		\
+    else if (x >= 0xC2 && c < 0xE0 && s < e) {				\
+	c = (x & 0x1F) << 6 | (*s++ & 0x3F);				\
     }									\
-    else if (x < 0xF0) {						\
-        c = (s+2 > e) ? -1 : ((x & 0x0F) << 12)	| ((s[0] & 0x3F) <<  6)	\
-	    | (s[1] & 0x3F);						\
+    else if (x >= 0xE0 && x < 0xF0 && s+1 < e)				\
+	c = (x & 0x0F) << 12 | (s[0] & 0x3F) << 6 | (s[1] & 0x3F);	\
 	s += 2;								\
     }									\
-    else if (x < 0xF8) {						\
-	c = (s+3 > e) ? -1 : ((x & 0x07) << 18) | ((s[0] & 0x3F) << 12) \
-	    | ((s[1] & 0x3F) << 6) | (s[2] & 0x3F);			\
+    else if (x >= 0xF0 && x <= 0xF5 && s+2 < e) {			\
+	c = (x & 0x07) << 18 | (s[0] & 0x3F) << 12 |			\
+	    (s[1] & 0x3F) << 6 | (s[2] & 0x3F);				\
+	if (c > 0x10FFFF) c = 0xFFFD;					\
 	s += 3;								\
     }									\
-    else if (x < 0xFC) {						\
-	c = (s+4 > e) ? -1 : ((x & 0x03) << 24) | ((s[0] & 0x3F) << 18) \
-	    | ((s[1] & 0x3F) << 12)|((s[2] & 0x3F) << 6)|(s[3] & 0x3F);	\
-	s += 4;								\
-    }									\
-    else if (x < 0xFE) {						\
-        c = (s+5>e)?-1:((x&1)<<30)|((s[0]&0x3F)<<24)|((s[1]&0x3F)<<18)| \
-	    ((s[2] & 0x3F) << 12) | ((s[3] & 0x3F) << 6)|(s[4] & 0x3F);	\
-	s += 5;								\
-    }									\
-    else c = -1;							\
+    else c = 0xFFFD;							\
 } while (0)
 
 /* case-insensitively compares two UTF8 encoded strings. String length for
