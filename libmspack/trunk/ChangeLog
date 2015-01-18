@@ -9,7 +9,7 @@
 	* inflate(): off-by-one error. Distance codes are 0-29, not 0-30.
 	Thanks to Jakub Wilk again.
 
-	* chmd_read_headers(), search_chunk(): another fix for checking name_len
+	* chmd_read_headers(), search_chunk(): another fix for checking pointer
 	is within a chunk, thanks again to Jakub Wilk.
 
 2015-01-17  Stuart Caie <kyzer@4u.net>
