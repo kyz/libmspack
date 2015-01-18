@@ -1,4 +1,9 @@
-2014-01-08  Stuart Caie <kyzer@4u.net>
+2015-01-18  Stuart Caie <kyzer@4u.net>
+
+	* wince_rename: installed files now include their install directories.
+	Thanks to Alfonso Acosta for sending a patch.
+
+2015-01-08  Stuart Caie <kyzer@4u.net>
 
 	* create_output_name: avoid invalid memory reads because of invalid
 	UTF-8 encodings. Use the Unicode substitution character for most
