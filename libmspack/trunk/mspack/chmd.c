@@ -446,7 +446,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
 
     while (num_entries--) {
       READ_ENCINT(name_len);
-      if (name_len > (unsigned int) (end - p)) goto chunk_end;
+      if (p > end || name_len > (unsigned int) (end - p)) goto chunk_end;
       name = p; p += name_len;
       READ_ENCINT(section);
       READ_ENCINT(offset);
@@ -748,7 +748,7 @@ static int search_chunk(struct mschmd_header *chm,
 	    /* compare filename with entry QR points to */
 	    p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
 	    READ_ENCINT(name_len);
-	    if (name_len > (unsigned int) (end - p)) goto chunk_end;
+	    if (p > end || name_len > (unsigned int) (end - p)) goto chunk_end;
 	    cmp = compare(filename, (char *)p, fname_len, name_len);
 
 	    if (cmp == 0) break;
@@ -785,7 +785,7 @@ static int search_chunk(struct mschmd_header *chm,
     *result = NULL;
     while (num_entries-- > 0) {
 	READ_ENCINT(name_len);
-	if (name_len > (unsigned int) (end - p)) goto chunk_end;
+	if (p > end || name_len > (unsigned int) (end - p)) goto chunk_end;
 	cmp = compare(filename, (char *)p, fname_len, name_len);
 	p += name_len;
 
