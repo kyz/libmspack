@@ -506,8 +506,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	  lzx->intel_started = 1;
 
 	  /* read 1-16 (not 0-15) bits to align to bytes */
-	  ENSURE_BITS(16);
-	  if (bits_left > 16) i_ptr -= 2;
+	  if (bits_left == 0) ENSURE_BITS(16);
 	  bits_left = 0; bit_buffer = 0;
 
 	  /* read 12 bytes of stored R0 / R1 / R2 values */
