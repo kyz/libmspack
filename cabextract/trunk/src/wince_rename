@@ -2,11 +2,37 @@
 # wince_rename
 # - when run in a directory containing files extracted from
 #   a Windows CE installation cabinet, it will rename all files
-#   to their "installed" filenames
+#   to their "installed" filenames, including path
 # - the header file (*.000) will be renamed to header.bin
 # - the setup DLL (*.999) will be renamed to setup.dll
 # - a REGEDIT4 style file will be made, called setup.reg
 use strict;
+use File::Basename qw(dirname);
+use File::Copy qw(move);
+use File::Path qw(make_path);
+use File::Spec;
+use File::Spec::Win32;
+
+my @ce = (
+  undef,
+  '\Program Files',
+  '\Windows',
+  '\Windows\Desktop',
+  '\Windows\StartUp',
+  '\My Documents',
+  '\Program Files\Accessories',
+  '\Program Files\Communications',
+  '\Program Files\Games',
+  '\Program Files\Pocket Outlook',
+  '\Program Files\Office',
+  '\Windows\Programs',
+  '\Windows\Programs\Accessories',
+  '\Windows\Programs\Communications',
+  '\Windows\Programs\Games',
+  '\Windows\Fonts',
+  '\Windows\Recent',
+  '\Windows\Favorites'
+);
 
 # expands a decimal number from 0-999 into a filename with a three digit
 # decimal number as a file extension, if one exists. Otherwise, undef is
@@ -24,10 +50,18 @@ sub get_fname {
 }
 
 sub rename_file {
-  print "renaming \"$_[0]\" to \"$_[1]\"\n";
-  rename $_[0], $_[1] || print STDERR "$_[0]: $!\n";
+  my ($src, $dest) = @_;
+  print "moving \"$src\" to \"$dest\"\n";
+  make_path(dirname($dest));
+  move($src, $dest) || print STDERR "$src: $!\n";
 }
 
+sub win32_path_to_local {
+  my ($volume, $dir, $file) = File::Spec::Win32->splitpath($_[0]) ;
+  my @dirs = File::Spec::Win32->splitdir($dir);
+  shift @dirs if @dirs > 0 && $dirs[0] eq ''; # remove leading slash
+  return File::Spec->catfile(@dirs, $file);
+}
 
 # get the *.000 file
 my $hdrfile = get_fname(0);
@@ -60,9 +94,26 @@ if (open FH, "<$hdrfile") {
     seek FH,$hdr[24],0; read FH,$x,$hdr[25]; chop $x; print "Appname:  $x\n";
     seek FH,$hdr[26],0; read FH,$x,$hdr[27]; chop $x; print "Provider: $x\n";
 
-    # RENAME FILES TO INSTALLED FILENAMES:
+    # STRINGS section
+    my @strs;
+    seek FH, $hdr[18], 0;
+    for (1 .. $hdr[12]) {
+      read FH, $x, 4; my ($id, $len) = unpack 'vv',$x;
+      read FH, $strs[$id], $len; chop $strs[$id];
+    }
 
-    # seek to FILES section and loop for the number of FILES entries
+    # DIRS section
+    my @dirs;
+    seek FH, $hdr[19], 0;
+    for (1 .. $hdr[13]) {
+	read FH, $x, 4;
+	my ($id, $len) = unpack 'vv', $x;
+	read FH, $x, $len; chop $x; chop $x;
+	$dirs[$id] = join '\\', map {$strs[$_]} unpack 'v*', $x;
+	$dirs[$id] =~ s/%CE(\d+)%/$ce[$1]/eg;
+    }
+
+    # FILES section
     seek FH, $hdr[20], 0;
     for (1 .. $hdr[14]) {
       # read a FILES entry
@@ -70,9 +121,9 @@ if (open FH, "<$hdrfile") {
       my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv',$x;
       read FH, $x, $len; chop $x;
 
-      # get file with decimal extension, rename it to filename given in
-      # FILES entry
-      rename_file(get_fname($id), $x);
+      # get file with decimal extension, rename it to dir and
+      # filename given in FILES entry
+      rename_file(get_fname($id), win32_path_to_local("$dirs[$dirid]\\$x"));
     }
 
     # CREATE REGISTRY KEYS LIST
@@ -81,16 +132,8 @@ if (open FH, "<$hdrfile") {
     if (($hdr[16] > 0) && open REGFH, '>setup.reg') {
       print REGFH "REGEDIT4\r\n";
 
-      my @strs;
       my @hives;
       my $lasthive = -1;
-
-      # seek to STRINGS section and read all STRINGS entries into @strs
-      seek FH, $hdr[18], 0;
-      for (1 .. $hdr[12]) {
-	read FH, $x, 4; my ($id, $len) = unpack 'vv',$x;
-	read FH, $strs[$id], $len; chop $strs[$id];
-      }
 
       # seek to HIVES section and read all HIVES entries into @hives
       seek FH, $hdr[21], 0;
