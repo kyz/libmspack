@@ -264,7 +264,7 @@ static int inflate(struct mszipd_stream *zip) {
 	  length += lit_lengths[code];
 
 	  READ_HUFFSYM(DISTANCE, code);
-	  if (code > 30) return INF_ERR_DISTCODE;
+	  if (code >= 30) return INF_ERR_DISTCODE;
 	  READ_BITS_T(distance, dist_extrabits[code]);
 	  distance += dist_offsets[code];
 
