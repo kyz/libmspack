@@ -24,7 +24,7 @@ cat >config.h <<EOF
 #define HAVE_UTIME_H 1
 #define STDC_HEADERS 1
 #define TIME_WITH_SYS_TIME 1
-#define VERSION "1.4"
+#define VERSION "1.5"
 #define WORDS_BIGENDIAN 1
 EOF
 cp fnmatch_.h fnmatch.h
