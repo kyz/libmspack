@@ -1,3 +1,11 @@
+New in 1.5
+* cabextract replaces bad Unicode characters in filenames with the
+  standard Unicode replacement character
+* wince_rename now puts files under the correct installation path
+* Several crashes and hangs were found by Debian project members
+  using the afl (American fuzzy lop) tool to generate corrupt
+  cabinet files. These crashes and hangs have been fixed.
+
 New in 1.4:
 * A bug in the LZX decompressor was fixed.
 * cabextract is now more tolerant when processing cabinet sets.

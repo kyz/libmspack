@@ -1,5 +1,5 @@
 P=cabextract
-V=1.4
+V=1.5
 R=1
 PVR=$(P)-$(V)-$(R)
 SRC=$(P)-$(V).tar.gz
