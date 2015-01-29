@@ -1,0 +1,34 @@
+#!/bin/sh
+# Test if cabd_md5 expands cab files identically to Microsoft's EXPAND.EXE
+
+[ -d .cache ] || mkdir .cache
+
+for cab in "$@"
+do
+    echo "test $cab"
+    cached=`echo $cab | sed -e 's/\//-/g' -e 's/^/.cache\//'`
+    if [ ! -s $cached ]; then
+        ./msexpand_md5 $cab >.orig.out 2>.orig.err
+        if [ -s .orig.err ]; then
+            echo "FAIL $cab: MS errors" >&2
+            cat .orig.err >&2
+        else
+            mv .orig.out $cached
+        fi
+    fi
+
+    ./cabd_md5 $cab >.test.out 2>.test.err
+    perl -pi -e 'if($.>1){s{\\}{/}g;s{  /}{  }}' .test.out
+    if [ -s .test.err ]; then
+        echo "FAIL $cab: errors" >&2
+        cat .test.err >&2
+    fi
+
+    if cmp $cached .test.out >/dev/null; then
+       echo "OK   $cab"
+    else
+       echo "FAIL $cab: differences" >&2
+       diff -u $cached .test.out >&2
+    fi
+done
+rm -f .orig.out .orig.err .test.out .test.err

@@ -1,0 +1,21 @@
+CAB
+- compression: everything
+
+CHM
+- compression: implementation
+- decompression: implement fast_find()
+
+HLP
+- everything
+
+LIT
+- everything
+
+SZDD
+- compression: implementation
+
+KWAJ
+- compression: implementation
+
+WIM
+- everything
