@@ -1,0 +1,1 @@
+../../../libmspack/trunk/mspack/mspack.h
