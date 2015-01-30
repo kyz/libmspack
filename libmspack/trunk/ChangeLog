@@ -1,3 +1,8 @@
+2015-01-29  Stuart Caie <kyzer@4u.net>
+
+	* system.h: if C99 inttypes.h exists, use its PRI{d,u}{32,64} macros.
+	Thanks to Johnathan Kollasch for the suggestion.
+
 2015-01-18  Stuart Caie <kyzer@4u.net>
 
 	* lzxd_decompress(): the byte-alignment code for reading uncompressed

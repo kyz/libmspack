@@ -57,17 +57,26 @@ extern "C" {
 # include <limits.h>
 #endif
 
+#ifdef HAVE_INTTYPES_H
+# include <inttypes.h>
+#else
+# define PRId64 "lld"
+# define PRIu64 "llu"
+# define PRId32 "ld"
+# define PRIu32 "lu"
+#endif
+
 #if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
      (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
      (defined(SIZEOF_OFF_T)      && SIZEOF_OFF_T      >= 8)  || \
      defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE))
 # define LARGEFILE_SUPPORT
-# define LD "lld"
-# define LU "llu"
+# define LD PRId64
+# define LU PRIu64
 #else
 extern const char *largefile_msg;
-# define LD "ld"
-# define LU "lu"
+# define LD PRId32
+# define LU PRIu32
 #endif
 
 /* endian-neutral reading of little-endian data */
