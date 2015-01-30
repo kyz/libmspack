@@ -30,7 +30,7 @@ AC_EXEEXT
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([ctype.h limits.h stdlib.h wctype.h])
+AC_CHECK_HEADERS([ctype.h inttypes.h limits.h stdlib.h wctype.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
