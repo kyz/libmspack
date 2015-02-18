@@ -1,3 +1,9 @@
+2015-02-18  Stuart Caie <kyzer@4u.net>
+
+	* create_output_name(): the check against leading slashes could be
+	evaded with malformed UTF-8. Thanks to Alexander Cherepanov for
+	reporting the issue.
+
 2015-01-18  Stuart Caie <kyzer@4u.net>
 
 	* wince_rename: installed files now include their install directories.
