@@ -1,6 +1,5 @@
 #!/bin/sh
-# see http://www.zerohero.se/cross/os3.html
-# and http://www.zerohero.se/cross/os4.html
+# see https://sourceforge.net/projects/adtools/
 
 cat >config.h <<EOF
 #define HAVE_CTYPE_H 1
@@ -9,6 +8,7 @@ cat >config.h <<EOF
 #define HAVE_FNMATCH_H 1
 #define HAVE_LIMITS_H 1
 #define HAVE_MEMCPY 1
+#define HAVE_MEMMOVE 1
 #define HAVE_MKDIR 1
 #define HAVE_STDARG_H 1
 #define HAVE_STDLIB_H 1
@@ -24,7 +24,7 @@ cat >config.h <<EOF
 #define HAVE_UTIME_H 1
 #define STDC_HEADERS 1
 #define TIME_WITH_SYS_TIME 1
-#define VERSION "1.5"
+#define VERSION "1.6"
 #define WORDS_BIGENDIAN 1
 EOF
 cp fnmatch_.h fnmatch.h

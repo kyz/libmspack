@@ -1,4 +1,4 @@
-PKG=cabextract-1.5-1
+PKG=cabextract-1.6-1
 
 PORT=$(PKG).cygport
 EXTRA=README setup.hint
