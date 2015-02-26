@@ -1,5 +1,5 @@
-/* cabextract 1.4 - a program to extract Microsoft Cabinet files
- * (C) 2000-2011 Stuart Caie <kyzer@4u.net>
+/* cabextract 1.5 - a program to extract Microsoft Cabinet files
+ * (C) 2000-2015 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,10 @@
 
 #if HAVE_CTYPE_H
 # include <ctype.h>
+#endif
+
+#if HAVE_WCTYPE_H
+# include <wctype.h>
 #endif
 
 #if HAVE_ERRNO_H
@@ -111,6 +115,9 @@
 # endif
 # if !HAVE_MEMCPY
 #  define memcpy(d,s,n) bcopy((s),(d),(n))
+# endif
+# if !HAVE_MEMMOVE
+#  define memmove(d,s,n) bcopy((s),(d),(n))
 # endif
 #endif
 
@@ -212,7 +219,7 @@ static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
                                    char *basename);
 static char *find_cabinet_file(char *origcab, char *cabname);
 static int unix_path_seperators(struct mscabd_file *files);
-static char *create_output_name(unsigned char *fname, unsigned char *dir,
+static char *create_output_name(const char *fname, const char *dir,
                                 int lower, int isunix, int unicode);
 static void set_date_and_perm(struct mscabd_file *file, char *filename);
 
@@ -441,8 +448,7 @@ static int process_cabinet(char *basename) {
     /* process all files */
     for (file = cab->files; file; file = file->next) {
       /* create the full UNIX output filename */
-      if (!(name = create_output_name(
-            (unsigned char *) file->filename, (unsigned char *) args.dir,
+      if (!(name = create_output_name(file->filename, args.dir,
             args.lower, isunix, file->attribs & MSCAB_ATTRIB_UTF_NAME)))
       {
         errors++;
@@ -735,75 +741,62 @@ static int unix_path_seperators(struct mscabd_file *files) {
  *         not enough memory.
  * @see unix_path_seperators()
  */
-static char *create_output_name(unsigned char *fname, unsigned char *dir,
-                         int lower, int isunix, int utf8)
+static char *create_output_name(const char *fname, const char *dir,
+				int lower, int isunix, int utf8)
 {
-  unsigned char *p, *name, c, *o, *fe, sep, slash;
-  int x;
+  char sep   = (isunix) ? '/'  : '\\'; /* the path-seperator */
+  char slash = (isunix) ? '\\' : '/';  /* the other slash */
 
-  sep   = (isunix) ? '/'  : '\\'; /* the path-seperator */
-  slash = (isunix) ? '\\' : '/';  /* the other slash */
+  size_t dirlen = dir ? strlen(dir) + 1 : 0; /* length of dir + '/' */
+  size_t filelen = strlen(fname);
 
-  /* length of filename */
-  x = strlen((char *) fname);
-  /* UTF-8 worst case scenario: tolower() expands all chars from 1 to 4 bytes */
-  if (utf8) x *= 4;
-  /* length of output directory */
-  if (dir) x += strlen((char *) dir);
-  x += 3;
+  /* worst case, UTF-8 processing expands all chars to 4 bytes */
+  char *name =  malloc(dirlen + (filelen * 4) + 2);
 
-  if (!(name = malloc(x))) {
-    fprintf(stderr, "Can't allocate output filename (%u bytes)\n", x);
+  unsigned char *i    = (unsigned char *) &fname[0];
+  unsigned char *iend = (unsigned char *) &fname[filelen];
+  unsigned char *o    = (unsigned char *) &name[dirlen], c;
+
+  if (!name) {
+    fprintf(stderr, "Can't allocate output filename\n");
     return NULL;
   }
-  
-  /* start with blank name */
-  *name = '\0';
 
-  /* add output directory if needed */
+  /* copy directory prefix if needed */ 
   if (dir) {
-    strcpy((char *) name, (char *) dir);
-    strcat((char *) name, "/");
+    strcpy(name, dir);
+    name[dirlen - 1] = '/';
   }
 
-  /* copy from fi->filename to new name, converting MS-DOS slashes to UNIX
-   * slashes as we go. Also lowercases characters if needed.
-   */
-  p = o = &name[strlen((char *)name)]; /* p = o = start of output filename */
-  fe = &fname[strlen((char *)fname)]; /* fe = end of input filename */
-
+  /* copy cab filename to output name, converting MS-DOS slashes to UNIX
+   * slashes as we go. Also lowercases characters if needed. */
   if (utf8) {
-    int first = 1;
     /* handle UTF-8 encoded filenames (see RFC 3629). This doesn't reject bad
-     * UTF-8 with overlong encodings, but does re-encode it as valid UTF-8.
-     */
-    while (fname < fe) {
+     * UTF-8 with overlong encodings, but does re-encode it as valid UTF-8. */
+    while (i < iend) {
       /* get next UTF-8 character */
-      if ((c = *fname++) < 0x80) {
+      int x;
+      if ((c = *i++) < 0x80) {
         x = c;
       }
-      else if (c >= 0xC2 && c < 0xE0 && fname <= fe &&
-        (fname[0] & 0xC0) == 0x80)
-     {
+      else if (c >= 0xC2 && c < 0xE0 && i <= iend && (i[0] & 0xC0) == 0x80) {
         x = (c & 0x1F) << 6;
-        x |= *fname++ & 0x3F;
+        x |= *i++ & 0x3F;
       }
-      else if (c >= 0xE0 && c < 0xF0 && fname+1 <= fe &&
-        (fname[0] & 0xC0) == 0x80 && (fname[1] & 0xC0) == 0x80)
+      else if (c >= 0xE0 && c < 0xF0 && i+1 <= iend && (i[0] & 0xC0) == 0x80 &&
+               (i[1] & 0xC0) == 0x80)
       {
         x = (c & 0x0F) << 12;
-        x |= (*fname++ & 0x3F) << 6;
-        x |= *fname++ & 0x3F;
+        x |= (*i++ & 0x3F) << 6;
+        x |= *i++ & 0x3F;
       }
-      else if (c >= 0xF0 && c < 0xF5 && fname+2 <= fe &&
-        (fname[0] & 0xC0) == 0x80 &&
-        (fname[1] & 0xC0) == 0x80 &&
-        (fname[2] & 0xC0) == 0x80)
+      else if (c >= 0xF0 && c < 0xF5 && i+2 <= iend && (i[0] & 0xC0) == 0x80 &&
+               (i[1] & 0xC0) == 0x80 && (i[2] & 0xC0) == 0x80)
       {
         x = (c & 0x07) << 18;
-        x |= (*fname++ & 0x3F) << 12;
-        x |= (*fname++ & 0x3F) << 6;
-        x |= *fname++ & 0x3F;
+        x |= (*i++ & 0x3F) << 12;
+        x |= (*i++ & 0x3F) << 6;
+        x |= *i++ & 0x3F;
       }
       else {
         x = 0xFFFD; /* unicode replacement character */
@@ -813,70 +806,78 @@ static char *create_output_name(unsigned char *fname, unsigned char *dir,
         x = 0xFFFD; /* invalid code point or cheeky null byte */
       }
 
-      /* remove leading slashes */
-      if (first && x == sep) continue;
-      first = 0;
+#ifdef HAVE_TOWLOWER
+      if (lower) x = towlower(x);
+#else
+      if (lower && x < 256) x = tolower(x);
+#endif
 
-      /* whatever is the path seperator -> '/'
-       * whatever is the other slash    -> '\\'
-       * otherwise, if lower is set, the lowercase version */
-      if      (x == sep)   x = '/';
-      else if (x == slash) x = '\\';
-      else if (lower)      x = tolower(x);
+      /* whatever is the path separator -> '/'
+       * whatever is the other slash    -> '\' */
+      if (x == sep) x = '/'; else if (x == slash) x = '\\';
 
       /* convert unicode character back to UTF-8 */
       if (x < 0x80) {
-        *p++ = (unsigned char) x;
+        *o++ = (unsigned char) x;
       }
       else if (x < 0x800) {
-        *p++ = 0xC0 | (x >> 6);
-        *p++ = 0x80 | (x & 0x3F);
+        *o++ = 0xC0 | (x >> 6);
+        *o++ = 0x80 | (x & 0x3F);
       }
       else if (x < 0x10000) {
-        *p++ = 0xE0 | (x >> 12);
-        *p++ = 0x80 | ((x >> 6) & 0x3F);
-        *p++ = 0x80 | (x & 0x3F);
+        *o++ = 0xE0 | (x >> 12);
+        *o++ = 0x80 | ((x >> 6) & 0x3F);
+        *o++ = 0x80 | (x & 0x3F);
       }
       else if (x <= 0x10FFFF) {
-        *p++ = 0xF0 | (x >> 18);
-        *p++ = 0x80 | ((x >> 12) & 0x3F);
-        *p++ = 0x80 | ((x >> 6) & 0x3F);
-        *p++ = 0x80 | (x & 0x3F);
+        *o++ = 0xF0 | (x >> 18);
+        *o++ = 0x80 | ((x >> 12) & 0x3F);
+        *o++ = 0x80 | ((x >> 6) & 0x3F);
+        *o++ = 0x80 | (x & 0x3F);
       }
       else {
-        *p++ = 0xEF; /* unicode replacement character in UTF-8 */
-        *p++ = 0xBF;
-        *p++ = 0xBD;
+        *o++ = 0xEF; /* unicode replacement character in UTF-8 */
+        *o++ = 0xBF;
+        *o++ = 0xBD;
       }
     }
-    *p++ = 0;
   }
   else {
-    /* regular non-utf8 version */
-    while (*fname == sep) fname++;
-    do {
-      c = *fname++;
-      if      (c == sep)   c = '/';
-      else if (c == slash) c = '\\';
-      else if (lower)      c = (unsigned char) tolower((int) c);
-    } while ((*p++ = c));
+    /* non UTF-8 version */
+    while (i < iend) {
+      c = *i++;
+      if (lower) c = (unsigned char) tolower((int) c);
+      if (c == sep) c = '/'; else if (c == slash) c = '\\';
+      *o++ = c;
+    }
   }
+  *o++ = '\0';
 
-  /* search for "../" in cab filename part and change to "xx/".  This
-   * prevents any unintended directory traversal. */
-  for (p = o; *p; p++) {
-    if ((p[0] == '.') && (p[1] == '.') && (p[2] == '/')) {
-      p[0] = p[1] = 'x';
-      p += 2;
+  /* remove any leading slashes in the cab filename part.
+   * This prevents unintended absolute file path access. */
+  o = (unsigned char *) &name[dirlen];
+  for (i = o; *i == '/' || *i == '\\'; i++);
+  if (i != o) {
+    size_t len = strlen((char *) i);
+    if (len > 0) {
+      memmove(o, i, len + 1);
+    }
+    else {
+      /* change filename composed entirely of leading slashes to "x" */
+      strcpy((char *) o, "x");
     }
   }
 
-  /* change filename composed entirely of leading slashes to "x" */
-  if (strlen(o) == 0) {
-      strcat(o, "x");
+  /* search for "../" or "..\" in cab filename part and change to "xx"
+   * This prevents unintended directory traversal. */
+  for (; *o; o++) {
+    if ((o[0] == '.') && (o[1] == '.') && (o[2] == '/' || o[2] == '\\')) {
+      o[0] = o[1] = 'x';
+      o += 2;
+    }
   }
 
-  return (char *) name;
+  return name;
 }
 
 /**
