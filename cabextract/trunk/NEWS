@@ -1,3 +1,12 @@
+New in 1.6
+* cabextract now prevents archive files giving themselves absolute path access
+  using badly UTF-8 encoded slashes.
+* Because Cygwin allows both '/' and '\' as path separators, cabextract now
+  removes both leading '/'s and '\'s and changes both "../" and "..\" in
+  CAB filenames to "xx".  You can no longer have a CAB filename called e.g
+  "\/t" (file "t" in the directory "\"). If you need this, create a CAB file
+  where the filename is "./\/t" instead.
+
 New in 1.5
 * cabextract replaces bad Unicode characters in filenames with the
   standard Unicode replacement character

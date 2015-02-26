@@ -1,4 +1,4 @@
-/* cabextract 1.5 - a program to extract Microsoft Cabinet files
+/* cabextract 1.6 - a program to extract Microsoft Cabinet files
  * (C) 2000-2015 Stuart Caie <kyzer@4u.net>
  *
  * This program is free software; you can redistribute it and/or modify

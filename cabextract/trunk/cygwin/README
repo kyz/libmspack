@@ -26,21 +26,21 @@ Language:
 ------------------------------------
 
 Build instructions:
-  unpack cabextract-1.5-1-src.tar.bz2
+  unpack cabextract-1.6-1-src.tar.bz2
     if you use setup to install this src package, it will be
 	 unpacked under /usr/src automatically
   cd /usr/src
-  cygport ./cabextract-1.5-1.cygport all
+  cygport ./cabextract-1.6-1.cygport all
 
 This will create:
-  /usr/src/cabextract-1.5-1.tar.bz2
-  /usr/src/cabextract-1.5-1-src.tar.bz2
+  /usr/src/cabextract-1.6-1.tar.bz2
+  /usr/src/cabextract-1.6-1-src.tar.bz2
 
 ------------------
 
 Port Notes:
 
-----------  cabextract-1.5-1 -- 2015-01-24 -----------
+----------  cabextract-1.6-1 -- 2015-02-26 -----------
 Update to latest upstream release
 
 ----------  cabextract-1.4-1 -- 2011-05-11 -----------
@@ -50,7 +50,7 @@ Update to latest upstream release
 Initial release
 
 For more information about this package, see the upstream documentation in
-/usr/share/doc/cabextract-1.5.
+/usr/share/doc/cabextract-1.6.
 
 Cygwin port maintained by: Stuart Caie <kyzer@4u.net>
 Please address all questions to the Cygwin mailing list at <cygwin@cygwin.com>
