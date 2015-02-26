@@ -1,3 +1,12 @@
+2015-02-25  Stuart Caie <kyzer@4u.net>
+
+	* create_output_name(): Simplify code; do path checking only after
+	output name has been constructed. Use towlower to lowercase UTF-8
+	characters. Remove both leading '/' and '\' from cab filenames and
+	change both "../" and "..\" to "xx", for Cygwin and other Cygwin-like
+	environments that use both '/' and '\' as path separators. Thanks to
+	Alexander Cherepanov and the MITRE team.
+
 2015-02-18  Stuart Caie <kyzer@4u.net>
 
 	* create_output_name(): the check against leading slashes could be
