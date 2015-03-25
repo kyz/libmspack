@@ -13,9 +13,9 @@ clean:
 $(DIR32)/dist/cabextract/$(PKG).tar.xz: $(PORT) $(EXTRA)
 	cygport --32 $(PORT) download prep
 	cp $(EXTRA) $(DIR32)/CYGWIN-PATCHES/
-	cygport --32 $(PORT) compile install package
+	cygport --32 $(PORT) compile install package upload
 
 $(DIR64)/dist/cabextract/$(PKG).tar.xz: $(PORT) $(EXTRA)
 	cygport --64 $(PORT) download prep
 	cp $(EXTRA) $(DIR64)/CYGWIN-PATCHES/
-	cygport --64 $(PORT) compile install package
+	cygport --64 $(PORT) compile install package upload
