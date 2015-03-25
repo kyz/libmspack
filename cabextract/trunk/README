@@ -42,4 +42,4 @@ $ cabextract -l wibble.cab
 Testing the integrity of a cabinet file, without extracting it:
 $ cabextract -t wibble.cab
 
-Stuart Caie <kyzer@4u.net>, January 2015
+Stuart Caie <kyzer@4u.net>, March 2015
