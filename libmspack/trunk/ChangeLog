@@ -1,3 +1,9 @@
+2015-05-10  Stuart Caie <kyzer@4u.net>
+
+	* Makefile.am: Add subdir-objects option as suggested by autoreconf.
+
+	* configure.ac: Add AM_PROG_AR as suggested by autoreconf.
+
 2015-01-29  Stuart Caie <kyzer@4u.net>
 
 	* system.h: if C99 inttypes.h exists, use its PRI{d,u}{32,64} macros.

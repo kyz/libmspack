@@ -24,6 +24,7 @@ AM_CONDITIONAL(DEBUG, test x$enable_debug = 'xyes')
 # Checks for programs.
 AC_PROG_CC
 AM_CONDITIONAL(GCC, test x$GCC = 'xyes')
+AM_PROG_AR
 AC_PROG_INSTALL
 LT_INIT
 AC_EXEEXT
