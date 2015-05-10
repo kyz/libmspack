@@ -1,5 +1,10 @@
 2015-05-10  Stuart Caie <kyzer@4u.net>
 
+	* cabd_read_string(): correct rejection of empty strings. Thanks to
+	Hanno BÃ¶ck for finding the issue and providing a sample file.
+
+2015-05-10  Stuart Caie <kyzer@4u.net>
+
 	* Makefile.am: Add subdir-objects option as suggested by autoreconf.
 
 	* configure.ac: Add AM_PROG_AR as suggested by autoreconf.
@@ -48,7 +53,7 @@
 	null and thus segfault. Thanks to Jakub Wilk again.
 
 	* cabd_read_string: reject empty strings. They are not found in any
-	valid CAB files. Thanks to Hanno Böck for sending me an example.
+	valid CAB files. Thanks to Hanno BÃ¶ck for sending me an example.
 
 2015-01-05  Stuart Caie <kyzer@4u.net>
 
@@ -470,7 +475,7 @@
 2005-03-22:  Stuart Caie   <kyzer@4u.net>
 
 	* system.h: now undefs "read", as the latest glibc defines read()
-	as a macro which messes everything up. Thanks to Ville Skyttä for
+	as a macro which messes everything up. Thanks to Ville SkyttÃ¤ for
 	the update.
 
 2005-03-14:  Stuart Caie   <kyzer@4u.net>
