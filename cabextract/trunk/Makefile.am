@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS =	no-dependencies
+AUTOMAKE_OPTIONS =	no-dependencies subdir-objects
 
 EXTRA_DIST =		cabextract.spec \
 			doc/cabextract.1 doc/ja/cabextract.1 \
