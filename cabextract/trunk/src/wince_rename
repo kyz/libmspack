@@ -63,6 +63,22 @@ sub win32_path_to_local {
   return File::Spec->catfile(@dirs, $file);
 }
 
+sub seek_to { 
+  seek FH, $_[0], 0;
+}
+
+sub read_data {
+  my $buf;
+  read FH, $buf, $_[0];
+  return $buf;
+}
+
+sub read_string {
+  my $str = read_data($_[0]);
+  $str =~ s/\000*$//;
+  return $str;
+}
+
 # get the *.000 file
 my $hdrfile = get_fname(0);
 if (not defined $hdrfile) {
@@ -72,9 +88,6 @@ if (not defined $hdrfile) {
 
 # open the header file
 if (open FH, "<$hdrfile") {
-  my $x;
-  read FH, $x, 0x64;
-
   # read the fixed header
   # $hdr[0] = "MSCE" signature
   # $hdr[2] = overall length of the header file
@@ -86,44 +99,42 @@ if (open FH, "<$hdrfile") {
   # @hdr[26..27] = {file offset, length} of PROVIDER
   # @hdr[28..29] = {file offset, length} of UNSUPPORTED
   # other entries are unknown/undefined
-  my @hdr = unpack 'V12v6V6v8', $x;
+  my @hdr = unpack 'V12v6V6v8', read_data(100);
 
   # does the file begin with "MSCE"?
   if ($hdr[0] == 0x4543534D) {
     # print appname and provider
-    seek FH,$hdr[24],0; read FH,$x,$hdr[25]; chop $x; print "Appname:  $x\n";
-    seek FH,$hdr[26],0; read FH,$x,$hdr[27]; chop $x; print "Provider: $x\n";
+    seek_to($hdr[24]); printf "Appname:  %s\n", read_string($hdr[25]);
+    seek_to($hdr[26]); printf "Provider: %s\n", read_string($hdr[27]);
 
     # STRINGS section
     my @strs;
-    seek FH, $hdr[18], 0;
+    seek_to($hdr[18]);
     for (1 .. $hdr[12]) {
-      read FH, $x, 4; my ($id, $len) = unpack 'vv',$x;
-      read FH, $strs[$id], $len; chop $strs[$id];
+      my ($id, $len) = unpack 'vv', read_data(4);
+      $strs[$id] = read_string($len);
     }
 
     # DIRS section
     my @dirs;
-    seek FH, $hdr[19], 0;
+    seek_to($hdr[19]);
     for (1 .. $hdr[13]) {
-	read FH, $x, 4;
-	my ($id, $len) = unpack 'vv', $x;
-	read FH, $x, $len; chop $x; chop $x;
-	$dirs[$id] = join '\\', map {$strs[$_]} unpack 'v*', $x;
+	my ($id, $len) = unpack 'vv', read_data(4);
+	my @ids = unpack 'v*', read_data($len); pop @ids;
+	$dirs[$id] = join '\\', map {$strs[$_]} @ids;
 	$dirs[$id] =~ s/%CE(\d+)%/$ce[$1]/eg;
     }
 
     # FILES section
-    seek FH, $hdr[20], 0;
+    seek_to($hdr[20]);
     for (1 .. $hdr[14]) {
       # read a FILES entry
-      read FH, $x, 12;
-      my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv',$x;
-      read FH, $x, $len; chop $x;
+      my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv', read_data(12);
+      my $fname = read_string($len);
 
       # get file with decimal extension, rename it to dir and
       # filename given in FILES entry
-      rename_file(get_fname($id), win32_path_to_local("$dirs[$dirid]\\$x"));
+      rename_file(get_fname($id), win32_path_to_local("$dirs[$dirid]\\$fname"));
     }
 
     # CREATE REGISTRY KEYS LIST
@@ -136,22 +147,21 @@ if (open FH, "<$hdrfile") {
       my $lasthive = -1;
 
       # seek to HIVES section and read all HIVES entries into @hives
-      seek FH, $hdr[21], 0;
+      seek_to($hdr[21]);
       for (1 .. $hdr[15]) {
-	read FH, $x, 8; my ($id, $root, $unk, $len) = unpack 'vvvv',$x;
-	read FH, $x, $len; chop $x; chop $x;
+	my ($id, $root, $unk, $len) = unpack 'vvvv', read_data(8);
+	my @ids = unpack 'v*', read_data($len); pop @ids;
 	$hives[$id] = join '\\',(('HKCR','HKCU','HKLM','HKEY_USERS')[$root-1],
-				 (map{$strs[$_]} unpack 'v*', $x));
+				 (map{$strs[$_]} @ids));
       }
 
       # seek to KEYS section and loop for all KEYS entries
-      seek FH, $hdr[22], 0;
+      seek_to($hdr[22]);
       for (1 .. $hdr[16]) {
 	# read KEYS entry, split off name and data components
-	read FH, $x, 12; my ($id,$hive,$unk,$flags,$len) = unpack 'vvvVv',$x;
-	read FH, $x, $len;
-	my $name = (split /\000/, $x)[0];
-	my $data = substr $x, length($name) + 1;
+	my ($id,$hive,$unk,$flags,$len) = unpack 'vvvVv', read_data(12);
+	my $entry = read_data($len); $entry =~ /^(.*?)\000(.*)/s;
+	my ($name, $data) = ($1, $2);
 
 	# print REGEDIT4 entry header for key, print hive header if a
 	# different hive has been entered
@@ -185,7 +195,7 @@ if (open FH, "<$hdrfile") {
   rename_file($hdrfile, 'header.bin');
 
   # rename *.999 file to setup.dll, if it exists
-  rename_file($x, 'setup.dll') if $x = get_fname(999);
+  rename_file(get_fname(999), 'setup.dll') if get_fname(999);
 }
 else {
   print "$hdrfile: $!\n";
