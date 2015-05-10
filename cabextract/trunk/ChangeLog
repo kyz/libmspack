@@ -1,5 +1,10 @@
 2015-05-10  Stuart Caie <kyzer@4u.net>
 
+	* wince_rename, wince_info: allow the possibility that strings have
+	more than one null byte. Thanks to Stefan Riegler for the suggestion.
+
+2015-05-10  Stuart Caie <kyzer@4u.net>
+
 	* Makefile.am: Add subdir-objects option as suggested by autoreconf.
 
 	* configure.ac: Add AM_PROG_AR as suggested by autoreconf.

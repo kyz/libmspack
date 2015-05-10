@@ -68,6 +68,13 @@ sub hexdump($$) {
   }
 }
 
+sub readstr(*$$) {
+    my $str;
+    read $_[0], $str, $_[2];
+    $str =~ s/\000*$//s; # remove trailing null(s)
+    $_[1] = $str;
+}
+
 for my $hdrfile (@ARGV) {
   if (open FH, "<$hdrfile") {
     my $x;
@@ -92,16 +99,16 @@ for my $hdrfile (@ARGV) {
 
       # header STRINGS
       seek FH, $hdr[24], 0;
-      read FH, $x, $hdr[25]; chop $x;
+      readstr FH, $x, $hdr[25];
       print "  app name     = $x\n";
 
       seek FH, $hdr[26], 0;
-      read FH, $x, $hdr[27]; chop $x;
+      readstr FH, $x, $hdr[27];
       print "  provider     = $x\n";
 
       if ($hdr[29] > 0) {
 	seek FH, $hdr[28], 0;
-	read FH, $x, $hdr[29]; chop $x; chop $x;
+	readstr FH, $x, $hdr[29];
 	print "  unsupported  = ".join(',', split /\000/, $x)."\n";
       }
 
@@ -112,8 +119,7 @@ for my $hdrfile (@ARGV) {
       for (1 .. $hdr[12]) {
 	read FH, $x, 4;
 	my ($id, $len) = unpack 'vv', $x;
-	read FH, $strings[$id], $len;
-	chop $strings[$id];
+	readstr FH, $strings[$id], $len;
 	printf "  s%02d: %s\n", $id, $strings[$id];
       }
 
@@ -137,7 +143,7 @@ for my $hdrfile (@ARGV) {
       for (1 .. $hdr[14]) {
 	read FH, $x, 12;
 	my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv', $x;
-	read FH, $x, $len; chop $x;
+	readstr FH, $x, $len;
 	$files[$id] = join '\\', ($dirs[$dirid], $x);
 	printf "  f%02d: %s\n", $id, $files[$id];
 	printf "       unknown=%d flags=0x%08x\n", $unk, $flags;
