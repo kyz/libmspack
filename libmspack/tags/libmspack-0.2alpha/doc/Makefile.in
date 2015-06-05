@@ -1,9 +1,0 @@
-all: index.html
-
-clean:
-	-rm -f annotated.html classes.html files.html functions*.html \
-	globals*.html index.html mspack*.html struct*.html \
-	doxygen.* tab* installdox search
-
-index.html: @top_srcdir@/mspack/mspack.h Doxyfile
-	doxygen
