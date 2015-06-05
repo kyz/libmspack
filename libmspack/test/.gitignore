@@ -1,0 +1,16 @@
+*.o
+.deps
+.dirstamp
+.libs
+cabd_md5
+cabd_memory
+cabd_test
+cabrip
+chmd_find
+chmd_md5
+chmd_order
+chminfo
+chmx
+expand
+multifh
+oabx
