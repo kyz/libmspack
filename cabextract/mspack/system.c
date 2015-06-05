@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/system.c
+../../libmspack/mspack/system.c

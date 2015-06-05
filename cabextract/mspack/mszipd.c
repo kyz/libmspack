@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/mszipd.c
+../../libmspack/mspack/mszipd.c

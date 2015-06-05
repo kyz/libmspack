@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/cabd.c
+../../libmspack/mspack/cabd.c

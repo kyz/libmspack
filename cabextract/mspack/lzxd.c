@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/lzxd.c
+../../libmspack/mspack/lzxd.c

@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/readbits.h
+../../libmspack/mspack/readbits.h

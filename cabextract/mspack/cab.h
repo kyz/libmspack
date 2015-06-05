@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/cab.h
+../../libmspack/mspack/cab.h

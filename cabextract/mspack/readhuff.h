@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/readhuff.h
+../../libmspack/mspack/readhuff.h

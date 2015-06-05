@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/qtmd.c
+../../libmspack/mspack/qtmd.c

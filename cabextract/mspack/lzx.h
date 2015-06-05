@@ -1,1 +1,1 @@
-../../../libmspack/trunk/mspack/lzx.h
+../../libmspack/mspack/lzx.h
