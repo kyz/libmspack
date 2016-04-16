@@ -1,3 +1,7 @@
+2016-04-16  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac: change my email address to kyzer@cabextract.org.uk
+
 2015-05-10  Stuart Caie <kyzer@4u.net>
 
 	* wince_rename, wince_info: allow the possibility that strings have

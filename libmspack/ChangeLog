@@ -1,3 +1,7 @@
+2016-04-20  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac: change my email address to kyzer@cabextract.org.uk
+
 2015-05-10  Stuart Caie <kyzer@4u.net>
 
 	* cabd_read_string(): correct rejection of empty strings. Thanks to

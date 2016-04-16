@@ -7,7 +7,7 @@ Group: Applications/Archiving
 Source: http://www.cabextract.org.uk/%{name}-%{version}.tar.gz
 URL: http://www.cabextract.org.uk/
 Vendor: Stuart Caie
-Packager: Stuart Caie <kyzer@4u.net>
+Packager: Stuart Caie <kyzer@cabextract.org.uk>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Prefix: /usr
 

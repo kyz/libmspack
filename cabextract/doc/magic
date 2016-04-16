@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # Microsoft Cabinet files
 #
-# From <kyzer@4u.net> (part of cabextract package)
+# From <kyzer@cabextract.org.uk> (part of cabextract package)
 0	string		MSCF\0\0\0\0	Microsoft Cabinet file
 >8	lelong		x		\b, %u bytes
 >28	leshort		1		\b, 1 file
@@ -10,7 +10,7 @@
 #------------------------------------------------------------------------------
 # InstallShield Cabinet files
 #
-# From <kyzer@4u.net> (part of cabextract package)
+# From <kyzer@cabextract.org.uk> (part of cabextract package)
 0	string		ISc(		InstallShield Cabinet file
 >5	byte&0xf0	=0x60 		version 6,
 >5	byte&0xf0	!0x60 		version 4/5,
@@ -19,7 +19,7 @@
 #------------------------------------------------------------------------------
 # Windows CE package files
 #
-# From <kyzer@4u.net> (part of cabextract package)
+# From <kyzer@cabextract.org.uk> (part of cabextract package)
 0	string		MSCE\0\0\0\0	Microsoft WinCE install header
 >20	lelong		0		\b, architecture-independent
 >20	lelong		103		\b, Hitachi SH3

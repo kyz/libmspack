@@ -1,5 +1,5 @@
 /* libmspack -- a library for working with Microsoft compression formats.
- * (C) 2003-2013 Stuart Caie <kyzer@4u.net>
+ * (C) 2003-2016 Stuart Caie <kyzer@cabextract.org.uk>
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1

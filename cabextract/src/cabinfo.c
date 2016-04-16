@@ -1,5 +1,5 @@
 /* cabinfo -- dumps useful information from cabinets
- * (C) 2000-2006 Stuart Caie <kyzer@4u.net>
+ * (C) 2000-2016 Stuart Caie <kyzer@cabextract.org.uk>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ int myseek(FILELEN offset, int mode) {
 }
 
 int main(int argc, char *argv[]) {
-  printf("Cabinet information dumper by Stuart Caie <kyzer@4u.net>\n");
+  printf("Cabinet information dumper by Stuart Caie <kyzer@cabextract.org.uk>\n");
 
   if (argc <= 1) {
     printf("Usage: %s <file.cab>\n", argv[0]);

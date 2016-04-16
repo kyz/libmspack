@@ -1,5 +1,5 @@
 cabextract 1.6 - a program to extract Microsoft Cabinet files.
-(C) 2000-2015 Stuart Caie <kyzer@4u.net>
+(C) 2000-2016 Stuart Caie <kyzer@cabextract.org.uk>
 This is free software with ABSOLUTELY NO WARRANTY.
 
 Cabinet (.CAB) files are a form of archive, which Microsoft use to
@@ -42,4 +42,4 @@ $ cabextract -l wibble.cab
 Testing the integrity of a cabinet file, without extracting it:
 $ cabextract -t wibble.cab
 
-Stuart Caie <kyzer@4u.net>, March 2015
+Stuart Caie <kyzer@cabextract.org.uk>, April 2016
