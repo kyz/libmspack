@@ -199,7 +199,10 @@ static struct mscabd_cabinet *cabd_open(struct mscab_decompressor *base,
 
   if ((fh = sys->open(sys, filename, MSPACK_SYS_OPEN_READ))) {
     if ((cab = (struct mscabd_cabinet_p *) sys->alloc(sys, sizeof(struct mscabd_cabinet_p)))) {
-      cab->base.filename = filename;
+      //cab->base.filename = filename;
+	  // As this pointer gets used after opening, don't rely on callee to keep it alive
+	  cab->base.filename = (const char*) sys->alloc(sys, strlen(filename)+1);
+	  sys->copy((void*)filename, (void*)cab->base.filename, strlen(filename)+1);
       error = cabd_read_headers(sys, fh, cab, (off_t) 0, 0);
       if (error) {
 	cabd_close(base, (struct mscabd_cabinet *) cab);
@@ -237,6 +240,11 @@ static void cabd_close(struct mscab_decompressor *base,
   sys = self->system;
 
   self->error = MSPACK_ERR_OK;
+
+  if (origcab) {
+	// Free allocated filename as we allocated a copy in cabd_open
+	sys->free((void*)(((struct mscabd_cabinet_p*)origcab)->base.filename));
+  }
 
   while (origcab) {
     /* free files */
