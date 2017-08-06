@@ -1,3 +1,11 @@
+2017-08-05  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd_read_string(): add missing error check on result of read().
+	If an mspack_system implementation returns an error, it's interpreted
+	as a huge positive integer, which leads to reading past the end of the
+	stack-based buffer. Thanks to Sebastian Andrzej Siewior for explaining
+	the problem. This issue was raised by ClamAV as CVE-2017-11423
+
 2016-04-20  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac: change my email address to kyzer@cabextract.org.uk
