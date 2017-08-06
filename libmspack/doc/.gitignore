@@ -5,12 +5,15 @@ dynsections.js
 files.html
 functions*.html
 globals*.html
+graph_legend.html
 index.html
 mspack*.html
 struct*.html
 doxygen.*
 tab*
 *.png
+*.md5
+*.map
 jquery.js
 installdox
 search
