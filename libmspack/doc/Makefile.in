@@ -1,6 +1,6 @@
-DOCS =	annotated.html classes.html files.html functions*.html globals*.html \
-	jquery.js index.html mspack*.html struct*.html doxygen.* tab* search \
-	*.png
+DOCS =	annotated.html classes.html dir_*.html doxygen.* dynsections.js \
+	files.html functions*.html globals*.html graph_legend.html index.html \
+	jquery.js mspack*.html search struct*.html tab* *.map *.md5 *.png
 
 all: index.html
 
