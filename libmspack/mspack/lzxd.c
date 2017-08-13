@@ -300,8 +300,14 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
       if (window_bits < 15 || window_bits > 21) return NULL;
   }
 
+  if (reset_interval < 0 || output_length < 0) {
+      D(("reset interval or output length < 0"))
+      return NULL;
+  }
+
+  /* round up input buffer size to multiple of two */
   input_buffer_size = (input_buffer_size + 1) & -2;
-  if (!input_buffer_size) return NULL;
+  if (input_buffer_size < 2) return NULL;
 
   /* allocate decompression state */
   if (!(lzx = (struct lzxd_stream *) system->alloc(system, sizeof(struct lzxd_stream)))) {
@@ -382,7 +388,7 @@ int lzxd_set_reference_data(struct lzxd_stream *lzx,
 }
 
 void lzxd_set_output_length(struct lzxd_stream *lzx, off_t out_bytes) {
-  if (lzx) lzx->length = out_bytes;
+  if (lzx && out_bytes > 0) lzx->length = out_bytes;
 }
 
 int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {

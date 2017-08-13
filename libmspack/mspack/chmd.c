@@ -1269,9 +1269,15 @@ static int read_spaninfo(struct mschm_decompressor_p *self,
 
     /* get the uncompressed length of the LZX stream */
     err = read_off64(length_ptr, data, sys, self->d->infh);
-
     sys->free(data);
-    return (err) ? MSPACK_ERR_DATAFORMAT : MSPACK_ERR_OK;
+    if (err) return MSPACK_ERR_DATAFORMAT;
+
+    if (*length_ptr <= 0) {
+        D(("output length is invalid"))
+        return MSPACK_ERR_DATAFORMAT;
+    }
+
+    return MSPACK_ERR_OK;
 }
 
 /***************************************

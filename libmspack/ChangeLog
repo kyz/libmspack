@@ -1,3 +1,16 @@
+2017-08-13  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* read_spaninfo(): a CHM file can have no ResetTable and have a
+	negative length in SpanInfo, which then feeds a negative output length
+	to lzxd_init(), which then sets frame_size to a value of your choosing,
+	the lower 32 bits of output length, larger than LZX_FRAME_SIZE. If the
+	first LZX block is uncompressed, this writes data beyond the end of the
+	window. This issue was raised by ClamAV as CVE-2017-6419.  Thanks to
+	Sebastian Andrzej Siewior for finding this by chance!
+
+	* lzxd_init(), lzxd_set_output_length(), mszipd_init(): due to the issue
+	mentioned above, these functions now reject negative lengths
+
 2017-08-05  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd_read_string(): add missing error check on result of read().
