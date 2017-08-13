@@ -8,7 +8,7 @@ do
     echo "test $cab"
     cached=`echo $cab | sed -e 's/\//-/g' -e 's/^/.cache\//'`
     if [ ! -s $cached ]; then
-        ./msexpand_md5 $cab >.orig.out 2>.orig.err
+        ./msextract_md5 $cab >.orig.out 2>.orig.err
         if [ -s .orig.err ]; then
             echo "FAIL $cab: MS errors" >&2
             cat .orig.err >&2

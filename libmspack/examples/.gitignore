@@ -1,0 +1,6 @@
+*.o
+.deps
+.dirstamp
+.libs
+cabd_memory
+multifh

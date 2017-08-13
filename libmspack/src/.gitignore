@@ -1,0 +1,8 @@
+*.o
+.deps
+.dirstamp
+.libs
+cabrip
+chmextract
+msexpand
+oabextract
