@@ -1,5 +1,7 @@
 #!/bin/sh
-topdir=`pwd`
+# deletes all auto-generated / compiled files
+
+topdir="`pwd`"
 for x in . doc examples mspack src test
 do
   cd "$topdir/$x"

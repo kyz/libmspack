@@ -1,3 +1,7 @@
 #!/bin/sh
-./cleanup.sh && mkdir m4 && autoreconf -i -W all &&
-./configure && make && make -C doc && make distcheck
+# rebuilds the entire project
+
+./cleanup.sh && ./autogen.sh && ./configure && make
+
+# and to build the API docs: make -C doc 
+# and before any release: make distcheck
