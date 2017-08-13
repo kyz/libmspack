@@ -1,5 +1,10 @@
 2017-08-13  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* src/chmextract.c: support MinGW one-arg mkdir(). Thanks to AntumDeluge
+	for reporting this.
+
+2017-08-13  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* read_spaninfo(): a CHM file can have no ResetTable and have a
 	negative length in SpanInfo, which then feeds a negative output length
 	to lzxd_init(), which then sets frame_size to a value of your choosing,
