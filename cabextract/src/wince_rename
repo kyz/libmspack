@@ -38,22 +38,19 @@ my @ce = (
 # decimal number as a file extension, if one exists. Otherwise, undef is
 # is returned.
 sub get_fname {
-  my $x = sprintf '*.%03d', $_[0];
-  my @x = glob $x;
-  if ($#x > 0) {
-    print STDERR "WARNING: more than one '$x' file, using '$x[0]'\n";
+  my $pattern = sprintf '*.%03d', $_[0];
+  my @files = glob $pattern;
+  if (@files > 1) {
+    warn "WARNING: more than one '$pattern' file, using '$files[0]'\n";
   }
-  elsif ($#x < 0) {
-    return undef;
-  }
-  return $x[0];
+  return shift @files;
 }
 
 sub rename_file {
   my ($src, $dest) = @_;
   print "moving \"$src\" to \"$dest\"\n";
   make_path(dirname($dest));
-  move($src, $dest) || print STDERR "$src: $!\n";
+  move($src, $dest) || warn "$src: $!\n";
 }
 
 sub win32_path_to_local {

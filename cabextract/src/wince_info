@@ -4,221 +4,210 @@
 use strict;
 
 my %arch = (
- '0',     'none',
- '103',   'SHx SH3',
- '104',   'SHx SH4',
- '386',   'Intel 386',
- '486',   'Intel 486',
- '586',   'Intel Pentium',
- '601',   'PowerPC 601',
- '603',   'PowerPC 603',
- '604',   'PowerPC 604',
- '620',   'PowerPC 620',
- '821',   'Motorola 821',
- '1824',  'ARM 720',
- '2080',  'ARM 820',
- '2336',  'ARM 920',
- '2577',  'StrongARM',
- '4000',  'MIPS R4000',
- '10003', 'Hitachi SH3',
- '10004', 'Hitachi SH3E',
- '10005', 'Hitachi SH4',
- '21064', 'Alpha 21064',
- '70001', 'ARM 7TDMI'
+    0     => 'none',
+    103   => 'SHx SH3',
+    104   => 'SHx SH4',
+    386   => 'Intel 386',
+    486   => 'Intel 486',
+    586   => 'Intel Pentium',
+    601   => 'PowerPC 601',
+    603   => 'PowerPC 603',
+    604   => 'PowerPC 604',
+    620   => 'PowerPC 620',
+    821   => 'Motorola 821',
+    0x720 => 'ARM 720',
+    0x820 => 'ARM 820',
+    0x920 => 'ARM 920',
+    0xA11 => 'StrongARM',
+    4000  => 'MIPS R4000',
+    10003 => 'Hitachi SH3',
+    10004 => 'Hitachi SH3E',
+    10005 => 'Hitachi SH4',
+    21064 => 'Alpha 21064',
+    70001 => 'ARM 7TDMI'
 );
 
 my @ce = (
-  undef,
-  '\Program Files',
-  '\Windows',
-  '\Windows\Desktop',
-  '\Windows\StartUp',
-  '\My Documents',
-  '\Program Files\Accessories',
-  '\Program Files\Communications',
-  '\Program Files\Games',
-  '\Program Files\Pocket Outlook',
-  '\Program Files\Office',
-  '\Windows\Programs',
-  '\Windows\Programs\Accessories',
-  '\Windows\Programs\Communications',
-  '\Windows\Programs\Games',
-  '\Windows\Fonts',
-  '\Windows\Recent',
-  '\Windows\Favorites'
+    undef,
+    '\Program Files',
+    '\Windows',
+    '\Windows\Desktop',
+    '\Windows\StartUp',
+    '\My Documents',
+    '\Program Files\Accessories',
+    '\Program Files\Communications',
+    '\Program Files\Games',
+    '\Program Files\Pocket Outlook',
+    '\Program Files\Office',
+    '\Windows\Programs',
+    '\Windows\Programs\Accessories',
+    '\Windows\Programs\Communications',
+    '\Windows\Programs\Games',
+    '\Windows\Fonts',
+    '\Windows\Recent',
+    '\Windows\Favorites'
 );
 
 my @hkeys = (
-  undef,
-  'HKEY_CLASSES_ROOT',
-  'HKEY_CURRENT_USER',
-  'HKEY_LOCAL_MACHINE',
-  'HKEY_USERS'
+    undef,
+    'HKEY_CLASSES_ROOT',
+    'HKEY_CURRENT_USER',
+    'HKEY_LOCAL_MACHINE',
+    'HKEY_USERS'
 );
 
-sub hexdump($$) {
-  my $id  = $_[0];
-  my $dat = $_[1];
-  my $row = 12;
-  for my $pos (0 .. (length($dat)/$row)) {
-    my $seg = substr $dat, $pos * $row, $row;
-    my $hex = join ' ', map { sprintf '%02x', $_ } unpack 'c*', $seg;
-    $seg =~ s/[\000-\037\200-\377]/./g;
-    printf '%s %-'.int($row*3)."s  %s\n", $id, $hex, $seg;
-  }
+my @strings;
+
+sub seek_to {
+    seek FH, $_[0], 0;
 }
 
-sub readstr(*$$) {
-    my $str;
-    read $_[0], $str, $_[2];
-    $str =~ s/\000*$//s; # remove trailing null(s)
-    $_[1] = $str;
+sub read_data {
+    my $buf;
+    read FH, $buf, $_[0];
+    return $buf;
+}
+
+sub read_string {
+    my $str = read_data($_[0]);
+    $str =~ s/\000*$//;
+    return $str;
+}
+
+sub read_strings {
+    my @ids = unpack 'v*', read_data($_[0]);
+    pop @ids;
+    return map { $strings[$_] } @ids;
+}
+
+# replaces nulls with commas
+sub denull {
+    $_[0] =~ s/\000/,/g;
+    return $_[0];
 }
 
 for my $hdrfile (@ARGV) {
-  if (open FH, "<$hdrfile") {
-    my $x;
+    if (! open FH, '<', $hdrfile) {
+        warn "$hdrfile: $!\n";
+        next;
+    }
+
     # read fixed-size header
-    read FH, $x, 100;
-    my @hdr = unpack 'V12v6V6v8', $x;
-
-    if ($hdr[0] == 0x4543534D) {
-      # HEADER section
-      print "$hdrfile HEADER\n";
-      print "  length       = $hdr[2] bytes\n";
-      print "  architecture = ".($arch{$hdr[5]} || 'unknown')." ($hdr[5])\n";
-      print "  counts       = " . join(',', @hdr[12..17]) . "\n";
-      print "  offsets      = " . join(',', @hdr[18..23]) . "\n";
-      print "  strings      = " . join(',', @hdr[24..29]) . "\n";
-      print "  unknowns     = " . join(',',($hdr[1],@hdr[3..4],@hdr[30..31]))
-                                . "\n";
-      print "  min WinCE v. = $hdr[6].$hdr[7]";
-      print " [build $hdr[10]]" if $hdr[10] > 0; print "\n";
-      print "  max WinCE v. = $hdr[8].$hdr[9]";
-      print " [build $hdr[11]]" if $hdr[11] > 0; print "\n";
-
-      # header STRINGS
-      seek FH, $hdr[24], 0;
-      readstr FH, $x, $hdr[25];
-      print "  app name     = $x\n";
-
-      seek FH, $hdr[26], 0;
-      readstr FH, $x, $hdr[27];
-      print "  provider     = $x\n";
-
-      if ($hdr[29] > 0) {
-	seek FH, $hdr[28], 0;
-	readstr FH, $x, $hdr[29];
-	print "  unsupported  = ".join(',', split /\000/, $x)."\n";
-      }
-
-      # STRINGS section
-      print "$hdrfile STRINGS\n";
-      my @strings;
-      seek FH, $hdr[18], 0;
-      for (1 .. $hdr[12]) {
-	read FH, $x, 4;
-	my ($id, $len) = unpack 'vv', $x;
-	readstr FH, $strings[$id], $len;
-	printf "  s%02d: %s\n", $id, $strings[$id];
-      }
-
-      # DIRS section
-      print "$hdrfile DIRS\n";
-      my @dirs;
-      seek FH, $hdr[19], 0;
-      for (1 .. $hdr[13]) {
-	read FH, $x, 4;
-	my ($id, $len) = unpack 'vv', $x;
-	read FH, $x, $len; chop $x; chop $x;
-	$dirs[$id] = join '\\', map {$strings[$_]} unpack 'v*', $x;
-	$dirs[$id] =~ s/%CE(\d+)%/$ce[$1]/eg;
-	printf "  d%02d: %s\n", $id, $dirs[$id];
-      }
-
-      # FILES section
-      print "$hdrfile FILES\n";
-      my @files;
-      seek FH, $hdr[20], 0;
-      for (1 .. $hdr[14]) {
-	read FH, $x, 12;
-	my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv', $x;
-	readstr FH, $x, $len;
-	$files[$id] = join '\\', ($dirs[$dirid], $x);
-	printf "  f%02d: %s\n", $id, $files[$id];
-	printf "       unknown=%d flags=0x%08x\n", $unk, $flags;
-      }
-
-      # REGHIVES section
-      print "$hdrfile REGHIVES\n";
-      my @reghives;
-      seek FH, $hdr[21], 0;
-      for (1 .. $hdr[15]) {
-	read FH, $x, 8;
-	my ($id, $root, $unk, $len) = unpack 'vvvv', $x;
-	read FH, $x, $len; chop $x; chop $x;
-	$reghives[$id] = join '\\',
-	  ($hkeys[$root], (map {$strings[$_]} unpack 'v*', $x));
-	printf "  h%02d: %s\n", $id, $reghives[$id], $unk;
-      }
-
-      # REGKEYS section
-      print "$hdrfile REGKEYS\n";
-      seek FH, $hdr[22], 0;
-      for (1 .. $hdr[16]) {
-	read FH, $x, 12;
-	my ($id, $hive, $unk, $flags, $len) = unpack 'vvvVv', $x;
-	read FH, $x, $len;
-	my $name = (split /\000/, $x)[0] || '';
-	my $data = substr $x, length($name) + 1;
-
-	printf "  k%02d: hive=%s\n", $id, $reghives[$hive];
-	printf "       name=<<%s>> subst=%d flags=0x%08x\n", $name, $unk, $flags;
-
-	if (($flags & 0x10001) == 0x10001) {
-	  $x = unpack 'V', $data; printf "       [DWORD] %08x (%d)\n", $x, $x;
-	}
-	elsif (($flags & 0x10001) == 0x10000) {
-	  for (split /\000/, $data) {printf "       [MULTI_SZ] <<%s>>\n", $_}
-	}
-	elsif (($flags & 0x10001) == 0x00001) {
-	  printf "       [BINARY] (%d bytes hexdump follows)\n", length($data);
-	  hexdump("      ", $data);
-	}
-	else {
-	  chop $data; printf "       [SZ] %s\n", $data;
-	}
-      }
-
-      # LINKS section
-      print "$hdrfile LINKS\n";
-      my @links;
-      seek FH, $hdr[23], 0;
-      for (1 .. $hdr[17]) {
-	read FH, $x, 12;
-	my ($id, $unk, $dir, $fid, $type, $len) = unpack 'vvvvvv', $x;
-	read FH, $x, $len;
-	my $name = join '\\', map {$strings[$_]} unpack 'v*', $x;
-	$name = '%InstallDir%\\'.$name if $dir == 0;
-	$name = $ce[$dir].'\\'.$name   if $dir > 0;
-	if ($type == 0) {
-	  $fid = ($fid == 0) ? '%InstallDir%' : $dirs[$fid];
-	}
-	else {
-	  $fid = $files[$fid];
-	}
-	printf "  l%02d: src=<<%s>>\n", $id, $fid;
-	printf "       dest=<<%s>>  (unk=%d)\n", $name, $unk;
-      }
-
-      print "\n";
+    my @hdr = unpack 'V12v6V6v8', read_data(100);
+    if ($hdr[0] != 0x4543534D) {
+        warn "$hdrfile: not a Windows CE install cabinet header\n";
+        close FH;
+        next;
     }
-    else {
-      print "$hdrfile: not a Windows CE install cabinet header\n";
+
+    # HEADER section
+    print "$hdrfile HEADER\n";
+    printf "  length       = %d bytes\n", $hdr[2];
+    printf "  architecture = %s (%d)\n", $arch{$hdr[5]} || 'unknown', $hdr[5];
+    printf "  counts       = %s\n", join ',', @hdr[12..17];
+    printf "  offsets      = %s\n", join ',', @hdr[18..23];
+    printf "  strings      = %s\n", join ',', @hdr[24..29];
+    printf "  unknowns     = %s\n", join ',', @hdr[1,3,4,30,31];
+    printf "  min WinCE v. = %d.%d%s\n", $hdr[6], $hdr[7], $hdr[10] ? " [build $hdr[10]]" : "";
+    printf "  max WinCE v. = %d.%d%s\n", $hdr[8], $hdr[9], $hdr[11] ? " [build $hdr[11]]" : "";
+
+    seek_to($hdr[24]) && printf "  app name     = %s\n", read_string($hdr[25]);
+    seek_to($hdr[26]) && printf "  provider     = %s\n", read_string($hdr[27]);
+    seek_to($hdr[28]) && printf "  unsupported  = %s\n", denull(read_string($hdr[29])) if $hdr[29];
+
+    # STRINGS section
+    print "$hdrfile STRINGS\n";
+    @strings = ();
+    seek_to($hdr[18]);
+    for (1 .. $hdr[12]) {
+        my ($id, $len) = unpack 'vv', read_data(4);
+        $strings[$id] = read_string($len);
+        printf "  s%02d: %s\n", $id, $strings[$id];
     }
+
+    # DIRS section
+    print "$hdrfile DIRS\n";
+    my @dirs;
+    seek_to($hdr[19]);
+    for (1 .. $hdr[13]) {
+        my ($id, $len) = unpack 'vv', read_data(4);
+        $dirs[$id] = join '\\', read_strings($len);
+        $dirs[$id] =~ s/%CE(\d+)%/$ce[$1]/eg;
+        printf "  d%02d: %s\n", $id, $dirs[$id];
+    }
+
+    # FILES section
+    print "$hdrfile FILES\n";
+    my @files;
+    seek_to($hdr[20]);
+    for (1 .. $hdr[14]) {
+        my ($id, $dirid, $unk, $flags, $len) = unpack 'vvvVv', read_data(12);
+        $files[$id] = "$dirs[$dirid]\\" . read_string($len);
+        printf "  f%02d: %s\n", $id, $files[$id];
+        printf "       unknown=%d flags=0x%08x\n", $unk, $flags;
+    }
+
+    # REGHIVES section
+    print "$hdrfile REGHIVES\n";
+    my @reghives;
+    seek_to($hdr[21]);
+    for (1 .. $hdr[15]) {
+        my ($id, $root, $unk, $len) = unpack 'vvvv', read_data(8);
+        $reghives[$id] = join '\\', $hkeys[$root], read_strings($len);
+        printf "  h%02d: %s\n", $id, $reghives[$id], $unk;
+    }
+
+    # REGKEYS section
+    print "$hdrfile REGKEYS\n";
+    seek_to($hdr[22]);
+    for (1 .. $hdr[16]) {
+        my ($id, $hive, $subst, $flags, $len) = unpack 'vvvVv', read_data(12);
+        my $data = read_data($len);
+        my $name = $1 if $data =~ s/^([^\000]*)\000//; # data begins with key name
+
+        printf "  k%02d: hive=%s\n", $id, $reghives[$hive];
+        printf "       name=<<%s>> subst=%d flags=0x%08x\n", $name, $subst, $flags;
+
+        if (($flags & 0x10001) == 0x10001) {
+            my $dword = unpack 'V', $data;
+	    printf "       [DWORD] %08x (%d)\n", $dword, $dword;;
+        }
+        elsif (($flags & 0x10001) == 0x10000) {
+            for my $sz (split /\000/, $data) {
+                printf "       [MULTI_SZ] <<%s>>\n", $sz
+	    }
+        }
+        elsif (($flags & 0x10001) == 0x00001) {
+            printf "       [BINARY] (%d bytes hexdump follows)\n", length($data);
+	    while ($data =~ /(.{1,12})/gs) {
+                my ($text, $hex) = ($1, unpack('h*', $1));
+                $hex =~ s/(.{8})/$1 /g; # space every 8 hexdigits
+                $text =~ s/[^[:print:]]/./g; # replace unprintables
+                printf "       %-28s%s\n", $hex, $text;
+            }
+        }
+        else {
+            chop $data; printf "       [SZ] %s\n", $data;
+        }
+    }
+
+    # LINKS section
+    print "$hdrfile LINKS\n";
+    my @links;
+    seek_to($hdr[23]);
+    for (1 .. $hdr[17]) {
+        my ($id, $unk, $dir, $fid, $type, $len) = unpack 'vvvvvv', read_data(12);
+        my $name = join '\\', read_strings($len);
+        my $dest = ($dir == 0) ? "%InstallDir%\\$name" :
+                   ($dir >  0) ? "$ce[$dir]\\$name" :
+                   $name;
+        my $src = ($type == 1) ? $files[$fid] :
+                  ($fid == 0) ? '%InstallDir%' :
+                  $dirs[$fid];
+        printf "  l%02d: src=<<%s>>\n", $id, $src;
+        printf "       dest=<<%s>>  (unk=%d)\n", $dest, $unk;
+    }
+
+    print "\n";
     close FH;
-  }
-  else {
-    print "$hdrfile: $!\n";
-  }
 }
