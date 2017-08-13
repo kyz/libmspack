@@ -88,7 +88,7 @@ examples/multifh.c     - an mspack_system that can simultaneously work on
 src/cabrip.c           - extracts any CAB files embedded in another file
 src/chmextract.c       - extracts all files in a CHM file to disk
 src/msexpand.c         - expands an SZDD or KWAJ file
-src/oabextract.c       - extracts an Outlook Address Book (.LZX) file
+src/oabextract.c       - extracts an Exchange Offline Address Book (.LZX) file
 
 test/cabd_c10          - tests the CAB decompressor on the C10 collection
 test/cabd_compare      - compares libmspack with Microsoft's EXTRACT.EXE
