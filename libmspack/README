@@ -1,4 +1,4 @@
-libmspack 0.5alpha
+libmspack 0.6alpha
 
 The purpose of libmspack is to provide compressors and decompressors,
 archivers and dearchivers for Microsoft compression formats: CAB, CHM, WIM,
