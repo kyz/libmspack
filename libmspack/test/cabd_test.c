@@ -186,7 +186,8 @@ void cabd_open_test_05() {
   for (i = 0; i < (sizeof(str_files)/sizeof(char *)); i++) {
     cab = cabd->open(cabd, str_files[i]);
     TEST(cab == NULL);
-    TEST(cabd->last_error(cabd) == MSPACK_ERR_DATAFORMAT);
+    TEST(cabd->last_error(cabd) == MSPACK_ERR_DATAFORMAT ||
+         cabd->last_error(cabd) == MSPACK_ERR_READ);
   }
 
   /* lack of data blocks should NOT be a problem for merely reading */

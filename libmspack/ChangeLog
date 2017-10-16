@@ -1,3 +1,13 @@
+2017-10-16  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* test/cabd_test.c: update the short string tests to expect not only
+	MSPACK_ERR_DATAFORMAT but also MSPACK_ERR_READ, because of the recent
+	change to cabd_read_string(). Thanks to maitreyee43 for spotting this.
+
+	* test/msdecompile_md5: update the setup instructions for this script,
+	and also change the script so it works with current Wine. Again, thanks
+	to maitreyee43 for trying to use it and finding it not working.
+
 2017-08-13  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* src/chmextract.c: support MinGW one-arg mkdir(). Thanks to AntumDeluge

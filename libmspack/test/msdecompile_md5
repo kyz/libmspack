@@ -1,24 +1,25 @@
-#!/usr/bin/perl -w
-# put hh.exe, hhctrl.ocx and itss.dll into this directory
-# for this script to work. You can get them by downloading
-# the HTML Help Workshop from Microsoft and then doing:
-#   $ cabextract -F 'hh*' htmlhelp.exe
-#   $ cabextract -F itircl.dll hhupd.exe
-#   $ cabextract -F itss.dll hhupd.exe
-#   $ cp -a itircl.dll ~/.wine/drive_c/windows/system32/
-#   $ cp -a itss.dll ~/.wine/drive_c/windows/system32/
-#   $ wine regsvr32 /s 'C:\WINDOWS\SYSTEM32\itircl.dll'
-#   $ wine regsvr32 /s 'C:\WINDOWS\SYSTEM32\itss.dll'
+#!/bin/sh
+# This script needs the following setup to work:
+# - hh.exe and hhctrl.ocx copied to Wine's system32
+# - itss.dll and itircl.dll installed as Wine DLLs
+#
+# Download the HTML Help Workshop (htmlhelp.exe) from Microsoft:
+#
+#   https://msdn.microsoft.com/en-us/library/windows/desktop/ms669985(v=vs.85).aspx
+#
+# and then run these commands:
+#
+#   cabextract htmlhelp.exe -F hhupd.exe
+#   cabextract hhupd.exe -F hh.exe
+#   cabextract hhupd.exe -F hhctrl.ocx
+#   cabextract hhupd.exe -F itircl.dll
+#   cabextract hhupd.exe -F itss.dll
+#   mv hh.exe hhctrl.ocx itircl.dll itss.dll ~/.wine/drive_c/windows/system32/
+#   wine regsvr32 /s 'c:\windows\system32\itircl.dll'
+#   wine regsvr32 /s 'c:\windows\system32\itss.dll'
 
-use strict;
-use File::Temp qw(tempdir);
-
-die "Usage: $0 <file.chm>\n" unless @ARGV == 1;
-my $hh = $0; $hh =~ s{[^/]+$}{hh.exe};
-my $dir = tempdir("./.tempXXXX", CLEANUP => 1);
-
-$ENV{LANG} = 'C';
-$ENV{WINEDLLOVERRIDES}='hhctrl.ocx,itss=n';
-print "*** $ARGV[0]\n";
-system("wine $hh -decompile $dir $ARGV[0] 1>&2 && " .
-       "cd $dir && find * -type f -print0 | xargs -0 md5sum");
+dir=`mktemp -d`
+echo "*** $1"
+LANG=C WINEDLLOVERRIDES='hhctrl.ocx=n' wine hh -decompile $dir "$1"
+cd $dir && find * -type f -exec md5sum {} +
+rm -rf $dir
