@@ -1,3 +1,11 @@
+2017-11-26  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* kwajd_read_headers(): fix up the logic of reading the filename and
+	extension headers to avoid a one or two byte overwrite. Thanks to
+	Jakub Wilk for finding the issue.
+
+	* test/kwajd_test.c: add tests for KWAJ filename.ext handling
+
 2017-10-16  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* test/cabd_test.c: update the short string tests to expect not only
