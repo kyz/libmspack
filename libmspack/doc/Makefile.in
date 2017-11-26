@@ -11,4 +11,4 @@ index.html: @top_srcdir@/mspack/mspack.h Doxyfile
 	doxygen
 
 mspack_docs.zip: index.html
-	zip -9r $@ $(DOCS)
+	zip -9r $@ $(DOCS) szdd_kwaj_format.html
