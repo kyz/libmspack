@@ -1,3 +1,8 @@
+2018-02-06  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* chmd.c: fixed an off-by-one error in the TOLOWER() macro, reported
+	by Dmitry Glavatskikh. Thanks Dmitry!
+
 2017-11-26  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* kwajd_read_headers(): fix up the logic of reading the filename and
