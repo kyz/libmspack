@@ -1,3 +1,8 @@
+New in 1.7
+* cabextract now supports an --encoding parameter, to specify the character
+  encoding of CAB filenames if they are not ASCII or UTF8
+* cabextract -L now lowercases non-ASCII characters
+
 New in 1.6
 * cabextract now prevents archive files giving themselves absolute path access
   using badly UTF-8 encoded slashes.
