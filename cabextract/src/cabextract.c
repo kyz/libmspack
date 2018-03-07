@@ -989,51 +989,54 @@ static void set_date_and_perm(struct mscabd_file *file, char *filename) {
 }
 
 #if HAVE_ICONV
+static char *convert_filename(char *name) {
+    /* worst case: all characters expand from 1 to 4 bytes */
+    size_t ilen = strlen(name) + 1, olen = ilen * 4;
+    char *i, *o, *newname = malloc(olen);
+
+    if (!newname) {
+        fprintf(stderr, "WARNING: out of memory converting filename\n");
+        return NULL;
+    }
+
+    /* convert filename to UTF8 */
+    i = name, o = newname;
+    iconv(converter, NULL, NULL, NULL, NULL);
+    while (iconv(converter, &i, &ilen, &o, &olen) == (size_t) -1) {
+        if (errno == EILSEQ || errno == EINVAL) {
+            /* invalid or incomplete multibyte sequence: skip it */
+            i++; ilen--;
+            *o++ = 0xEF; *o++ = 0xBF; *o++ = 0xBD; olen += 3;
+        }
+        else /* E2BIG: should be impossible to get here */ {
+            free(newname);
+            fprintf(stderr, "WARNING: error while converting filename: %s",
+                strerror(errno));
+            return NULL;
+        }
+    }
+    return newname;
+}
+
 static void convert_filenames(struct mscabd_file *files) {
     struct mscabd_file *fi;
-    char *i, *o, *newname;
-    size_t ilen, olen;
-
     for (fi = files; fi; fi = fi->next) {
-        if (fi->attribs & MSCAB_ATTRIB_UTF_NAME) {
-            continue; /* already UTF8 */
-        }
-
-        i = fi->filename;
-        ilen = strlen(i) + 1;
-        olen = ilen * 4; /* worst case: all characters become 4 bytes */
-        o = newname = malloc(olen);
-
-        if (!newname) {
-            fprintf(stderr, "WARNING: out of memory converting filename\n");
-            continue;
-        }
-
-        /* convert filename to UTF8 */
-        iconv(converter, NULL, NULL, NULL, NULL);
-        while (iconv(converter, &i, &ilen, &o, &olen) == (size_t) -1) {
-            if (errno == E2BIG) { /* is this even possible? */
-                free(newname);
-                fprintf(stderr, "WARNING: out of memory converting filename\n");
-                continue;
-            }
-            else {
-                /* invalid or incomplete multibyte sequence: skip it */
-                i++; ilen--; /* skip it */
-                *o++ = 0xEF; *o++ = 0xBF; *o++ = 0xBD; olen += 3;      
+        if (!fi->attribs & MSCAB_ATTRIB_UTF_NAME) {
+            char *newname = convert_filename(fi->filename);
+            if (newname) {
+                /* replace filename with converted filename - this is a dirty
+                 * hack to avoid having to convert filenames twice (first for
+                 * unix_path_seperators(), then again for create_output_name())
+                 * Instead of obeying the libmspack API and treating
+                 * fi->filename as read only, we know libmspack allocated it
+                 * using cabx_alloc() which uses malloc(), so we can free() it
+                 * and replace it with other memory allocated with malloc()
+                 */
+                free(fi->filename);
+                fi->filename = newname;
+                fi->attribs |= MSCAB_ATTRIB_UTF_NAME;
             }
         }
-
-        /* replace filename with converted filename - this is a dirty hack
-         * to avoid having to convert filenames twice (first for
-         * unix_path_seperators(), then again for create_output_name())
-         * Instead of obeying the libmspack API and treating fi->filename
-         * as read only, we know libmspack allocated it using cabx_alloc
-         * which uses malloc(), so we can free() it and replace it
-         */
-        free(fi->filename);
-        fi->filename = newname;
-        fi->attribs |= MSCAB_ATTRIB_UTF_NAME;
     }
 }
 #endif
