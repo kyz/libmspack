@@ -1,4 +1,4 @@
-.TH CABEXTRACT 1 "October 30, 2005"
+.TH CABEXTRACT 1 "March 7, 2018"
 .SH NAME
 cabextract \- program to extract files from Microsoft cabinet (.cab) archives
 .SH SYNOPSIS
@@ -6,6 +6,7 @@ cabextract \- program to extract files from Microsoft cabinet (.cab) archives
 .RB [ -d \fIdir\fP ]
 .RB [ -f ]
 .RB [ -F \fIpattern\fP ]
+.RB [ -e \fIencoding\fP ]
 .RB [ -h ]
 .RB [ -l ]
 .RB [ -L ]
@@ -48,6 +49,12 @@ ignored. A warning will be printed if a corrupted MSZIP block is encountered.
 Only files with names that match the shell pattern \fIpattern\fP shall be
 listed, tested or extracted. On non-GNU systems, this match may be
 case-sensitive.
+.TP
+.B \-e \fIencoding\fP
+Specify the character encoding of filenames inside the cabinet files.
+This is only needed if you find cabinet files with garbled filenames;
+most software creates CAB files with either ASCII or UTF8 filenames.
+The list of supported encodings is given by the command "iconv \-l".
 .TP
 .B \-h
 Prints a page of help and exits.
