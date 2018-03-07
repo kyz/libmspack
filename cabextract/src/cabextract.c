@@ -23,7 +23,8 @@
 #define _GNU_SOURCE 1
 
 #if HAVE_CONFIG_H
-#include <config.h>
+# include <config.h>
+#endif
 
 #include <stdio.h> /* everyone has this! */
 
@@ -45,6 +46,10 @@
 
 #if HAVE_FNMATCH_H
 # include <fnmatch.h>
+#endif
+
+#if HAVE_ICONV
+# include <iconv.h>
 #endif
 
 #if HAVE_LIMITS_H
@@ -143,14 +148,15 @@ extern time_t mktime(struct tm *tp);
 
 #include "getopt.h"
 
-#endif
-
 #include <mspack.h>
 #include <md5.h>
 
 /* structures and global variables */
 struct option optlist[] = {
   { "directory", 1, NULL, 'd' },
+#if HAVE_ICONV
+  { "encoding",  1, NULL, 'e' },
+#endif
   { "fix",       0, NULL, 'f' },
   { "filter",    1, NULL, 'F' },
   { "help",      0, NULL, 'h' },
@@ -164,6 +170,12 @@ struct option optlist[] = {
   { NULL,        0, NULL, 0   }
 };
 
+#if HAVE_ICONV
+const char *OPTSTRING = "d:e:fF:hlLpqstv";
+#else
+const char *OPTSTRING = "d:fF:hlLpqstv";
+#endif
+
 struct file_mem {
   struct file_mem *next;
   dev_t st_dev;
@@ -173,7 +185,7 @@ struct file_mem {
 
 struct cabextract_args {
   int help, lower, pipe, view, quiet, single, fix, test;
-  char *dir, *filter;
+  char *dir, *filter, *encoding;
 };
 
 /* global variables */
@@ -187,9 +199,12 @@ mode_t user_umask;
 
 struct cabextract_args args = {
   0, 0, 0, 0, 0, 0, 0, 0,
-  NULL, NULL
+  NULL, NULL, NULL
 };
 
+#ifdef HAVE_ICONV
+iconv_t converter = NULL;
+#endif
 
 /** A special filename. Extracting to this filename will send the output
  * to standard output instead of a file on disk. The magic happens in
@@ -203,7 +218,6 @@ const char *STDOUT_FNAME = "stdout";
  * magic happens in cabx_open() when the TEST_FNAME pointer is given as a
  * filename, so treat this like a constant rather than a string. 
  */
-
 const char *TEST_FNAME = "test";
 
 /** A global MD5 context, used when a file is written to TEST_FNAME */
@@ -222,6 +236,10 @@ static int unix_path_seperators(struct mscabd_file *files);
 static char *create_output_name(const char *fname, const char *dir,
                                 int lower, int isunix, int unicode);
 static void set_date_and_perm(struct mscabd_file *file, char *filename);
+
+#if HAVE_ICONV
+static void convert_filenames(struct mscabd_file *files);
+#endif
 
 static void memorise_file(struct file_mem **fml, char *name, char *from);
 static int recall_file(struct file_mem *fml, char *name, char **from);
@@ -255,19 +273,20 @@ int main(int argc, char *argv[]) {
   int i, err;
 
   /* parse options */
-  while ((i = getopt_long(argc, argv, "d:fF:hlLpqstv", optlist, NULL)) != -1) {
+  while ((i = getopt_long(argc, argv, OPTSTRING, optlist, NULL)) != -1) {
     switch (i) {
-    case 'd': args.dir    = optarg; break;
-    case 'f': args.fix    = 1;      break;
-    case 'F': args.filter = optarg; break;
-    case 'h': args.help   = 1;      break;
-    case 'l': args.view   = 1;      break;
-    case 'L': args.lower  = 1;      break;
-    case 'p': args.pipe   = 1;      break;
-    case 'q': args.quiet  = 1;      break;
-    case 's': args.single = 1;      break;
-    case 't': args.test   = 1;      break;
-    case 'v': args.view   = 1;      break;
+    case 'd': args.dir      = optarg; break;
+    case 'e': args.encoding = optarg; break;
+    case 'f': args.fix      = 1;      break;
+    case 'F': args.filter   = optarg; break;
+    case 'h': args.help     = 1;      break;
+    case 'l': args.view     = 1;      break;
+    case 'L': args.lower    = 1;      break;
+    case 'p': args.pipe     = 1;      break;
+    case 'q': args.quiet    = 1;      break;
+    case 's': args.single   = 1;      break;
+    case 't': args.test     = 1;      break;
+    case 'v': args.view     = 1;      break;
     }
   }
 
@@ -290,6 +309,9 @@ int main(int argc, char *argv[]) {
       "  -p   --pipe        pipe extracted files to stdout\n"
       "  -s   --single      restrict search to cabs on the command line\n"
       "  -F   --filter      extract only files that match the given pattern\n"
+#ifdef HAVE_ICONV
+      "  -e   --encoding    assume non-UTF8 filenames have the given encoding\n"
+#endif
       "  -d   --directory   extract all files to the given directory\n\n"
       "cabextract %s (C) 2000-2016 Stuart Caie <kyzer@cabextract.org.uk>\n"
       "This is free software with ABSOLUTELY NO WARRANTY.\n",
@@ -352,6 +374,18 @@ int main(int argc, char *argv[]) {
   /* turn on/off 'fix MSZIP' mode */
   cabd->set_param(cabd, MSCABD_PARAM_FIXMSZIP, args.fix);
 
+#ifdef HAVE_ICONV
+  /* set up converter for given encoding */
+    if (args.encoding) {
+      if ((converter = iconv_open("UTF8", args.encoding)) == (iconv_t) -1) {
+        converter = NULL;
+        fprintf(stderr, "FATAL ERROR: encoding '%s' is not recognised\n",
+            args.encoding);
+        return EXIT_FAILURE;
+      }
+    }
+#endif
+
   /* process cabinets */
   for (i = optind, err = 0; i < argc; i++) {
     err += process_cabinet(argv[i]);
@@ -362,6 +396,12 @@ int main(int argc, char *argv[]) {
     if (err) printf("\nAll done, errors in processing %d file(s)\n", err);
     else printf("\nAll done, no errors.\n");
   }
+
+#if HAVE_ICONV
+  if (converter) {
+    iconv_close(converter);
+  }
+#endif
 
   /* close libmspack */
   mspack_destroy_cab_decompressor(cabd);
@@ -416,6 +456,11 @@ static int process_cabinet(char *basename) {
 
     /* load all spanning cabinets */
     load_spanning_cabinets(cab, basename);
+
+#if HAVE_ICONV
+    /* convert all non-UTF8 filenames to UTF8 using given encoding */
+    convert_filenames(cab->files);
+#endif
 
     /* determine whether UNIX or MS-DOS path seperators are used */
     isunix = unix_path_seperators(cab->files);
@@ -921,6 +966,56 @@ static void set_date_and_perm(struct mscabd_file *file, char *filename) {
   if (!(file->attribs & MSCAB_ATTRIB_RDONLY)) mode |= 0222;
   chmod(filename, mode & ~user_umask);
 }
+
+#if HAVE_ICONV
+static void convert_filenames(struct mscabd_file *files) {
+    struct mscabd_file *fi;
+    char *i, *o, *newname;
+    size_t ilen, olen;
+
+    for (fi = files; fi; fi = fi->next) {
+        if (fi->attribs & MSCAB_ATTRIB_UTF_NAME) {
+            continue; /* already UTF8 */
+        }
+
+        i = fi->filename;
+        ilen = strlen(i) + 1;
+        olen = ilen * 4; /* worst case: all characters become 4 bytes */
+        o = newname = malloc(olen);
+
+        if (!newname) {
+            fprintf(stderr, "WARNING: out of memory converting filename\n");
+            continue;
+        }
+
+        /* convert filename to UTF8 */
+        iconv(converter, NULL, NULL, NULL, NULL);
+        while (iconv(converter, &i, &ilen, &o, &olen) == (size_t) -1) {
+            if (errno == E2BIG) { /* is this even possible? */
+                free(newname);
+                fprintf(stderr, "WARNING: out of memory converting filename\n");
+                continue;
+            }
+            else {
+                /* invalid or incomplete multibyte sequence: skip it */
+                i++; ilen--; /* skip it */
+                *o++ = 0xEF; *o++ = 0xBF; *o++ = 0xBD; olen += 3;      
+            }
+        }
+
+        /* replace filename with converted filename - this is a dirty hack
+         * to avoid having to convert filenames twice (first for
+         * unix_path_seperators(), then again for create_output_name())
+         * Instead of obeying the libmspack API and treating fi->filename
+         * as read only, we know libmspack allocated it using cabx_alloc
+         * which uses malloc(), so we can free() it and replace it
+         */
+        free(fi->filename);
+        fi->filename = newname;
+        fi->attribs |= MSCAB_ATTRIB_UTF_NAME;
+    }
+}
+#endif
 
 /* ------- support functions ------- */
 

@@ -1,3 +1,9 @@
+2017-03-07  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac, src/cabextract.c: add support for choosing the
+	character encoding of non-UTF8 filenames, using the iconv library.
+	This is based on a patch originally developed by Kevin Tardif.
+
 2016-04-16  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac: change my email address to kyzer@cabextract.org.uk
