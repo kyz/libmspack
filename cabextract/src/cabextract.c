@@ -56,6 +56,10 @@
 # include <limits.h>
 #endif
 
+#if HAVE_LOCALE_H
+# include <locale.h>
+#endif
+
 #if HAVE_STDARG_H
 # include <stdarg.h>
 #endif
@@ -271,6 +275,23 @@ static struct mspack_system cabextract_system = {
 
 int main(int argc, char *argv[]) {
   int i, err;
+
+#if HAVE_LOCALE_H
+   /* attempt to set a UTF8-based locale, so that tolower()/towlower()
+    * in create_output_name() lowercase more than just A-Z in ASCII.
+    *
+    * We don't attempt to pick up the system default locale, "",
+    * because it might not be compatible with ASCII/ISO-8859-1/Unicode
+    * character codes and would mess up lowercased filenames
+    */
+   char *locales[] = {
+       "C.UTF-8", /* https://sourceware.org/glibc/wiki/Proposals/C.UTF-8 */
+       "en_US.UTF-8", "en_GB.UTF8", "de_DE.UTF-8", "UTF-8", "UTF8"
+   };
+   for (i = 0; i < (sizeof(locales)/sizeof(*locales)); i++) {
+      if (setlocale(LC_CTYPE, locales[i])) break;
+   }
+#endif
 
   /* parse options */
   while ((i = getopt_long(argc, argv, OPTSTRING, optlist, NULL)) != -1) {

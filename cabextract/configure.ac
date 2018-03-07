@@ -17,7 +17,7 @@ AC_EXEEXT
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS([ctype.h errno.h fnmatch.h libintl.h limits.h stdlib.h \
+AC_CHECK_HEADERS([ctype.h errno.h fnmatch.h libintl.h limits.h locale.h stdlib.h \
 	string.h strings.h utime.h stdarg.h sys/stat.h sys/time.h sys/types.h \
 	getopt.h wchar.h wctype.h inttypes.h])
 

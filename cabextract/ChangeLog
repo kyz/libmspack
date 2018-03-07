@@ -4,6 +4,11 @@
 	character encoding of non-UTF8 filenames, using the iconv library.
 	This is based on a patch originally developed by Kevin Tardif.
 
+	* src/cabextract.c: try setting various UTF8 locales for LC_CTYPE,
+	in order to get tolower() / towlower() to lowercase non-ASCII
+	characters.  Again, thanks to Kevin Tardif for discussing this
+	and supplying a proposed patch.
+
 2016-04-16  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac: change my email address to kyzer@cabextract.org.uk
