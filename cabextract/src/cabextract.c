@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
       "  -e   --encoding    assume non-UTF8 filenames have the given encoding\n"
 #endif
       "  -d   --directory   extract all files to the given directory\n\n"
-      "cabextract %s (C) 2000-2016 Stuart Caie <kyzer@cabextract.org.uk>\n"
+      "cabextract %s (C) 2000-2018 Stuart Caie <kyzer@cabextract.org.uk>\n"
       "This is free software with ABSOLUTELY NO WARRANTY.\n",
       VERSION);
     return EXIT_FAILURE;
@@ -1021,7 +1021,7 @@ static char *convert_filename(char *name) {
 static void convert_filenames(struct mscabd_file *files) {
     struct mscabd_file *fi;
     for (fi = files; fi; fi = fi->next) {
-        if (!fi->attribs & MSCAB_ATTRIB_UTF_NAME) {
+        if (!(fi->attribs & MSCAB_ATTRIB_UTF_NAME)) {
             char *newname = convert_filename(fi->filename);
             if (newname) {
                 /* replace filename with converted filename - this is a dirty
