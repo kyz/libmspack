@@ -480,7 +480,7 @@ static int process_cabinet(char *basename) {
 
 #if HAVE_ICONV
     /* convert all non-UTF8 filenames to UTF8 using given encoding */
-    convert_filenames(cab->files);
+    if (converter) convert_filenames(cab->files);
 #endif
 
     /* determine whether UNIX or MS-DOS path seperators are used */
