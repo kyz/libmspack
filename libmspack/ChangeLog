@@ -161,9 +161,9 @@
 
 2011-11-23  Stuart Caie <kyzer@4u.net>
 
-	* chmd_fast_find(): add a simple check against infinite PGML
+	* chmd_fast_find(): add a simple check against infinite PMGL
 	loops. Thanks to Sergei Trofimovich for finding sample files.
-	Multi-step PGML or PGMI infinite loops remain possible.
+	Multi-step PMGL/PMGI infinite loops remain possible.
 
 2011-06-17  Stuart Caie <kyzer@4u.net>
 
@@ -282,7 +282,7 @@
 2011-04-26:  Stuart Caie <kyzer@4u.net>
 
 	* test/chminfo.c: more sanity checks for corrupted CHM files where
-	entries go past the end of a PGML/PGMI chunk, thanks to
+	entries go past the end of a PMGL/PMGI chunk, thanks to
 	Sergei Trofimovich for sending me examples and analysis.
 
 2011-04-25:  Stuart Caie <kyzer@4u.net>

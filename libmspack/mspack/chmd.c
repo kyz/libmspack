@@ -524,7 +524,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
  * directly from the on-disk index.
  *
  * TODO: protect against infinite loops in chunks (where pgml_NextChunk
- * or a PGMI index entry point to an already visited chunk)
+ * or a PMGI index entry point to an already visited chunk)
  */
 static int chmd_fast_find(struct mschm_decompressor *base,
 			  struct mschmd_header *chm, const char *filename,
