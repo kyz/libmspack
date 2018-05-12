@@ -1,3 +1,13 @@
+2018-04-26  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* read_chunk(): the test that chunk numbers are in bounds was off
+	by one, so read_chunk() returned a pointer taken from outside
+	allocated memory that usually crashes libmspack when accessed.
+	Thanks to Hanno Böck for finding the issue and providing a sample.
+
+	* chmd_read_headers(): reject files with blank filenames. Thanks
+	again to Hanno Böck for finding the issue and providing a sample file.
+
 2018-02-06  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* chmd.c: fixed an off-by-one error in the TOLOWER() macro, reported
