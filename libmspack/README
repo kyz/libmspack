@@ -24,7 +24,7 @@ DOCUMENTATION
 
 The API documentation is stored in the doc/ directory. It is generated
 automatically from mspack.h with doxygen. It is also available online at
-http://www.cabextract.org.uk/libmspack/doc/
+https://www.cabextract.org.uk/libmspack/doc/
 
 
 BUILDING / INSTALLING

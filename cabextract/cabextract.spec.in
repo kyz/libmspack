@@ -4,8 +4,8 @@ Version: @VERSION@
 Release: 1
 License: GPL
 Group: Applications/Archiving
-Source: http://www.cabextract.org.uk/%{name}-%{version}.tar.gz
-URL: http://www.cabextract.org.uk/
+Source: https://www.cabextract.org.uk/%{name}-%{version}.tar.gz
+URL: https://www.cabextract.org.uk/
 Vendor: Stuart Caie
 Packager: Stuart Caie <kyzer@cabextract.org.uk>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root

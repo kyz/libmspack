@@ -55,7 +55,7 @@ New in 1.1:
 New in 1.0:
 * The libmspack library is used for all the hard work. You should find
   cabextract more robust, and fractionally faster. See the libmspack website
-  at http://www.cabextract.org.uk/libmspack/ for more on this library.
+  at https://www.cabextract.org.uk/libmspack/ for more on this library.
 * Fixed a bug (now moved to libmspack) where CAB files that had two kinds of
   compression would crash.
 * CAB files should no longer get "/" and "\" mixed up, even with non

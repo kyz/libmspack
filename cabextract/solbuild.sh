@@ -18,7 +18,7 @@ CLASSES=none
 VERSION=$VERSION
 ARCH=$ARCH
 CATEGORY=application
-VENDOR=http://www.cabextract.org.uk/
+VENDOR=https://www.cabextract.org.uk/
 EMAIL=kyzer@cabextract.org.uk
 BASEDIR=/usr/local
 EOF
