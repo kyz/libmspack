@@ -865,10 +865,12 @@ static char *create_output_name(const char *fname, const char *dir,
         x |= *i++ & 0x3F;
       }
       else {
-        x = 0xFFFD; /* unicode replacement character */
+        x = 0xFFFD; /* bad first byte */
       }
 
-      if (x <= 0 || x > 0x10FFFF) {
+      if (x <= 0 || x > 0x10FFFF || (x >= 0xD800 && x <= 0xDFFF) ||
+          x == 0xFFFE || x == 0xFFFF)
+      {
         x = 0xFFFD; /* invalid code point or cheeky null byte */
       }
 
