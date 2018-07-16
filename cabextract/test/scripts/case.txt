@@ -1,0 +1,9 @@
+# test that cabextract can lowercase ASCII and UTF-8 filenames
+ascii\upper\ABCDEFGHIJKLMNOPQRSTUVWXYZ
+ascii\lower\abcdefghijklmnopqrstuvwxyz
+latin1\upper\ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ
+latin1\lower\àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþ
+greek\upper\ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ
+greek\lower\αβγδεζηθικλμνξοπρςστυφχψ
+cyrillic\upper\АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ
+cyrillic\lower\абвгдежзийклмнопрстуфхцчшщъыьэюя

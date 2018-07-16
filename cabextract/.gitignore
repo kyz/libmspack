@@ -2,7 +2,7 @@
 *.o
 COPYING
 INSTALL
-Makefile
+/Makefile
 Makefile.in
 aclocal.m4
 ar-lib

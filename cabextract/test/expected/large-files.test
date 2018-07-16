@@ -1,0 +1,6 @@
+Testing cabinet: large-files.cab
+  mszip-2gb.txt  OK                            d64bf04a56027b97ac17d751aba2d291
+  lzx15-2gb.txt  OK                            d64bf04a56027b97ac17d751aba2d291
+  lzx21-2gb.txt  OK                            d64bf04a56027b97ac17d751aba2d291
+
+All done, no errors.
