@@ -199,7 +199,7 @@ struct file_mem *cab_args = NULL;
 struct file_mem *cab_exts = NULL;
 struct file_mem *cab_seen = NULL;
 
-mode_t user_umask;
+mode_t user_umask = 0;
 
 struct cabextract_args args = {
   0, 0, 0, 0, 0, 0, 0, 0,
@@ -243,6 +243,9 @@ static void set_date_and_perm(struct mscabd_file *file, char *filename);
 
 #if HAVE_ICONV
 static void convert_filenames(struct mscabd_file *files);
+#endif
+#if LATIN1_FILENAMES
+static void convert_utf8_to_latin1(char *str);
 #endif
 
 static void memorise_file(struct file_mem **fml, char *name, char *from);
@@ -389,8 +392,9 @@ int main(int argc, char *argv[]) {
   }
 
   /* obtain user's umask */
-  user_umask = umask(0);
-  umask(user_umask);
+#if HAVE_UMASK
+  umask(user_umask = umask(0));
+#endif
 
   /* turn on/off 'fix MSZIP' mode */
   cabd->set_param(cabd, MSCABD_PARAM_FIXMSZIP, args.fix);
@@ -507,9 +511,7 @@ static int process_cabinet(char *basename) {
      * include that. So, we work out where the filename part of the 
      * output name begins. This is the same for every extracted file.
      */
-    if (args.filter) {
-      fname_offset = args.dir ? (strlen(args.dir) + 1) : 0;
-    }
+    fname_offset = args.dir ? (strlen(args.dir) + 1) : 0;
 
     /* process all files */
     for (file = cab->files; file; file = file->next) {
@@ -909,6 +911,10 @@ static char *create_output_name(const char *fname, const char *dir,
         *o++ = 0xBD;
       }
     }
+    *o++ = '\0';
+#if LATIN1_FILENAMES
+    convert_utf8_to_latin1(&name[dirlen]);
+#endif
   }
   else {
     /* non UTF-8 version */
@@ -918,8 +924,8 @@ static char *create_output_name(const char *fname, const char *dir,
       if (c == sep) c = '/'; else if (c == slash) c = '\\';
       *o++ = c;
     }
+    *o++ = '\0';
   }
-  *o++ = '\0';
 
   /* remove any leading slashes in the cab filename part.
    * This prevents unintended absolute file path access. */
@@ -1040,6 +1046,26 @@ static void convert_filenames(struct mscabd_file *files) {
             }
         }
     }
+}
+#endif
+
+#if LATIN1_FILENAMES
+/* converts _valid_ UTF-8 to ISO-8859-1 in-place */
+static void convert_utf8_to_latin1(char *str) {
+    unsigned char *i = (unsigned char *) str, *o = i, c;
+    while ((c = *i++)) {
+        if (c < 0x80) {
+            *o++ = c;
+        }
+        else if (c == 0xC2 || c == 0xC3) {
+            *o++ = ((c << 6) & 0x03) | (*i++ | 0x3F);
+        }
+        else {
+            *o++ = '?';
+            i += (c >= 0xF0) ? 3 : (c >= 0xE0) ? 2 : 1;
+        }
+    }
+    *o = '\0';
 }
 #endif
 

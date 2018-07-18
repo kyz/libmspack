@@ -1,4 +1,18 @@
-2017-03-07  Stuart Caie <kyzer@cabextract.org.uk>
+2018-07-17  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* amibuild.sh: support using setlocale()/iconv() in the OS4 version.
+
+	* amibuild.sh: build the 68K version with -noixemul so the resulting
+	executable doesn't need ixemul.library, libnix is used instead.
+	Because libnix has no umask(), add a HAVE_UMASK feature test.
+
+	* src/cabextract.c: add a new feature flag, LATIN1_FILENAMES,
+	which should be defined if the host environment expects ISO-8859-1
+	filenames rather than UTF-8. This adds in a step to translate
+	even UTF-8 filenames to ISO-8859-1.  It's only enabled for the
+	Amiga build so far.
+
+2018-03-07  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac, src/cabextract.c: add support for choosing the
 	character encoding of non-UTF8 filenames, using the iconv library.

@@ -1,5 +1,5 @@
 #!/bin/sh
-# see https://sourceforge.net/projects/adtools/
+# see https://github.com/cahirwpz/amigaos-cross-toolchain
 
 cat >config.h <<EOF
 #define HAVE_CTYPE_H 1
@@ -7,9 +7,11 @@ cat >config.h <<EOF
 #define HAVE_ERRNO_H 1
 #define HAVE_FNMATCH_H 1
 #define HAVE_LIMITS_H 1
+#define HAVE_LOCALE_H 1
 #define HAVE_MEMCPY 1
 #define HAVE_MEMMOVE 1
 #define HAVE_MKDIR 1
+#define HAVE_MKTIME 1
 #define HAVE_STDARG_H 1
 #define HAVE_STDLIB_H 1
 #define HAVE_STRCASECMP 1
@@ -22,6 +24,7 @@ cat >config.h <<EOF
 #define HAVE_UTIME 1
 #define HAVE_UTIMES 1
 #define HAVE_UTIME_H 1
+#define LATIN1_FILENAMES 1
 #define STDC_HEADERS 1
 #define TIME_WITH_SYS_TIME 1
 #define VERSION "1.7"
@@ -30,12 +33,13 @@ EOF
 cp fnmatch_.h fnmatch.h
 
 PATH=/usr/local/amiga/bin:$PATH
-export PATH
+CFLAGS='-Wall -O2 -s -DHAVE_CONFIG_H -I. -Imspack'
+SRCS="mspack/*.c src/cabextract.c md5.c fnmatch.c"
 
 rm -f *.lha
 
-ppc-amigaos-gcc -Wall -O2 -o cabextract -DHAVE_CONFIG_H -DHAVE_FSEEKO -I. -Imspack mspack/*.c src/cabextract.c md5.c fnmatch.c
+ppc-amigaos-gcc $CFLAGS -DHAVE_FSEEKO -DHAVE_ICONV -DHAVE_UMASK $SRCS -o cabextract &&
 lha a cabextract_OS4.lha cabextract
 
-m68k-amigaos-gcc -Wall -O2 -o cabextract -DHAVE_CONFIG_H -DNDEBUG -I. -Imspack mspack/*.c src/cabextract.c md5.c fnmatch.c getopt.c getopt1.c
+m68k-amigaos-gcc $CFLAGS -DNDEBUG -noixemul $SRCS getopt.c getopt1.c -o cabextract &&
 lha a cabextract.lha cabextract

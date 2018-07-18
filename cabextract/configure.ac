@@ -35,7 +35,7 @@ AC_FUNC_FNMATCH
 AC_FUNC_FSEEKO
 AX_FUNC_MKDIR
 AC_FUNC_MKTIME
-AC_CHECK_FUNCS([memcpy memmove strcasecmp strchr towlower utime utimes])
+AC_CHECK_FUNCS([memcpy memmove strcasecmp strchr towlower umask utime utimes])
 AC_CHECK_FUNCS([getopt_long],,[AC_CHECK_LIB([gnugetopt], [getopt_long],
   [AC_DEFINE([HAVE_GETOPT_LONG])],[AC_LIBOBJ(getopt) AC_LIBOBJ(getopt1)])])
 AC_REPLACE_FNMATCH
