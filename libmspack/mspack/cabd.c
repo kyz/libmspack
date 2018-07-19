@@ -1361,8 +1361,8 @@ static unsigned int cabd_checksum(unsigned char *data, unsigned int bytes,
   }
 
   switch (bytes & 3) {
-  case 3: ul |= *data++ << 16;
-  case 2: ul |= *data++ <<  8;
+  case 3: ul |= *data++ << 16; /*@fallthrough@*/
+  case 2: ul |= *data++ <<  8; /*@fallthrough@*/
   case 1: ul |= *data;
   }
   cksum ^= ul;

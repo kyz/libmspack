@@ -494,7 +494,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 	  /* read lengths of and build aligned huffman decoding tree */
 	  for (i = 0; i < 8; i++) { READ_BITS(j, 3); lzx->ALIGNED_len[i] = j; }
 	  BUILD_TABLE(ALIGNED);
-	  /* no break -- rest of aligned header is same as verbatim */
+	  /* rest of aligned header is same as verbatim */ /*@fallthrough@*/
 	case LZX_BLOCKTYPE_VERBATIM:
 	  /* read lengths of and build main huffman decoding tree */
 	  READ_LENGTHS(MAINTREE, 0, 256);
