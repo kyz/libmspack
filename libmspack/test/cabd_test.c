@@ -8,12 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mspack.h>
+#include <system.h>
 
 unsigned int test_count = 0;
 
 #define TEST(x) do {\
   test_count++; \
-  if (!(x)) {printf("%s:%d FAILED %s\n",__FUNCTION__,__LINE__,#x);exit(1);} \
+  if (!(x)) {printf("%s:%d FAILED %s\n",__func__,__LINE__,#x);exit(1);} \
 } while (0)
 
 /* open where cab file doesn't exist */
