@@ -2,36 +2,39 @@
 # Test if chmd_md5 expands chm files identically to Microsoft's HH.EXE -DECOMPILE
 
 [ -d .cache ] || mkdir .cache
+BASEDIR=`dirname $0`
 
-for chm in "$@"
-do
-    echo "test $chm"
+cnt=1
+for chm in "$@"; do
+    name=`printf '%d/%d %s' $cnt $# $chm`; cnt=`expr $cnt + 1`
+
+    echo "test $name"
     cached=`echo $chm | sed -e 's/\//-/g' -e 's/^/.cache\//'`
     if [ ! -s $cached ]; then
-        ./msdecompile_md5 $chm >.orig.out 2>.orig.err
+        $BASEDIR/msdecompile_md5 $chm >.orig.out 2>.orig.err
         if [ -s .orig.err ]; then
-            echo "FAIL $chm: MS errors" >&2
+            echo "FAIL $name: MS errors" >&2
             cat .orig.err >&2
         else
-            sort -k2 .orig.out >$cached
+            LANG=C sort -k2 .orig.out >$cached
         fi
     fi
 
-    ./chmd_md5 $chm >.test.out 2>.test.err
-    perl -pe 'if($.>1){$_=""if/^[0-9a-f]{32} \/[#\$]/;s{ /}{  }}' .test.out | sort -k2 >.test.sorted
+    $BASEDIR/chmd_md5 $chm >.test.out 2>.test.err
+    perl -pe 'if($.>1){$_=""if/^[0-9a-f]{32} \/[#\$]/;s{ /}{  }}' .test.out | LANG=C sort -k2 >.test.sorted
     if [ -s .test.err ]; then
-        echo "FAIL $chm: errors" >&2
+        echo "FAIL $name: errors" >&2
         cat .test.err >&2
     fi
 
     if cmp $cached .test.sorted >/dev/null; then
-        echo "OK   $chm"
+        echo "OK   $name"
     else
        if [ `diff $cached .test.sorted | grep -c '^<'` -gt 0 ]; then
-           echo "FAIL $chm: differences" >&2
+           echo "FAIL $name: differences" >&2
            diff -u $cached .test.sorted >&2
        else
-           echo "OK   $chm (better than hh.exe)"
+           echo "OK   $name (better than hh.exe)"
        fi
     fi
 done
