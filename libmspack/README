@@ -98,6 +98,8 @@ test/chmd_compare      - compares libmspack with Microsoft's HH.EXE
 test/chmd_find.c       - fast-finds a file within a CHM file.
 test/chmd_md5.c        - shows MD5 checksums of all files within a CHM file
 test/chmd_order.c      - extracts files in a CHM file in four different ways
+test/chmd_test.c       - regression tests for libmspack's CHM decompression
+test/kwajd_test.c      - regression tests for libmspack's KWAJ decompression
 test/chminfo.c         - prints verbose information about CHM file structures
 test/msdecompile_md5   - runs Microsoft's HH.EXE -DECOMPILE via WINE
 test/msextract_md5     - runs Microsoft's EXTRACT.EXE via WINE

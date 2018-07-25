@@ -24,7 +24,7 @@ lib_LTLIBRARIES =	libmspack.la
 noinst_LTLIBRARIES =	libmscabd.la libmschmd.la
 noinst_PROGRAMS =	examples/cabd_memory examples/multifh test/cabd_md5 \
 			test/cabd_test test/chmd_find test/chmd_md5 \
-			test/chmd_order test/chminfo test/kwajd_test
+			test/chmd_order test/chmd_test test/chminfo test/kwajd_test
 
 libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
@@ -87,6 +87,8 @@ test_chmd_md5_LDADD =		libmschmd.la
 test_chmd_order_SOURCES =	test/chmd_order.c test/md5.c test/md5.h \
 				test/md5_fh.h test/error.h libmschmd.la
 test_chmd_order_LDADD =		libmschmd.la
+test_chmd_test_SOURCES =	test/chmd_test.c lbmschmd.la
+test_chmd_test_LDADD =		libmschmd.la
 test_chminfo_SOURCES =		test/chminfo.c libmschmd.la
 test_chminfo_LDADD =		libmschmd.la
 test_kwajd_test_SOURCES =	test/kwajd_test.c libmspack.la
