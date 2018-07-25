@@ -1,5 +1,5 @@
 DESCRIPTION="Extract Microsoft cabinet (.CAB) files"
 HOMEPAGE="https://www.cabextract.org.uk/"
 SRC_URI="https://www.cabextract.org.uk/${P}.tar.gz"
-DEPEND="libmspack0 libmspack-devel"
+DEPEND="libmspack0 libiconv2 libiconv-devel gettext-devel libiconv-devel libmspack-devel"
 CYGCONF_ARGS="--with-external-libmspack"
