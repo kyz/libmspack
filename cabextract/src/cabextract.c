@@ -1112,7 +1112,8 @@ static int recall_file(struct file_mem *fml, char *name, char **from) {
   if (stat(name, &st_buf) != 0) return 0;
   for (fm = fml; fm; fm = fm->next) {
     if ((st_buf.st_ino == fm->st_ino) && (st_buf.st_dev == fm->st_dev)) {
-      if (from) *from = fm->from; return 1;
+      if (from) *from = fm->from;
+      return 1;
     }
   }
   return 0;

@@ -43,13 +43,20 @@
 # define FILELEN long
 #endif
 
+#if HAVE_INTTYPES_H
+# include <inttypes.h>
+#else
+# define PRId64 "lld"
+# define PRId32 "ld"
+#endif
+
 #if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
      (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
      (defined(SIZEOF_OFF_T)      && SIZEOF_OFF_T      >= 8)  || \
      defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE))
-# define FL "lld"
+# define FL PRId64
 #else
-# define FL "ld"
+# define FL PRId32
 #endif
 
 
@@ -127,7 +134,7 @@ void getinfo();
 int myread(void *buf, int length) {
   FILELEN remain = filelen - GETOFFSET;
   if (length > remain) length = (int) remain;
-  if (fread(buf, 1, length, fh) != length) {
+  if (fread(buf, 1, length, fh) != (size_t) length) {
     perror(filename);
     return 1;
   }
@@ -182,7 +189,7 @@ unsigned char search_buf[SEARCH_SIZE];
 void search() {
   unsigned char *pstart = &search_buf[0], *pend, *p;
   FILELEN offset, caboff, cablen, foffset, length;
-  unsigned long cablen32, foffset32;
+  unsigned long cablen32 = 0, foffset32 = 0;
   int state = 0;
 
   for (offset = 0; offset < filelen; offset += length) {
