@@ -24,6 +24,7 @@ cat >config.h <<EOF
 #define HAVE_UTIME 1
 #define HAVE_UTIMES 1
 #define HAVE_UTIME_H 1
+#define ICONV_CONST const
 #define LATIN1_FILENAMES 1
 #define STDC_HEADERS 1
 #define TIME_WITH_SYS_TIME 1

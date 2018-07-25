@@ -1000,7 +1000,8 @@ static void set_date_and_perm(struct mscabd_file *file, char *filename) {
 static char *convert_filename(char *name) {
     /* worst case: all characters expand from 1 to 4 bytes */
     size_t ilen = strlen(name) + 1, olen = ilen * 4;
-    char *i, *o, *newname = malloc(olen);
+    ICONV_CONST char *i = name;
+    char *newname = malloc(olen), *o = newname;
 
     if (!newname) {
         fprintf(stderr, "WARNING: out of memory converting filename\n");
@@ -1008,7 +1009,6 @@ static char *convert_filename(char *name) {
     }
 
     /* convert filename to UTF8 */
-    i = name, o = newname;
     iconv(converter, NULL, NULL, NULL, NULL);
     while (iconv(converter, &i, &ilen, &o, &olen) == (size_t) -1) {
         if (errno == EILSEQ || errno == EINVAL) {

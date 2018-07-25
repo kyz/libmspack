@@ -28,8 +28,8 @@ bin_PROGRAMS =		cabextract
 noinst_PROGRAMS =	src/cabinfo
 cabextract_SOURCES =	src/cabextract.c md5.h md5.c
 if ! EXTERNAL_LIBMSPACK
-cabextract_LDADD =	libmspack.a @LIBOBJS@
+cabextract_LDADD =	libmspack.a @LIBOBJS@ @LIBICONV@
 else
-cabextract_LDADD =	@LIBOBJS@ $(LIBMSPACK_LIBS)
+cabextract_LDADD =	@LIBOBJS@ @LIBICONV@ $(LIBMSPACK_LIBS)
 endif
 
