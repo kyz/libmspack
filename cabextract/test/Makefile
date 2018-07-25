@@ -18,7 +18,7 @@ case.list: case.cab $(CABX)
 	$(CABX) -d DIR/PATH -l $< >>$@
 	$(CABX) -d DIR/PATH -L -l $< >>$@
 encoding-koi8.list: encoding-koi8.cab $(CABX)
-	$(CABX) -e koi8 -l $< >$@
+	$(CABX) -e koi8-ru -l $< >$@
 encoding-latin1.list: encoding-latin1.cab $(CABX)
 	$(CABX) -e iso-8859-1 -l $< >$@
 encoding-sjis.list: encoding-sjis.cab $(CABX)
