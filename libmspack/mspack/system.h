@@ -28,18 +28,19 @@ extern "C" {
 # undef read
 #endif
 
-#if DEBUG
-# include <stdio.h>
 /* Old GCCs don't have __func__, but __FUNCTION__:
  * http://gcc.gnu.org/onlinedocs/gcc/Function-Names.html
  */
-# if __STDC_VERSION__ < 199901L
-#  if __GNUC__ >= 2
-#   define __func__ __FUNCTION__
-#  else
-#   define __func__ "<unknown>"
-#  endif
+#if __STDC_VERSION__ < 199901L
+# if __GNUC__ >= 2
+#  define __func__ __FUNCTION__
+# else
+#  define __func__ "<unknown>"
 # endif
+#endif
+
+#if DEBUG
+# include <stdio.h>
 # define D(x) do { printf("%s:%d (%s) ",__FILE__, __LINE__, __func__); \
                    printf x ; fputc('\n', stdout); fflush(stdout);} while (0);
 #else
