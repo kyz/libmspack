@@ -1,3 +1,7 @@
+2018-07-28  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* src/cabinfo.c: cabinfo now supports examining more than one file
+
 2018-07-17  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* amibuild.sh: support using setlocale()/iconv() in the OS4 version.

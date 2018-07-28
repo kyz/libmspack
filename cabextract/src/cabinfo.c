@@ -1,5 +1,5 @@
 /* cabinfo -- dumps useful information from cabinets
- * (C) 2000-2016 Stuart Caie <kyzer@cabextract.org.uk>
+ * (C) 2000-2018 Stuart Caie <kyzer@cabextract.org.uk>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,8 +63,6 @@ void getinfo();
 #define SKIP(offset)   if (myseek((offset),SEEK_CUR)) return
 #define SEEK(offset)   if (myseek((offset),SEEK_SET)) return
 
-
-
 int myread(void *buf, int length) {
   FILELEN remain = filelen - GETOFFSET;
   if (length > remain) length = (int) remain;
@@ -84,6 +82,8 @@ int myseek(FILELEN offset, int mode) {
 }
 
 int main(int argc, char *argv[]) {
+  int i;
+
   printf("Cabinet information dumper by Stuart Caie <kyzer@cabextract.org.uk>\n");
 
   if (argc <= 1) {
@@ -91,31 +91,17 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (!(fh = fopen((filename = argv[1]), "rb"))) {
-    perror(filename);
-    return 1;
+  for (i = 1; i < argc; i++) {
+    if ((fh = fopen((filename = argv[i]), "rb"))) {
+      search();
+      fclose(fh);
+    }
+    else {
+      perror(filename);
+    }
   }
-
-  if (FSEEK(fh, 0, SEEK_END) != 0) {
-    perror(filename);
-    fclose(fh);
-    return 1;
-  }
-
-  filelen = FTELL(fh);
-
-  if (FSEEK(fh, 0, SEEK_SET) != 0) {
-    perror(filename);
-    fclose(fh);
-    return 1;
-  }
-
-  printf("Examining file \"%s\" (%"LD" bytes)...\n", filename, filelen);
-  search();
-  fclose(fh);
   return 0;
 }
-
 
 #define SEARCH_SIZE (32*1024)
 unsigned char search_buf[SEARCH_SIZE];
@@ -125,6 +111,18 @@ void search() {
   FILELEN offset, caboff, cablen, foffset, length;
   unsigned long cablen32 = 0, foffset32 = 0;
   int state = 0;
+
+  if (FSEEK(fh, 0, SEEK_END) != 0) {
+    perror(filename);
+    return;
+  }
+  filelen = FTELL(fh);
+  if (FSEEK(fh, 0, SEEK_SET) != 0) {
+    perror(filename);
+    return;
+  }
+
+  printf("Examining file \"%s\" (%"LD" bytes)...\n", filename, filelen);
 
   for (offset = 0; offset < filelen; offset += length) {
     /* search length is either the full length of the search buffer,
