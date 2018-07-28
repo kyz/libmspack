@@ -28,7 +28,7 @@ extern "C" {
 # undef read
 #endif
 
-#ifdef DEBUG
+#if DEBUG
 # include <stdio.h>
 /* Old GCCs don't have __func__, but __FUNCTION__:
  * http://gcc.gnu.org/onlinedocs/gcc/Function-Names.html
@@ -53,11 +53,11 @@ extern "C" {
  * greater than 2GB is detected, an error message indicating the library
  * can't support the file should be printed.
  */
-#ifdef HAVE_LIMITS_H
+#if HAVE_LIMITS_H
 # include <limits.h>
 #endif
 
-#ifdef HAVE_INTTYPES_H
+#if HAVE_INTTYPES_H
 # include <inttypes.h>
 #else
 # define PRId64 "lld"
@@ -70,7 +70,7 @@ extern "C" {
      (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
      (defined(SIZEOF_OFF_T)      && SIZEOF_OFF_T      >= 8)  || \
      defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE))
-# define LARGEFILE_SUPPORT
+# define LARGEFILE_SUPPORT 1
 # define LD PRId64
 # define LU PRIu64
 #else

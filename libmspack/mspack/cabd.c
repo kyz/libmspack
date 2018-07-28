@@ -633,7 +633,7 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
   unsigned int cablen_u32 = 0, foffset_u32 = 0;
   int false_cabs = 0;
 
-#ifndef LARGEFILE_SUPPORT
+#if !LARGEFILE_SUPPORT
   /* detect 32-bit off_t overflow */
   if (flen < 0) {
     sys->message(fh, largefile_msg);
@@ -735,7 +735,7 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
 	    /* cause the search to restart after this cab's data. */
 	    offset = caboff + (off_t) cablen_u32;
 
-#ifndef LARGEFILE_SUPPORT
+#if !LARGEFILE_SUPPORT
 	    /* detect 32-bit off_t overflow */
 	    if (offset < caboff) {
 	      sys->message(fh, largefile_msg);

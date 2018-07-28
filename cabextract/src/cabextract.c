@@ -206,7 +206,7 @@ struct cabextract_args args = {
   NULL, NULL, NULL
 };
 
-#ifdef HAVE_ICONV
+#if HAVE_ICONV
 iconv_t converter = NULL;
 #endif
 
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
       "  -p   --pipe        pipe extracted files to stdout\n"
       "  -s   --single      restrict search to cabs on the command line\n"
       "  -F   --filter      extract only files that match the given pattern\n"
-#ifdef HAVE_ICONV
+#if HAVE_ICONV
       "  -e   --encoding    assume non-UTF8 filenames have the given encoding\n"
 #endif
       "  -d   --directory   extract all files to the given directory\n\n"
@@ -399,7 +399,7 @@ int main(int argc, char *argv[]) {
   /* turn on/off 'fix MSZIP' mode */
   cabd->set_param(cabd, MSCABD_PARAM_FIXMSZIP, args.fix);
 
-#ifdef HAVE_ICONV
+#if HAVE_ICONV
   /* set up converter for given encoding */
     if (args.encoding) {
       if ((converter = iconv_open("UTF8", args.encoding)) == (iconv_t) -1) {
@@ -876,7 +876,7 @@ static char *create_output_name(const char *fname, const char *dir,
         x = 0xFFFD; /* invalid code point or cheeky null byte */
       }
 
-#ifdef HAVE_TOWLOWER
+#if HAVE_TOWLOWER
       if (lower) x = towlower(x);
 #else
       if (lower && x < 256) x = tolower(x);

@@ -1382,7 +1382,7 @@ static int chmd_error(struct mschm_decompressor *base) {
 static int read_off64(off_t *var, unsigned char *mem,
 		      struct mspack_system *sys, struct mspack_file *fh)
 {
-#ifdef LARGEFILE_SUPPORT
+#if LARGEFILE_SUPPORT
     *var = EndGetI64(mem);
 #else
     *var = EndGetI32(mem);

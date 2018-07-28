@@ -33,7 +33,7 @@
 # include <strings.h>
 #endif
 
-#ifdef HAVE_FSEEKO
+#if HAVE_FSEEKO
 # define FSEEK fseeko
 # define FTELL ftello
 # define FILELEN off_t
