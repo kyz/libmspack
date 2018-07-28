@@ -328,7 +328,9 @@ struct mspack_system {
    * @param bytes   the number of bytes to read from the file.
    * @return the number of bytes successfully read (this can be less than
    *         the number requested), zero to mark the end of file, or less
-   *         than zero to indicate an error.
+   *         than zero to indicate an error. The library does not "retry"
+   *         reads and assumes short reads are due to EOF, so you should
+   *         avoid returning short reads because of transient errors.
    * @see open(), write()
    */
   int (*read)(struct mspack_file *file,
