@@ -33,6 +33,11 @@
 # include <strings.h>
 #endif
 
+/* include <system.h> from libmspack for LD and EndGetI?? macros */
+#include <system.h>
+/* include <cab.h> from libmspack for cab structure offsets */
+#include <cab.h>
+
 #if HAVE_FSEEKO
 # define FSEEK fseeko
 # define FTELL ftello
@@ -43,83 +48,12 @@
 # define FILELEN long
 #endif
 
-#if HAVE_INTTYPES_H
-# include <inttypes.h>
-#else
-# define PRId64 "lld"
-# define PRId32 "ld"
-#endif
-
-#if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
-     (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
-     (defined(SIZEOF_OFF_T)      && SIZEOF_OFF_T      >= 8)  || \
-     defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE))
-# define FL PRId64
-#else
-# define FL PRId32
-#endif
-
-
-/* structure offsets */
-#define cfhead_Signature         (0x00)
-#define cfhead_CabinetSize       (0x08)
-#define cfhead_FileOffset        (0x10)
-#define cfhead_MinorVersion      (0x18)
-#define cfhead_MajorVersion      (0x19)
-#define cfhead_NumFolders        (0x1A)
-#define cfhead_NumFiles          (0x1C)
-#define cfhead_Flags             (0x1E)
-#define cfhead_SetID             (0x20)
-#define cfhead_CabinetIndex      (0x22)
-#define cfhead_SIZEOF            (0x24)
-#define cfheadext_HeaderReserved (0x00)
-#define cfheadext_FolderReserved (0x02)
-#define cfheadext_DataReserved   (0x03)
-#define cfheadext_SIZEOF         (0x04)
-#define cffold_DataOffset        (0x00)
-#define cffold_NumBlocks         (0x04)
-#define cffold_CompType          (0x06)
-#define cffold_SIZEOF            (0x08)
-#define cffile_UncompressedSize  (0x00)
-#define cffile_FolderOffset      (0x04)
-#define cffile_FolderIndex       (0x08)
-#define cffile_Date              (0x0A)
-#define cffile_Time              (0x0C)
-#define cffile_Attribs           (0x0E)
-#define cffile_SIZEOF            (0x10)
-#define cfdata_CheckSum          (0x00)
-#define cfdata_CompressedSize    (0x04)
-#define cfdata_UncompressedSize  (0x06)
-#define cfdata_SIZEOF            (0x08)
-
-/* flags */
-#define cffoldCOMPTYPE_MASK            (0x000f)
-#define cffoldCOMPTYPE_NONE            (0x0000)
-#define cffoldCOMPTYPE_MSZIP           (0x0001)
-#define cffoldCOMPTYPE_QUANTUM         (0x0002)
-#define cffoldCOMPTYPE_LZX             (0x0003)
-#define cfheadPREV_CABINET             (0x0001)
-#define cfheadNEXT_CABINET             (0x0002)
-#define cfheadRESERVE_PRESENT          (0x0004)
-#define cffileCONTINUED_FROM_PREV      (0xFFFD)
-#define cffileCONTINUED_TO_NEXT        (0xFFFE)
-#define cffileCONTINUED_PREV_AND_NEXT  (0xFFFF)
-#define cffile_A_RDONLY                (0x01)
-#define cffile_A_HIDDEN                (0x02)
-#define cffile_A_SYSTEM                (0x04)
-#define cffile_A_ARCH                  (0x20)
-#define cffile_A_EXEC                  (0x40)
-#define cffile_A_NAME_IS_UTF           (0x80)
-
-
 FILE *fh;
 char *filename;
 FILELEN filelen;
 void search();
 void getinfo();
 
-#define EndGetI32(a)  ((((a)[3])<<24)|(((a)[2])<<16)|(((a)[1])<<8)|((a)[0]))
-#define EndGetI16(a)  ((((a)[1])<<8)|((a)[0]))
 #define GETLONG(n) EndGetI32(&buf[n])
 #define GETWORD(n) EndGetI16(&buf[n])
 #define GETBYTE(n) ((int)buf[n])
@@ -176,7 +110,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  printf("Examining file \"%s\" (%" FL " bytes)...\n", filename, filelen);
+  printf("Examining file \"%s\" (%"LD" bytes)...\n", filename, filelen);
   search();
   fclose(fh);
   return 0;
@@ -249,7 +183,7 @@ void search() {
 	    ((caboff + cablen) < (filelen + 32)) )
 	{
 	  /* found a potential result - try loading it */
-	  printf("Found cabinet header at offset %" FL "\n", caboff);
+	  printf("Found cabinet header at offset %"LD"\n", caboff);
 	  SEEK(caboff);
 	  getinfo();
 	  offset = caboff + cablen;
@@ -288,7 +222,7 @@ void getinfo() {
     "\n*** HEADER SECTION ***\n\n"
     "Cabinet signature      = '%4.4s'\n"
     "Cabinet size           = %u bytes\n"
-    "Offset of files        = %" FL "\n"
+    "Offset of files        = %"LD"\n"
     "Cabinet format version = %d.%d\n"
     "Number of folders      = %u\n"
     "Number of files        = %u\n"
@@ -338,7 +272,7 @@ void getinfo() {
     printf("WARNING: header reserved space > 60000\n");
 
   if (header_res) {
-    printf("[Reserved header: offset %" FL ", size %u]\n", GETOFFSET,
+    printf("[Reserved header: offset %"LD", size %u]\n", GETOFFSET,
 	   header_res);
     SKIP(header_res);
   }
@@ -386,8 +320,8 @@ void getinfo() {
     }
 
     printf(
-      "\n[New folder at offset %" FL "]\n"
-      "Offset of folder       = %" FL "\n"
+      "\n[New folder at offset %"LD"]\n"
+      "Offset of folder       = %"LD"\n"
       "Num. blocks in folder  = %u\n"
       "Compression type       = 0x%04x [%s]\n",
 
@@ -401,7 +335,7 @@ void getinfo() {
     num_blocks += GETWORD(cffold_NumBlocks);
 
     if (folder_res) {
-      printf("[Reserved folder: offset %" FL ", size %u]\n", GETOFFSET,
+      printf("[Reserved folder: offset %"LD", size %u]\n", GETOFFSET,
 	     folder_res);
       SKIP(folder_res);
     }
@@ -442,7 +376,7 @@ void getinfo() {
     if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
 
     printf(
-      "\n[New file at offset %" FL "]\n"
+      "\n[New file at offset %"LD"]\n"
       "File name              = %s%s\n"
       "File size              = %u bytes\n"
       "Offset within folder   = %u\n"
@@ -450,7 +384,7 @@ void getinfo() {
       "Date / time            = %02d/%02d/%4d %02d:%02d:%02d\n"
       "File attributes        = 0x%02x %s%s%s%s%s%s\n",
       offset,
-      x & cffile_A_NAME_IS_UTF ? "UTF: " : "",
+      x & MSCAB_ATTRIB_UTF_NAME ? "UTF: " : "",
       namebuf,
       GETLONG(cffile_UncompressedSize),
       GETLONG(cffile_FolderOffset),
@@ -463,12 +397,12 @@ void getinfo() {
       (GETWORD(cffile_Time) >> 5) & 0x3f,
       (GETWORD(cffile_Time) << 1) & 0x3e,
       x,
-      (x & cffile_A_RDONLY)      ? "RDONLY " : "",
-      (x & cffile_A_HIDDEN)      ? "HIDDEN " : "",
-      (x & cffile_A_SYSTEM)      ? "SYSTEM " : "",
-      (x & cffile_A_ARCH)        ? "ARCH "   : "",
-      (x & cffile_A_EXEC)        ? "EXEC "   : "",
-      (x & cffile_A_NAME_IS_UTF) ? "UTF-8"   : ""
+      (x & MSCAB_ATTRIB_RDONLY)   ? "RDONLY " : "",
+      (x & MSCAB_ATTRIB_HIDDEN)   ? "HIDDEN " : "",
+      (x & MSCAB_ATTRIB_SYSTEM)   ? "SYSTEM " : "",
+      (x & MSCAB_ATTRIB_ARCH)     ? "ARCH "   : "",
+      (x & MSCAB_ATTRIB_EXEC)     ? "EXEC "   : "",
+      (x & MSCAB_ATTRIB_UTF_NAME) ? "UTF-8"   : ""
     );
   }
 
@@ -480,7 +414,7 @@ void getinfo() {
     READ(&buf, cfdata_SIZEOF);
     x = GETWORD(cfdata_CompressedSize);
     y = GETWORD(cfdata_UncompressedSize);
-    printf("Block %6d: offset %12" FL " / csum %08x / c=%5u / u=%5u%s\n",
+    printf("Block %6d: offset %12"LD" / csum %08x / c=%5u / u=%5u%s\n",
 	   i, offset, GETLONG(cfdata_CheckSum), x, y,
 	   ((x > (32768+6144)) || (y > 32768)) ? " INVALID" : "");
     SKIP(x);
