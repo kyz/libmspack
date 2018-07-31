@@ -11,7 +11,6 @@ cat >config.h <<EOF
 #define HAVE_MEMCPY 1
 #define HAVE_MEMMOVE 1
 #define HAVE_MKDIR 1
-#define HAVE_MKTIME 1
 #define HAVE_STDARG_H 1
 #define HAVE_STDLIB_H 1
 #define HAVE_STRCASECMP 1

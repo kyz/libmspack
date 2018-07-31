@@ -142,10 +142,6 @@
 # endif
 #endif
 
-#ifndef HAVE_MKTIME
-extern time_t mktime(struct tm *tp);
-#endif
-
 #ifndef FNM_CASEFOLD
 # define FNM_CASEFOLD (0)
 #endif

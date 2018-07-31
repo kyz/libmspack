@@ -1,3 +1,14 @@
+2018-07-31  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac: drop AC_FUNC_MKTIME. Looking into it, even C89 has
+	a mktime() function, the configure test is mostly checking if it
+	is POSIX-conformant or not, and substitutes mktime.c if not. But
+	even the replacement has no TZ handling, so it seems OK to me to
+	accept the system mktime() in any case. The fnmatch() and getopt()
+	substitutions remain because they enable GNU extensions that
+	cabextract uses (FNM_CASEFOLD and getopt_long() respectively).
+	Thanks to Stefan Haubenthal for bringing up the issue.
+
 2018-07-28  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* src/cabinfo.c: cabinfo now supports examining more than one file
