@@ -1,3 +1,11 @@
+2018-08-13  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* mspack.h: clarify that mspack_system.free() should allow NULL. If your
+	mspack_system implementation doesn't, it would already have crashed, as
+	there are several places where libmspack calls sys->free(NULL). This
+	change makes it official, and amends a few "if (x) sys->free(x)" cases
+	to the simpler "sys->free(x)" to make it clearer.
+
 2018-08-09  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* Makefile.am: the test file cve-2015-4467-reset-interval-zero.chm is
