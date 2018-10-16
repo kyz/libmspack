@@ -308,7 +308,7 @@ static int cabd_read_headers(struct mspack_system *sys,
 			     struct mscabd_cabinet_p *cab,
 			     off_t offset, int quiet, int salvage)
 {
-  int num_folders, num_files, folder_resv, i, x, fidx, fidx_ok;
+  int num_folders, num_files, folder_resv, i, x, err, fidx;
   struct mscabd_folder_p *fol, *linkfol = NULL;
   struct mscabd_file *file, *linkfile = NULL;
   unsigned char buf[64];
@@ -392,18 +392,18 @@ static int cabd_read_headers(struct mspack_system *sys,
 
   /* read name and info of preceeding cabinet in set, if present */
   if (cab->base.flags & cfheadPREV_CABINET) {
-    cab->base.prevname = cabd_read_string(sys, fh, &x);
-    if (x) return x;
-    cab->base.previnfo = cabd_read_string(sys, fh, &x);
-    if (x) return x;
+    cab->base.prevname = cabd_read_string(sys, fh, &err);
+    if (err) return err;
+    cab->base.previnfo = cabd_read_string(sys, fh, &err);
+    if (err) return err;
   }
 
   /* read name and info of next cabinet in set, if present */
   if (cab->base.flags & cfheadNEXT_CABINET) {
-    cab->base.nextname = cabd_read_string(sys, fh, &x);
-    if (x) return x;
-    cab->base.nextinfo = cabd_read_string(sys, fh, &x);
-    if (x) return x;
+    cab->base.nextname = cabd_read_string(sys, fh, &err);
+    if (err) return err;
+    cab->base.nextinfo = cabd_read_string(sys, fh, &err);
+    if (err) return err;
   }
 
   /* read folders */
@@ -452,7 +452,6 @@ static int cabd_read_headers(struct mspack_system *sys,
     file->offset   = EndGetI32(&buf[cffile_FolderOffset]);
 
     /* set folder pointer */
-    fidx_ok = 1;
     fidx = EndGetI16(&buf[cffile_FolderIndex]);
     if (fidx < cffileCONTINUED_FROM_PREV) {
       /* normal folder index; count up to the correct folder */
@@ -462,12 +461,8 @@ static int cabd_read_headers(struct mspack_system *sys,
         file->folder = ifol;
       }
       else {
-        file->folder = NULL;
-      }
-
-      if (!file->folder) {
         D(("invalid folder index"))
-        fidx_ok = 0;
+        file->folder = NULL;
       }
     }
     else {
@@ -511,13 +506,14 @@ static int cabd_read_headers(struct mspack_system *sys,
     file->date_y = (x >> 9) + 1980;
 
     /* get filename */
-    file->filename = cabd_read_string(sys, fh, &x);
+    file->filename = cabd_read_string(sys, fh, &err);
 
     /* if folder index or filename are bad, either skip it or fail */
-    if (x || !fidx_ok) {
+    if (err || !file->folder) {
       sys->free(file->filename);
       sys->free(file);
-      if (salvage) continue; else return x;
+      if (salvage) continue;
+      return err ? err : MSPACK_ERR_DATAFORMAT;
     }
 
     /* link file entry into file list */
