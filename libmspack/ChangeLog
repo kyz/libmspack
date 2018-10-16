@@ -1,5 +1,14 @@
 2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* Makefile.am: using automake _DEPENDENCIES for chmd_test appears to
+	override the default dependencies (e.g. sources), so libchmd.la was no
+	longer considered a dependency of chmd_test. This breaks parallel
+	builds like "make -j4". Added libchmd.la explicitly to dependencies.
+	Thanks to Thomas Deutschmann for reporting this.
+
+
+2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* cabd.c: add new parameter, MSCABD_PARAM_SALVAGE, which makes CAB file
 	reading and extraction more lenient, to allow damaged or mangled CABs
 	to be extracted. When enabled:
