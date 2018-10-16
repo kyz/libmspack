@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2011 Stuart Caie.
+ * (C) 2003-2018 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -109,7 +109,7 @@ static int cabd_sys_write(
   struct mspack_file *file, void *buffer, int bytes);
 static int cabd_sys_read_block(
   struct mspack_system *sys, struct mscabd_decompress_state *d, int *out,
-  int ignore_cksum);
+  int ignore_cksum, int ignore_blocksize);
 static unsigned int cabd_checksum(
   unsigned char *data, unsigned int bytes, unsigned int cksum);
 static struct noned_state *noned_init(
@@ -308,7 +308,7 @@ static int cabd_read_headers(struct mspack_system *sys,
 			     struct mscabd_cabinet_p *cab,
 			     off_t offset, int quiet, int salvage)
 {
-  int num_folders, num_files, folder_resv, i, x, fidx, fidx_ok, read_string_errno = 0;
+  int num_folders, num_files, folder_resv, i, x, fidx, fidx_ok;
   struct mscabd_folder_p *fol, *linkfol = NULL;
   struct mscabd_file *file, *linkfile = NULL;
   unsigned char buf[64];
@@ -392,18 +392,18 @@ static int cabd_read_headers(struct mspack_system *sys,
 
   /* read name and info of preceeding cabinet in set, if present */
   if (cab->base.flags & cfheadPREV_CABINET) {
-    cab->base.prevname = cabd_read_string(sys, fh, &read_string_errno);
-    if (read_string_errno) return read_string_errno;
-    cab->base.previnfo = cabd_read_string(sys, fh, &read_string_errno);
-    if (read_string_errno) return read_string_errno;
+    cab->base.prevname = cabd_read_string(sys, fh, &x);
+    if (x) return x;
+    cab->base.previnfo = cabd_read_string(sys, fh, &x);
+    if (x) return x;
   }
 
   /* read name and info of next cabinet in set, if present */
   if (cab->base.flags & cfheadNEXT_CABINET) {
-    cab->base.nextname = cabd_read_string(sys, fh, &read_string_errno);
-    if (read_string_errno) return read_string_errno;
-    cab->base.nextinfo = cabd_read_string(sys, fh, &read_string_errno);
-    if (read_string_errno) return read_string_errno;
+    cab->base.nextname = cabd_read_string(sys, fh, &x);
+    if (x) return x;
+    cab->base.nextinfo = cabd_read_string(sys, fh, &x);
+    if (x) return x;
   }
 
   /* read folders */
@@ -511,11 +511,13 @@ static int cabd_read_headers(struct mspack_system *sys,
     file->date_y = (x >> 9) + 1980;
 
     /* get filename */
-    file->filename = cabd_read_string(sys, fh, &read_string_errno);
-    if (read_string_errno || !fidx_ok) {
+    file->filename = cabd_read_string(sys, fh, &x);
+
+    /* if folder index or filename are bad, either skip it or fail */
+    if (x || !fidx_ok) {
       sys->free(file->filename);
       sys->free(file);
-      if (salvage) continue; else return read_string_errno;
+      if (salvage) continue; else return x;
     }
 
     /* link file entry into file list */
@@ -1012,7 +1014,7 @@ static int cabd_extract(struct mscab_decompressor *base,
   struct mscabd_folder_p *fol;
   struct mspack_system *sys;
   struct mspack_file *fh;
-  off_t filelen, maxlen;
+  off_t filelen;
 
   if (!self) return MSPACK_ERR_ARGS;
   if (!file) return self->error = MSPACK_ERR_ARGS;
@@ -1045,17 +1047,12 @@ static int cabd_extract(struct mscab_decompressor *base,
     return self->error = MSPACK_ERR_DECRUNCH;
   }
 
-  /* if file goes beyond what can be decoded, either error,
-   * or in salvage mode reduce file length to what can be decoded
+  /* if file goes beyond what can be decoded, given an error.
+   * In salvage mode, don't assume block sizes, just try decoding
    */
-  maxlen = fol->base.num_blocks * CAB_BLOCKMAX;
-  if ((file->offset + filelen) > maxlen) {
-    if (self->param[MSCABD_PARAM_SALVAGE]) {
-      sys->message(NULL, "WARNING: can only extract first %"LD" bytes "
-                   " of file \"%s\"", maxlen, file->filename);
-      filelen = maxlen;
-    }
-    else {
+  if (!self->param[MSCABD_PARAM_SALVAGE]) {
+    off_t maxlen = fol->base.num_blocks * CAB_BLOCKMAX;
+    if ((file->offset + filelen) > maxlen) {
       sys->message(NULL, "ERROR; file \"%s\" cannot be extracted, "
                    "cabinet set is incomplete", file->filename);
       return self->error = MSPACK_ERR_DECRUNCH;
@@ -1107,6 +1104,7 @@ static int cabd_extract(struct mscab_decompressor *base,
     self->d->data   = &fol->data;
     self->d->offset = 0;
     self->d->block  = 0;
+    self->d->outlen = 0;
     self->d->i_ptr = self->d->i_end = &self->d->input[0];
 
     /* read_error lasts for the lifetime of a decompressor */
@@ -1227,11 +1225,12 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
   struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) file;
   unsigned char *buf = (unsigned char *) buffer;
   struct mspack_system *sys = self->system;
-  int avail, todo, outlen, ignore_cksum;
+  int avail, todo, outlen, ignore_cksum, ignore_blocksize;
 
   ignore_cksum = self->param[MSCABD_PARAM_SALVAGE] ||
     (self->param[MSCABD_PARAM_FIXMSZIP] && 
      ((self->d->comp_type & cffoldCOMPTYPE_MASK) == cffoldCOMPTYPE_MSZIP));
+  ignore_blocksize = self->param[MSCABD_PARAM_SALVAGE];
 
   todo = bytes;
   while (todo > 0) {
@@ -1251,16 +1250,20 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
 
       /* check if we're out of input blocks, advance block counter */
       if (self->d->block++ >= self->d->folder->base.num_blocks) {
-        if (!self->param[MSCABD_PARAM_SALVAGE])
+        if (!self->param[MSCABD_PARAM_SALVAGE]) {
           self->read_error = MSPACK_ERR_DATAFORMAT;
-        else
+        }
+        else {
           D(("Ran out of CAB input blocks prematurely"))
+        }
         break;
       }
 
       /* read a block */
-      self->read_error = cabd_sys_read_block(sys, self->d, &outlen, ignore_cksum);
+      self->read_error = cabd_sys_read_block(sys, self->d, &outlen,
+        ignore_cksum, ignore_blocksize);
       if (self->read_error) return -1;
+      self->d->outlen += outlen;
 
       /* special Quantum hack -- trailer byte to allow the decompressor
        * to realign itself. CAB Quantum blocks, unlike LZX blocks, can have
@@ -1271,19 +1274,10 @@ static int cabd_sys_read(struct mspack_file *file, void *buffer, int bytes) {
 
       /* is this the last block? */
       if (self->d->block >= self->d->folder->base.num_blocks) {
-	/* last block */
 	if ((self->d->comp_type & cffoldCOMPTYPE_MASK) == cffoldCOMPTYPE_LZX) {
 	  /* special LZX hack -- on the last block, inform LZX of the
 	   * size of the output data stream. */
-	  lzxd_set_output_length((struct lzxd_stream *) self->d->state, (off_t)
-				 ((self->d->block-1) * CAB_BLOCKSTD + outlen));
-	}
-      }
-      else {
-	/* not the last block */
-	if (outlen != CAB_BLOCKMAX) {
-	  self->system->message(self->d->infh,
-				"WARNING; non-maximal data block");
+	  lzxd_set_output_length((struct lzxd_stream *) self->d->state, self->d->outlen);
 	}
       }
     } /* if (avail) */
@@ -1308,7 +1302,8 @@ static int cabd_sys_write(struct mspack_file *file, void *buffer, int bytes) {
  */
 static int cabd_sys_read_block(struct mspack_system *sys,
 			       struct mscabd_decompress_state *d,
-			       int *out, int ignore_cksum)
+			       int *out, int ignore_cksum,
+                               int ignore_blocksize)
 {
   unsigned char hdr[cfdata_SIZEOF];
   unsigned int cksum;
@@ -1342,7 +1337,7 @@ static int cabd_sys_read_block(struct mspack_system *sys,
      /* blocks must not expand to more than CAB_BLOCKMAX */
     if (EndGetI16(&hdr[cfdata_UncompressedSize]) > CAB_BLOCKMAX) {
       D(("block size > CAB_BLOCKMAX"))
-      return MSPACK_ERR_DATAFORMAT;
+      if (!ignore_blocksize) return MSPACK_ERR_DATAFORMAT;
     }
 
     /* read the block data */

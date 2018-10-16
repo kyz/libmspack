@@ -1,3 +1,26 @@
+2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd.c: add new parameter, MSCABD_PARAM_SALVAGE, which makes CAB file
+	reading and extraction more lenient, to allow damaged or mangled CABs
+	to be extracted. When enabled:
+	- cabd->open() won't reject cabinets with files that have invalid
+	  folder indices or filenames. These files will simply be skipped
+	- cabd->extract() won't reject files with invalid lengths, but will
+	  limit them to the maximum possible
+	- block output sizes over 32768 bytes won't be rejected
+	- invalid data block checksums won't be rejected
+	
+	It's still possible for corrupted files to fail extraction, but more
+	data can be extracted before they do.
+	
+	This new parameter doesn't affect the existing MSCABD_PARAM_FIXMSZIP
+	parameter, which ignores MSZIP decompression failures. You can enable
+	both at once.
+	
+	Thanks to Micah Snyder from ClamAV for working with me to get this
+	feature into libmspack. This also helps ClamAV move towards using a
+	vanilla copy of libmspack without needing their own patchset.
+
 2018-08-13  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* mspack.h: clarify that mspack_system.free() should allow NULL. If your
