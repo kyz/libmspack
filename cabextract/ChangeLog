@@ -1,3 +1,9 @@
+2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* src/cabextract.c: use libmspack's new MSCABD_PARAM_SALVAGE mode
+	for cabextract -f, to allow extracting even more data from broken
+	cabinet files.
+
 2018-07-31  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac: drop AC_FUNC_MKTIME. Looking into it, even C89 has

@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
       "  -t   --test        test cabinet integrity\n"
       "  -q   --quiet       only print errors and warnings\n"
       "  -L   --lowercase   make filenames lowercase\n"
-      "  -f   --fix         fix (some) corrupted cabinets\n");
+      "  -f   --fix         salvage as much as possible from corrupted cabinets\n");
     fprintf(stderr,
       "  -p   --pipe        pipe extracted files to stdout\n"
       "  -s   --single      restrict search to cabs on the command line\n"
@@ -392,8 +392,9 @@ int main(int argc, char *argv[]) {
   umask(user_umask = umask(0));
 #endif
 
-  /* turn on/off 'fix MSZIP' mode */
+  /* turn on/off 'fix MSZIP' and 'salvage' mode */
   cabd->set_param(cabd, MSCABD_PARAM_FIXMSZIP, args.fix);
+  cabd->set_param(cabd, MSCABD_PARAM_SALVAGE, args.fix);
 
 #if HAVE_ICONV
   /* set up converter for given encoding */

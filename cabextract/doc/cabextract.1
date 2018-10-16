@@ -42,8 +42,12 @@ A summary of options is included below.
 Extracts all files into the directory \fIdir\fP.
 .TP
 .B \-f
-When testing or extracting cabinet files, corrupted MSZIP blocks will be
-ignored. A warning will be printed if a corrupted MSZIP block is encountered.
+Corrupted cabinet files will be 'fixed' to salvage whatever is possible from
+them. File entries with bad folders or names will be skipped rather than
+rejecting  the entire cabinet file. Impossible file lengths will be truncated
+to extract as much as possible, including when you're missing later files in
+a cabinet set. Corrupted MSZIP blocks and failed block checksums will be
+ignored.  Warnings will be printed if any of these conditions are met.
 .TP
 .B \-F \fIpattern\fP
 Only files with names that match the shell pattern \fIpattern\fP shall be
