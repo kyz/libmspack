@@ -52,11 +52,12 @@ FILE *fh;
 char *filename;
 FILELEN filelen;
 void search();
-void getinfo();
+void getinfo(FILELEN base_offset);
 
 #define GETLONG(n) EndGetI32(&buf[n])
 #define GETWORD(n) EndGetI16(&buf[n])
 #define GETBYTE(n) ((int)buf[n])
+#define MIN(a,b) ((a)<(b)?(a):(b))
 
 #define GETOFFSET      (FTELL(fh))
 #define READ(buf,len)  if (myread((void *)(buf),(len))) return
@@ -80,6 +81,25 @@ int myseek(FILELEN offset, int mode) {
   }
   return 0;
 }
+
+#define CAB_NAMEMAX (1024)
+char namebuf[CAB_NAMEMAX];
+char *read_name() {
+    FILELEN name_start = GETOFFSET;
+    int i;
+    if (myread(&namebuf, CAB_NAMEMAX)) return "READ FAILED";
+    for (i = 0; i <= 256; i++) {
+        if (!namebuf[i]) {
+            myseek(name_start + i + 1, SEEK_SET);
+            return namebuf;
+        }
+    }
+    printf("WARNING: name length > 256\n");
+    namebuf[256] = 0;
+    myseek(name_start + 257, SEEK_SET);
+    return namebuf;
+}
+
 
 int main(int argc, char *argv[]) {
   int i;
@@ -181,9 +201,7 @@ void search() {
 	    ((caboff + cablen) < (filelen + 32)) )
 	{
 	  /* found a potential result - try loading it */
-	  printf("Found cabinet header at offset %"LD"\n", caboff);
-	  SEEK(caboff);
-	  getinfo();
+	  getinfo(caboff);
 	  offset = caboff + cablen;
 	  length = 0;
 	  p = pend;
@@ -198,224 +216,145 @@ void search() {
   } /* while offset < filelen */
 }
 
-#define CAB_NAMEMAX (1024)
+void getinfo(FILELEN base_offset) {
+    unsigned char buf[64], namebuf[CAB_NAMEMAX], *name;
+    int header_res = 0, folder_res = 0, data_res = 0;
+    int num_folders, num_files, flags, i, j;
+    FILELEN files_offset, min_data_offset = filelen;
 
-void getinfo() {
-  unsigned char buf[64];
-  unsigned char namebuf[CAB_NAMEMAX];
-  char *name;
+    SEEK(base_offset);
+    READ(&buf, cfhead_SIZEOF);
 
-  FILELEN offset, base_offset, files_offset, base;
-  int num_folders, num_files, num_blocks = 0;
-  int header_res = 0, folder_res = 0, data_res = 0;
-  int i, x, y;
-
-  base_offset = GETOFFSET;
-
-  READ(&buf, cfhead_SIZEOF);
-
-  x = GETWORD(cfhead_Flags);
-
-  printf(
-    "\n*** HEADER SECTION ***\n\n"
-    "Cabinet signature      = '%4.4s'\n"
-    "Cabinet size           = %u bytes\n"
-    "Offset of files        = %"LD"\n"
-    "Cabinet format version = %d.%d\n"
-    "Number of folders      = %u\n"
-    "Number of files        = %u\n"
-    "Header flags           = 0x%04x%s%s%s\n"
-    "Set ID                 = %u\n"
-    "Cabinet set index      = %u\n",
-
-    buf,
-    GETLONG(cfhead_CabinetSize),
-    files_offset = (GETLONG(cfhead_FileOffset) + base_offset),
-    GETBYTE(cfhead_MajorVersion),
-    GETBYTE(cfhead_MinorVersion),
+    files_offset = base_offset + GETLONG(cfhead_FileOffset);
     num_folders = GETWORD(cfhead_NumFolders),
     num_files = GETWORD(cfhead_NumFiles),
-    x,
-    ((x & cfheadPREV_CABINET)    ? " PREV_CABINET"    : ""),
-    ((x & cfheadNEXT_CABINET)    ? " NEXT_CABINET"    : ""),
-    ((x & cfheadRESERVE_PRESENT) ? " RESERVE_PRESENT" : ""),
-    GETWORD(cfhead_SetID),
-    GETWORD(cfhead_CabinetIndex)
-  );
+    flags = GETWORD(cfhead_Flags);
 
-  if (num_folders == 0) { printf("ERROR: no folders\n"); return; }
-  if (num_files == 0) { printf("ERROR: no files\n"); return; }
+    printf("CABINET HEADER @%"LD":\n", base_offset);
+    printf("- signature      = '%4.4s'\n", buf);
+    printf("- overall length = %u bytes\n", GETLONG(cfhead_CabinetSize));
+    printf("- files offset   = %"LD"\n", files_offset);
+    printf("- format version = %d.%d\n",
+        GETBYTE(cfhead_MajorVersion), GETBYTE(cfhead_MinorVersion));
+    printf("- folder count   = %u\n", num_folders);
+    printf("- file count     = %u\n", num_files);
+    printf("- header flags   = 0x%04x%s%s%s\n", flags,
+        ((flags & cfheadPREV_CABINET)    ? " PREV_CABINET"    : ""),
+        ((flags & cfheadNEXT_CABINET)    ? " NEXT_CABINET"    : ""),
+        ((flags & cfheadRESERVE_PRESENT) ? " RESERVE_PRESENT" : ""));
+    printf("- set ID         = %u\n", GETWORD(cfhead_SetID));
+    printf("- set index      = %u\n", GETWORD(cfhead_CabinetIndex));
 
-  if (buf[0]!='M' || buf[1]!='S' || buf[2]!='C' || buf[3]!='F')
-    printf("WARNING: cabinet doesn't start with MSCF signature\n");
-
-  if (GETBYTE(cfhead_MajorVersion) > 1
-  || GETBYTE(cfhead_MinorVersion) > 3)
-    printf("WARNING: format version > 1.3\n");
-
-
-
-  if (x & cfheadRESERVE_PRESENT) {
-    READ(&buf, cfheadext_SIZEOF);
-    header_res = GETWORD(cfheadext_HeaderReserved);
-    folder_res = GETBYTE(cfheadext_FolderReserved);
-    data_res   = GETBYTE(cfheadext_DataReserved);
-  }
-
-  printf("Reserved header space  = %u\n", header_res);
-  printf("Reserved folder space  = %u\n", folder_res);
-  printf("Reserved datablk space = %u\n", data_res);
-
-  if (header_res > 60000)
-    printf("WARNING: header reserved space > 60000\n");
-
-  if (header_res) {
-    printf("[Reserved header: offset %"LD", size %u]\n", GETOFFSET,
-	   header_res);
-    SKIP(header_res);
-  }
-
-  if (x & cfheadPREV_CABINET) {
-    base = GETOFFSET;
-    READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen((char *) namebuf) + 1);
-    printf("Previous cabinet file  = %s\n", namebuf);
-    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
-
-    base = GETOFFSET;
-    READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen((char *) namebuf) + 1);
-    printf("Previous disk name     = %s\n", namebuf);
-    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
-  }
-
-  if (x & cfheadNEXT_CABINET) {
-    base = GETOFFSET;
-    READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen((char *) namebuf) + 1);
-    printf("Next cabinet file      = %s\n", namebuf);
-    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
-
-    base = GETOFFSET;
-    READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen((char *) namebuf) + 1);
-    printf("Next disk name         = %s\n", namebuf);
-    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
-  }
-
-  printf("\n*** FOLDERS SECTION ***\n");
-
-  for (i = 0; i < num_folders; i++) {
-    offset = GETOFFSET;
-    READ(&buf, cffold_SIZEOF);
-
-    switch(GETWORD(cffold_CompType) & cffoldCOMPTYPE_MASK) {
-    case cffoldCOMPTYPE_NONE:    name = "stored";  break;
-    case cffoldCOMPTYPE_MSZIP:   name = "MSZIP";   break;
-    case cffoldCOMPTYPE_QUANTUM: name = "Quantum"; break;
-    case cffoldCOMPTYPE_LZX:     name = "LZX";     break;
-    default:                     name = "unknown"; break;
+    if (flags & cfheadRESERVE_PRESENT) {
+        READ(&buf, cfheadext_SIZEOF);
+        header_res = GETWORD(cfheadext_HeaderReserved);
+        folder_res = GETBYTE(cfheadext_FolderReserved);
+        data_res   = GETBYTE(cfheadext_DataReserved);
+        printf("- header reserve = %u bytes (@%"LD")\n",
+            header_res, GETOFFSET);
+        printf("- folder reserve = %u bytes\n", folder_res);
+        printf("- data reserve   = %u bytes\n", data_res);
+        SEEK(GETOFFSET + header_res);
+    }
+    if (flags & cfheadPREV_CABINET) {
+        printf("- prev cabinet   = %s\n", read_name());
+        printf("- prev disk      = %s\n", read_name());
+    }
+    if (flags & cfheadNEXT_CABINET) {
+        printf("- next cabinet   = %s\n", read_name());
+        printf("- next disk      = %s\n", read_name());
     }
 
-    printf(
-      "\n[New folder at offset %"LD"]\n"
-      "Offset of folder       = %"LD"\n"
-      "Num. blocks in folder  = %u\n"
-      "Compression type       = 0x%04x [%s]\n",
+    printf("FOLDERS SECTION @%"LD":\n", GETOFFSET);
+    for (i = 0; i < num_folders; i++) {
+        FILELEN folder_offset, data_offset;
+        int comp_type, num_blocks;
+        char *type_name;
 
-      offset,
-      base_offset + GETLONG(cffold_DataOffset),
-      GETWORD(cffold_NumBlocks),
-      GETWORD(cffold_CompType),
-      name
-    );
+        folder_offset = GETOFFSET;
+        READ(&buf, cffold_SIZEOF);
+        data_offset = base_offset + GETLONG(cffold_DataOffset);
+        num_blocks = GETWORD(cffold_NumBlocks),
+        comp_type = GETWORD(cffold_CompType);
 
-    num_blocks += GETWORD(cffold_NumBlocks);
+        min_data_offset = MIN(data_offset, min_data_offset);
 
-    if (folder_res) {
-      printf("[Reserved folder: offset %"LD", size %u]\n", GETOFFSET,
-	     folder_res);
-      SKIP(folder_res);
+        switch (comp_type & cffoldCOMPTYPE_MASK) {
+        case cffoldCOMPTYPE_NONE:    type_name = "stored";  break;
+        case cffoldCOMPTYPE_MSZIP:   type_name = "MSZIP";   break;
+        case cffoldCOMPTYPE_QUANTUM: type_name = "Quantum"; break;
+        case cffoldCOMPTYPE_LZX:     type_name = "LZX";     break;
+        default:                     type_name = "unknown"; break;
+        }
+        printf("- folder 0x%04x @%"LD" %u data blocks @%"LD" %s compression (0x%04x)\n",
+            i, folder_offset, num_blocks, data_offset, type_name, comp_type);
+
+        SEEK(data_offset);
+        for (j = 0; j < num_blocks; j++) {
+            int clen, ulen;
+            READ(&buf, cfdata_SIZEOF);
+            clen = GETWORD(cfdata_CompressedSize);
+            ulen = GETWORD(cfdata_UncompressedSize);
+            printf("  - datablock %d @%"LD" csum=%08x c=%5u u=%5u%s\n",
+                j, data_offset, GETLONG(cfdata_CheckSum), clen, ulen,
+                ((clen > (32768+6144)) || (ulen > 32768)) ? " INVALID" : "");
+            data_offset += cfdata_SIZEOF + data_res + clen;
+            SKIP(data_res + clen);
+        }
+        SEEK(folder_offset + cffold_SIZEOF + folder_res);
     }
-  }
 
-  printf("\n*** FILES SECTION ***\n");
-
-  if (GETOFFSET != files_offset) {
-    printf("WARNING: weird file offset in header\n");
-    SEEK(files_offset);
-  }
-
-
-  for (i = 0; i < num_files; i++) {
-    offset = GETOFFSET;
-    READ(&buf, cffile_SIZEOF);
-
-    switch (GETWORD(cffile_FolderIndex)) {
-    case cffileCONTINUED_PREV_AND_NEXT:
-      name = "continued from previous and to next cabinet";
-      break;
-    case cffileCONTINUED_FROM_PREV:
-      name = "continued from previous cabinet";
-      break;
-    case cffileCONTINUED_TO_NEXT:
-      name = "continued to next cabinet";
-      break;
-    default:
-      name = "normal folder";
-      break;
+    printf("FILES SECTION @%"LD":\n", GETOFFSET);
+    if (files_offset != GETOFFSET) {
+        printf("WARNING: file offset in header %"LD
+            " doesn't match start of files %"LD"\n",
+            files_offset, GETOFFSET);
     }
-    
-    x = GETWORD(cffile_Attribs);
-    
-    base = GETOFFSET;
-    READ(&namebuf, CAB_NAMEMAX);
-    SEEK(base + strlen((char *) namebuf) + 1);
-    if (strlen((char *) namebuf) > 256) printf("WARNING: name length > 256\n");
 
-    printf(
-      "\n[New file at offset %"LD"]\n"
-      "File name              = %s%s\n"
-      "File size              = %u bytes\n"
-      "Offset within folder   = %u\n"
-      "Folder index           = 0x%04x [%s]\n"
-      "Date / time            = %02d/%02d/%4d %02d:%02d:%02d\n"
-      "File attributes        = 0x%02x %s%s%s%s%s%s\n",
-      offset,
-      x & MSCAB_ATTRIB_UTF_NAME ? "UTF: " : "",
-      namebuf,
-      GETLONG(cffile_UncompressedSize),
-      GETLONG(cffile_FolderOffset),
-      GETWORD(cffile_FolderIndex),
-      name,
-       GETWORD(cffile_Date)       & 0x1f,
-      (GETWORD(cffile_Date) >> 5) & 0xf,
-      (GETWORD(cffile_Date) >> 9) + 1980,
-       GETWORD(cffile_Time) >> 11,
-      (GETWORD(cffile_Time) >> 5) & 0x3f,
-      (GETWORD(cffile_Time) << 1) & 0x3e,
-      x,
-      (x & MSCAB_ATTRIB_RDONLY)   ? "RDONLY " : "",
-      (x & MSCAB_ATTRIB_HIDDEN)   ? "HIDDEN " : "",
-      (x & MSCAB_ATTRIB_SYSTEM)   ? "SYSTEM " : "",
-      (x & MSCAB_ATTRIB_ARCH)     ? "ARCH "   : "",
-      (x & MSCAB_ATTRIB_EXEC)     ? "EXEC "   : "",
-      (x & MSCAB_ATTRIB_UTF_NAME) ? "UTF-8"   : ""
-    );
-  }
+    for (i = 0; i < num_files; i++) {
+        FILELEN file_offset = GETOFFSET;
+        char *folder_type;
+        int attribs, folder;
 
-  printf("\n*** DATABLOCKS SECTION ***\n");
-  printf("*** Note: offset is BLOCK offset. Add 8 for DATA offset! ***\n\n");
+        READ(&buf, cffile_SIZEOF);
+        folder =  GETWORD(cffile_FolderIndex);
+        attribs = GETWORD(cffile_Attribs);
 
-  for (i = 0; i < num_blocks; i++) {
-    offset = GETOFFSET;
-    READ(&buf, cfdata_SIZEOF);
-    x = GETWORD(cfdata_CompressedSize);
-    y = GETWORD(cfdata_UncompressedSize);
-    printf("Block %6d: offset %12"LD" / csum %08x / c=%5u / u=%5u%s\n",
-	   i, offset, GETLONG(cfdata_CheckSum), x, y,
-	   ((x > (32768+6144)) || (y > 32768)) ? " INVALID" : "");
-    SKIP(x);
-  }
+        switch (folder) {
+        case cffileCONTINUED_PREV_AND_NEXT:
+            folder_type = "continued from prev and to next cabinet"; break;
+        case cffileCONTINUED_FROM_PREV:
+            folder_type = "continued from prev cabinet"; break;
+        case cffileCONTINUED_TO_NEXT:
+            folder_type = "continued to next cabinet"; break;
+        default:
+            folder_type = folder >= num_folders
+                ? "INVALID FOLDER INDEX"
+                : "normal folder";
+            break;
+        }
 
+        printf("- file %-5d @%-12"LD"%s\n", i, file_offset,
+            (file_offset > min_data_offset ? " [INVALID FILE OFFSET]" : ""));
+        printf("  - name   = %s%s\n", read_name(),
+            (attribs & MSCAB_ATTRIB_UTF_NAME) ? " (UTF-8)" : "");
+        printf("  - folder = 0x%04x [%s]\n", folder, folder_type);
+        printf("  - length = %u bytes\n", GETLONG(cffile_UncompressedSize));
+        printf("  - offset = %u bytes\n", GETLONG(cffile_FolderOffset));
+        printf("  - date   = %02d/%02d/%4d %02d:%02d:%02d\n",
+            (GETWORD(cffile_Date))      & 0x1f,
+            (GETWORD(cffile_Date) >> 5) & 0xf,
+            (GETWORD(cffile_Date) >> 9) + 1980,
+            (GETWORD(cffile_Time) >> 11),
+            (GETWORD(cffile_Time) >> 5) & 0x3f,
+            (GETWORD(cffile_Time) << 1) & 0x3e);
+        printf("  - attrs  = 0x%02x %s%s%s%s%s%s\n",
+            attribs,
+            (attribs & MSCAB_ATTRIB_RDONLY)   ? "RDONLY " : "",
+            (attribs & MSCAB_ATTRIB_HIDDEN)   ? "HIDDEN " : "",
+            (attribs & MSCAB_ATTRIB_SYSTEM)   ? "SYSTEM " : "",
+            (attribs & MSCAB_ATTRIB_ARCH)     ? "ARCH "   : "",
+            (attribs & MSCAB_ATTRIB_EXEC)     ? "EXEC "   : "",
+            (attribs & MSCAB_ATTRIB_UTF_NAME) ? "UTF-8"   : "");
+    }
 }

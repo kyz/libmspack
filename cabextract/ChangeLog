@@ -1,5 +1,14 @@
 2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* src/cabinfo.c: thanks to Micah Snyder for sending some very corrupt
+	files, where cabinet blocks can be found absolutely anywhere, not in
+	a continguous sequence after the file entries, I found cabinfo unfit
+	for purpose. I've updated it with a new output format, where the
+	blocks for a folder appear immediately after each folder, rather than
+	all at the end.
+
+2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* src/cabextract.c: use libmspack's new MSCABD_PARAM_SALVAGE mode
 	for cabextract -f, to allow extracting even more data from broken
 	cabinet files.
