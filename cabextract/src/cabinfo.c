@@ -67,19 +67,11 @@ void getinfo(FILELEN base_offset);
 int myread(void *buf, int length) {
   FILELEN remain = filelen - GETOFFSET;
   if (length > remain) length = (int) remain;
-  if (fread(buf, 1, length, fh) != (size_t) length) {
-    perror(filename);
-    return 1;
-  }
-  return 0;
+  return fread(buf, 1, length, fh) != (size_t) length;
 }
 
 int myseek(FILELEN offset, int mode) {
-  if (FSEEK(fh, offset, mode) != 0) {
-    perror(filename);
-    return 1;
-  }
-  return 0;
+  return FSEEK(fh, offset, mode) != 0;
 }
 
 #define CAB_NAMEMAX (1024)
@@ -94,7 +86,7 @@ char *read_name() {
             return namebuf;
         }
     }
-    printf("WARNING: name length > 256\n");
+    printf("INVALID: name length > 256 for at offset %"LD"\n", name_start);
     namebuf[256] = 0;
     myseek(name_start + 257, SEEK_SET);
     return namebuf;
@@ -254,7 +246,7 @@ void getinfo(FILELEN base_offset) {
             header_res, GETOFFSET);
         printf("- folder reserve = %u bytes\n", folder_res);
         printf("- data reserve   = %u bytes\n", data_res);
-        SEEK(GETOFFSET + header_res);
+        SKIP(header_res);
     }
     if (flags & cfheadPREV_CABINET) {
         printf("- prev cabinet   = %s\n", read_name());
@@ -268,7 +260,7 @@ void getinfo(FILELEN base_offset) {
     printf("FOLDERS SECTION @%"LD":\n", GETOFFSET);
     for (i = 0; i < num_folders; i++) {
         FILELEN folder_offset, data_offset;
-        int comp_type, num_blocks;
+        int comp_type, num_blocks, offset_ok;
         char *type_name;
 
         folder_offset = GETOFFSET;
@@ -278,6 +270,7 @@ void getinfo(FILELEN base_offset) {
         comp_type = GETWORD(cffold_CompType);
 
         min_data_offset = MIN(data_offset, min_data_offset);
+        offset_ok = data_offset < filelen;
 
         switch (comp_type & cffoldCOMPTYPE_MASK) {
         case cffoldCOMPTYPE_NONE:    type_name = "stored";  break;
@@ -286,12 +279,19 @@ void getinfo(FILELEN base_offset) {
         case cffoldCOMPTYPE_LZX:     type_name = "LZX";     break;
         default:                     type_name = "unknown"; break;
         }
-        printf("- folder 0x%04x @%"LD" %u data blocks @%"LD" %s compression (0x%04x)\n",
-            i, folder_offset, num_blocks, data_offset, type_name, comp_type);
+
+        printf("- folder 0x%04x @%"LD" %u data blocks @%"LD"%s %s compression (0x%04x)\n",
+            i, folder_offset, num_blocks, data_offset,
+            offset_ok ? "" : " [INVALID OFFSET]",
+            type_name, comp_type);
 
         SEEK(data_offset);
         for (j = 0; j < num_blocks; j++) {
             int clen, ulen;
+            if (GETOFFSET > filelen) {
+                printf("  - datablock %d @%"LD" [INVALID OFFSET]\n", j, GETOFFSET);
+                break;
+            }
             READ(&buf, cfdata_SIZEOF);
             clen = GETWORD(cfdata_CompressedSize);
             ulen = GETWORD(cfdata_UncompressedSize);
@@ -306,7 +306,7 @@ void getinfo(FILELEN base_offset) {
 
     printf("FILES SECTION @%"LD":\n", GETOFFSET);
     if (files_offset != GETOFFSET) {
-        printf("WARNING: file offset in header %"LD
+        printf("INVALID: file offset in header %"LD
             " doesn't match start of files %"LD"\n",
             files_offset, GETOFFSET);
     }
@@ -315,6 +315,8 @@ void getinfo(FILELEN base_offset) {
         FILELEN file_offset = GETOFFSET;
         char *folder_type;
         int attribs, folder;
+
+        if (file_offset > filelen) return;
 
         READ(&buf, cffile_SIZEOF);
         folder =  GETWORD(cffile_FolderIndex);
