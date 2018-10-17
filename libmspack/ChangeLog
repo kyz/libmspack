@@ -1,4 +1,12 @@
 2018-10-17  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cab.h: Make the CAB block input buffer one byte larger, to allow
+	a maximum-allowed-size input block and the special extra byte added
+	after the block by cabd_sys_read_block to help Quantum alignment.
+	Thanks to Henri Salo for reporting this.
+
+
+2018-10-17  Stuart Caie <kyzer@cabextract.org.uk>
   
         * chmd_read_headers(): again reject files with blank filenames, this
         time because their 1st or 2nd byte is null, not because their length
