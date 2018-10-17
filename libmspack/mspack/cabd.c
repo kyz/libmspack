@@ -724,10 +724,11 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
 
 	/* check that the files offset is less than the alleged length of
 	 * the cabinet, and that the offset + the alleged length are
-	 * 'roughly' within the end of overall file length */
+	 * 'roughly' within the end of overall file length. In salvage
+	 * mode, don't check the alleged length, allow it to be garbage */
 	if ((foffset_u32 < cablen_u32) &&
 	    ((caboff + (off_t) foffset_u32) < (flen + 32)) &&
-	    ((caboff + (off_t) cablen_u32)  < (flen + 32)) )
+	    (((caboff + (off_t) cablen_u32)  < (flen + 32)) || salvage))
 	{
 	  /* likely cabinet found -- try reading it */
 	  if (!(cab = (struct mscabd_cabinet_p *) sys->alloc(sys, sizeof(struct mscabd_cabinet_p)))) {
