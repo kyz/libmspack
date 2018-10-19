@@ -5,12 +5,11 @@
 	after the block by cabd_sys_read_block to help Quantum alignment.
 	Thanks to Henri Salo for reporting this.
 
-
 2018-10-17  Stuart Caie <kyzer@cabextract.org.uk>
-  
-        * chmd_read_headers(): again reject files with blank filenames, this
-        time because their 1st or 2nd byte is null, not because their length
-        is zero.  Thanks again to Hanno Böck for finding the issue.
+
+	* chmd_read_headers(): again reject files with blank filenames, this
+	time because their 1st or 2nd byte is null, not because their length
+	is zero.  Thanks again to Hanno Böck for finding the issue.
 
 2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
 
@@ -19,7 +18,6 @@
 	longer considered a dependency of chmd_test. This breaks parallel
 	builds like "make -j4". Added libchmd.la explicitly to dependencies.
 	Thanks to Thomas Deutschmann for reporting this.
-
 
 2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
 
