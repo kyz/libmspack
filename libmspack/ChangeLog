@@ -1,3 +1,13 @@
+2018-10-20  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* src/chmextract.c: add anti "../" and leading slash protection to
+	chmextract. I'm not pleased about this. All the sample code provided
+	with libmspack is meant to be simple examples of library use, not
+	"productised" binaries. Making the "useful" code samples install
+	as binaries was a mistake. They were never intended to protect you
+	from unpacking archive files with relative/absolute paths, and I
+	would prefer that they never will be.
+
 2018-10-17  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cab.h: Make the CAB block input buffer one byte larger, to allow
