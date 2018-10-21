@@ -76,7 +76,8 @@
  * When MSCABD_PARAM_SALVAGE is set, block size is not checked so can be
  * up to 65535 bytes, so max input buffer size needed is 65535 + 1
  */
-#define CAB_INPUTBUF (65535 + 1)
+#define CAB_INPUTMAX_SALVAGE (65535)
+#define CAB_INPUTBUF (CAB_INPUTMAX_SALVAGE + 1)
 
 /* There are no more than 65535 data blocks per folder, so a folder cannot
  * be more than 32768*65535 bytes in length. As files cannot span more than

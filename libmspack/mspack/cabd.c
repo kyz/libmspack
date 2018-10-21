@@ -1329,7 +1329,7 @@ static int cabd_sys_read_block(struct mspack_system *sys,
     if (full_len > CAB_INPUTMAX) {
       D(("block size %d > CAB_INPUTMAX", full_len));
       /* in salvage mode, blocks can be 65535 bytes but no more than that */
-      if (!ignore_blocksize || full_len > 65535) {
+      if (!ignore_blocksize || full_len > CAB_INPUTMAX_SALVAGE) {
           return MSPACK_ERR_DATAFORMAT;
       }
     }
