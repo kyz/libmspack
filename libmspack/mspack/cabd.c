@@ -306,7 +306,7 @@ static void cabd_close(struct mscab_decompressor *base,
 static int cabd_read_headers(struct mspack_system *sys,
 			     struct mspack_file *fh,
 			     struct mscabd_cabinet_p *cab,
-			     off_t offset, int quiet, int salvage)
+			     off_t offset, int salvage, int quiet)
 {
   int num_folders, num_files, folder_resv, i, x, err, fidx;
   struct mscabd_folder_p *fol, *linkfol = NULL;
