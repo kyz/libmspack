@@ -1169,7 +1169,7 @@ static char *cab_error(struct mscab_decompressor *cd) {
   case MSPACK_ERR_READ:
   case MSPACK_ERR_WRITE:
   case MSPACK_ERR_SEEK:
-    return strerror(errno);
+    return errno ? strerror(errno) : "unknown file I/O error";
   case MSPACK_ERR_NOMEMORY:
     return "out of memory";
   case MSPACK_ERR_SIGNATURE:
