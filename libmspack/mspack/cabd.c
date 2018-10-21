@@ -673,9 +673,8 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
 
     /* FAQ avoidance strategy */
     if ((offset == 0) && (EndGetI32(&buf[0]) == 0x28635349)) {
-      sys->message(fh, "WARNING; found InstallShield header. "
-		   "This is probably an InstallShield file. "
-		   "Use UNSHIELD from www.synce.org to unpack it.");
+      sys->message(fh, "WARNING; found InstallShield header. Use unshield "
+                   "(https://github.com/twogood/unshield) to unpack this file"); 
     }
 
     /* read through the entire buffer. */
