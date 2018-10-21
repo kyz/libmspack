@@ -1304,7 +1304,7 @@ static int cabd_sys_read_block(struct mspack_system *sys,
 {
   unsigned char hdr[cfdata_SIZEOF];
   unsigned int cksum;
-  int len;
+  int len, full_len;
 
   /* reset the input block pointer and end of block pointer */
   d->i_ptr = d->i_end = &d->input[0];
@@ -1325,10 +1325,13 @@ static int cabd_sys_read_block(struct mspack_system *sys,
 
     /* blocks must not be over CAB_INPUTMAX in size */
     len = EndGetI16(&hdr[cfdata_CompressedSize]);
-    if (((d->i_end - d->i_ptr) + len) > CAB_INPUTMAX) {
-      D(("block size > CAB_INPUTMAX (%ld + %d)",
-          (long)(d->i_end - d->i_ptr), len))
-      return MSPACK_ERR_DATAFORMAT;
+    full_len = (d->i_end - d->i_ptr) + len; /* include cab-spanning blocks */
+    if (full_len > CAB_INPUTMAX) {
+      D(("block size %d > CAB_INPUTMAX", full_len));
+      /* in salvage mode, blocks can be 65535 bytes but no more than that */
+      if (!ignore_blocksize || full_len > 65535) {
+          return MSPACK_ERR_DATAFORMAT;
+      }
     }
 
      /* blocks must not expand to more than CAB_BLOCKMAX */
