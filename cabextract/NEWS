@@ -1,3 +1,6 @@
+New in 1.8
+* cabextract -f now extracts even more badly damaged files than before
+
 New in 1.7
 * cabextract now supports an --encoding parameter, to specify the character
   encoding of CAB filenames if they are not ASCII or UTF8
