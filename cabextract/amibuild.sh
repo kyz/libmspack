@@ -27,7 +27,7 @@ cat >config.h <<EOF
 #define LATIN1_FILENAMES 1
 #define STDC_HEADERS 1
 #define TIME_WITH_SYS_TIME 1
-#define VERSION "1.7"
+#define VERSION "1.8"
 #define WORDS_BIGENDIAN 1
 EOF
 cp fnmatch_.h fnmatch.h
