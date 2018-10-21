@@ -48,168 +48,137 @@
 # define FILELEN long
 #endif
 
+void search();
+void getinfo(FILELEN base_offset);
+char *read_name();
+
 FILE *fh;
 char *filename;
 FILELEN filelen;
-void search();
-void getinfo(FILELEN base_offset);
-
-#define GETLONG(n) EndGetI32(&buf[n])
-#define GETWORD(n) EndGetI16(&buf[n])
-#define GETBYTE(n) ((int)buf[n])
-#define MIN(a,b) ((a)<(b)?(a):(b))
-
-#define GETOFFSET      (FTELL(fh))
-#define READ(buf,len)  if (myread((void *)(buf),(len))) return
-#define SKIP(offset)   if (myseek((offset),SEEK_CUR)) return
-#define SEEK(offset)   if (myseek((offset),SEEK_SET)) return
-
-int myread(void *buf, int length) {
-  FILELEN remain = filelen - GETOFFSET;
-  if (length > remain) length = (int) remain;
-  return fread(buf, 1, length, fh) != (size_t) length;
-}
-
-int myseek(FILELEN offset, int mode) {
-  return FSEEK(fh, offset, mode) != 0;
-}
-
-#define CAB_NAMEMAX (1024)
-char namebuf[CAB_NAMEMAX];
-char *read_name() {
-    FILELEN name_start = GETOFFSET;
-    int i;
-    if (myread(&namebuf, CAB_NAMEMAX)) return "READ FAILED";
-    for (i = 0; i <= 256; i++) {
-        if (!namebuf[i]) {
-            myseek(name_start + i + 1, SEEK_SET);
-            return namebuf;
-        }
-    }
-    printf("INVALID: name length > 256 for at offset %"LD"\n", name_start);
-    namebuf[256] = 0;
-    myseek(name_start + 257, SEEK_SET);
-    return namebuf;
-}
-
 
 int main(int argc, char *argv[]) {
-  int i;
+    int i;
 
-  printf("Cabinet information dumper by Stuart Caie <kyzer@cabextract.org.uk>\n");
+    printf("Cabinet information dumper by Stuart Caie <kyzer@cabextract.org.uk>\n");
 
-  if (argc <= 1) {
-    printf("Usage: %s <file.cab>\n", argv[0]);
-    return 1;
-  }
-
-  for (i = 1; i < argc; i++) {
-    if ((fh = fopen((filename = argv[i]), "rb"))) {
-      search();
-      fclose(fh);
+    if (argc <= 1) {
+        printf("Usage: %s <file.cab>\n", argv[0]);
+        return 1;
     }
-    else {
-      perror(filename);
+
+    for (i = 1; i < argc; i++) {
+        if ((fh = fopen((filename = argv[i]), "rb"))) {
+            search();
+            fclose(fh);
+        }
+        else {
+            perror(filename);
+        }
     }
-  }
-  return 0;
+    return 0;
+}
+
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#define GETOFFSET      (FTELL(fh))
+#define READ(buf,len)  if (myread((void *)(buf),(len))) return
+#define SKIP(offset)   if (FSEEK(fh,(offset),SEEK_CUR)) return
+#define SEEK(offset)   if (FSEEK(fh,(offset),SEEK_SET)) return
+int myread(void *buf, size_t length) {
+    length = MIN(length, (int)(filelen - GETOFFSET));
+    return fread(buf, 1, length, fh) != length;
 }
 
 #define SEARCH_SIZE (32*1024)
 unsigned char search_buf[SEARCH_SIZE];
 
 void search() {
-  unsigned char *pstart = &search_buf[0], *pend, *p;
-  FILELEN offset, caboff, cablen, foffset, length;
-  unsigned long cablen32 = 0, foffset32 = 0;
-  int state = 0;
+    unsigned char *pstart = &search_buf[0], *pend, *p;
+    FILELEN offset, caboff, length;
+    unsigned long cablen32 = 0, foffset32 = 0;
+    int state = 0;
 
-  if (FSEEK(fh, 0, SEEK_END) != 0) {
-    perror(filename);
-    return;
-  }
-  filelen = FTELL(fh);
-  if (FSEEK(fh, 0, SEEK_SET) != 0) {
-    perror(filename);
-    return;
-  }
+    if (FSEEK(fh, 0, SEEK_END) != 0) {
+        perror(filename);
+        return;
+    }
+    filelen = FTELL(fh);
+    if (FSEEK(fh, 0, SEEK_SET) != 0) {
+        perror(filename);
+        return;
+    }
 
-  printf("Examining file \"%s\" (%"LD" bytes)...\n", filename, filelen);
+    printf("Examining file \"%s\" (%"LD" bytes)...\n", filename, filelen);
 
-  for (offset = 0; offset < filelen; offset += length) {
-    /* search length is either the full length of the search buffer,
-     * or the amount of data remaining to the end of the file,
-     * whichever is less.
-     */
-    length = filelen - offset;
-    if (length > SEARCH_SIZE) length = SEARCH_SIZE;
+    for (offset = 0; offset < filelen; offset += length) {
+        /* search length is either the full length of the search buffer,
+         * or the amount of data remaining to the end of the file,
+         * whichever is less. */
+        length = filelen - offset;
+        if (length > SEARCH_SIZE) length = SEARCH_SIZE;
 
-    /* fill the search buffer with data from disk */
-    SEEK(offset);
-    READ(&search_buf[0], length);
-    /* read through the entire buffer. */
-    p = pstart;
-    pend = &search_buf[length];
-    while (p < pend) {
-      switch (state) {
-	/* starting state */
-      case 0:
-	/* we spend most of our time in this while loop, looking for
-	 * a leading 'M' of the 'MSCF' signature
-	 */
-	while (*p++ != 0x4D && p < pend);
-	if (p < pend) state = 1; /* if we found tht 'M', advance state */
-	break;
-	
-	/* verify that the next 3 bytes are 'S', 'C' and 'F' */
-      case 1: state = (*p++ == 0x53) ? 2 : 0; break;
-      case 2: state = (*p++ == 0x43) ? 3 : 0; break;
-      case 3: state = (*p++ == 0x46) ? 4 : 0; break;
-	
-	/* we don't care about bytes 4-7 */
-	/* bytes 8-11 are the overall length of the cabinet */
-      case 8:  cablen32  = *p++;       state++; break;
-      case 9:  cablen32 |= *p++ << 8;  state++; break;
-      case 10: cablen32 |= *p++ << 16; state++; break;
-      case 11: cablen32 |= *p++ << 24; state++; break;
-	
-	/* we don't care about bytes 12-15 */
-	/* bytes 16-19 are the offset within the cabinet of the filedata */
-      case 16: foffset32  = *p++;       state++; break;
-      case 17: foffset32 |= *p++ << 8;  state++; break;
-      case 18: foffset32 |= *p++ << 16; state++; break;
-      case 19: foffset32 |= *p++ << 24;
-	/* now we have recieved 20 bytes of potential cab header. */
-	/* work out the offset in the file of this potential cabinet */
-	caboff = offset + (p-pstart) - 20;
-	/* check that the files offset is less than the alleged length
-	 * of the cabinet, and that the offset + the alleged length are
-	 * 'roughly' within the end of overall file length
-	 */
-	foffset = (FILELEN) foffset32;
-	cablen  = (FILELEN) cablen32;
-	if ((foffset < cablen) &&
-	    ((caboff + foffset) < (filelen + 32)) &&
-	    ((caboff + cablen) < (filelen + 32)) )
-	{
-	  /* found a potential result - try loading it */
-	  getinfo(caboff);
-	  offset = caboff + cablen;
-	  length = 0;
-	  p = pend;
-	}
-	state = 0;
-	break;
+        /* fill the search buffer with data from disk */
+        SEEK(offset);
+        READ(&search_buf[0], length);
 
-      default:
-	p++, state++; break;
-      } /* switch state */
-    } /* while p < pend */
-  } /* while offset < filelen */
+        /* read through the entire buffer. */
+        p = pstart;
+        pend = &search_buf[length];
+        while (p < pend) {
+            switch (state) {
+            /* starting state */
+            case 0:
+                /* we spend most of our time in this while loop, looking for
+                 * a leading 'M' of the 'MSCF' signature */
+                while (*p++ != 0x4D && p < pend);
+                if (p < pend) state = 1; /* if we found the 'M', advance state */
+            break;
+        
+            /* verify that the next 3 bytes are 'S', 'C' and 'F' */
+            case 1: state = (*p++ == 0x53) ? 2 : 0; break;
+            case 2: state = (*p++ == 0x43) ? 3 : 0; break;
+            case 3: state = (*p++ == 0x46) ? 4 : 0; break;
+        
+            /* we don't care about bytes 4-7 */
+            /* bytes 8-11 are the overall length of the cabinet */
+            case 8:  cablen32  = *p++;       state++; break;
+            case 9:  cablen32 |= *p++ << 8;  state++; break;
+            case 10: cablen32 |= *p++ << 16; state++; break;
+            case 11: cablen32 |= *p++ << 24; state++; break;
+        
+            /* we don't care about bytes 12-15 */
+            /* bytes 16-19 are the offset within the cabinet of the filedata */
+            case 16: foffset32  = *p++;       state++; break;
+            case 17: foffset32 |= *p++ << 8;  state++; break;
+            case 18: foffset32 |= *p++ << 16; state++; break;
+            case 19: foffset32 |= *p++ << 24;
+                /* now we have recieved 20 bytes of potential cab header. */
+                /* work out the offset in the file of this potential cabinet */
+                caboff = offset + (p-pstart) - 20;
+                /* check that the files offset is less than the alleged length
+                 * of the cabinet */
+                if (foffset32 < cablen32) {
+                    /* found a potential result - try loading it */
+                    getinfo(caboff);
+                    offset = caboff + (FILELEN) cablen32;
+                    length = 0;
+                    p = pend;
+                }
+                state = 0;
+                break;
+
+            default:
+                p++, state++; break;
+            } /* switch state */
+        } /* while p < pend */
+    } /* while offset < filelen */
 }
 
+#define GETLONG(n) EndGetI32(&buf[n])
+#define GETWORD(n) EndGetI16(&buf[n])
+#define GETBYTE(n) ((int)buf[n])
+
 void getinfo(FILELEN base_offset) {
-    unsigned char buf[64], namebuf[CAB_NAMEMAX], *name;
+    unsigned char buf[64], *name;
     int header_res = 0, folder_res = 0, data_res = 0;
     int num_folders, num_files, flags, i, j;
     FILELEN files_offset, min_data_offset = filelen;
@@ -359,4 +328,22 @@ void getinfo(FILELEN base_offset) {
             (attribs & MSCAB_ATTRIB_EXEC)     ? "EXEC "   : "",
             (attribs & MSCAB_ATTRIB_UTF_NAME) ? "UTF-8"   : "");
     }
+}
+
+#define CAB_NAMEMAX (1024)
+char namebuf[CAB_NAMEMAX];
+char *read_name() {
+    FILELEN name_start = GETOFFSET;
+    int i;
+    if (myread(&namebuf, CAB_NAMEMAX)) return "READ FAILED";
+    for (i = 0; i <= 256; i++) {
+        if (!namebuf[i]) {
+            FSEEK(fh, name_start + i + 1, SEEK_SET);
+            return namebuf;
+        }
+    }
+    printf("INVALID: name length > 256 for at offset %"LD"\n", name_start);
+    namebuf[256] = 0;
+    FSEEK(fh, name_start + 257, SEEK_SET);
+    return namebuf;
 }
