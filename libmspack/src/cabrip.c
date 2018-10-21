@@ -35,7 +35,7 @@ void rip(char *fname, off_t offset, unsigned int length) {
 	  unsigned int run = BUF_SIZE;
 	  if (run > length) run = length;
 	  if (fread(&buf[0], 1, run, in) != run) {
-	    perror(fname);
+	    fprintf(stderr, "%s: file shorter than expected cab length\n", fname);
 	    break;
 	  }
 	  if (fwrite(&buf[0], 1, run, out) != run) {
@@ -51,7 +51,7 @@ void rip(char *fname, off_t offset, unsigned int length) {
       }
     }
     else {
-      perror(fname);
+      fprintf(stderr, "%s: can't seek to expected cab offset\n", fname);
     }
     fclose(in);
   }
@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
   if (err) return 0;
 
   if ((cabd = mspack_create_cab_decompressor(NULL))) {
+    cabd->set_param(cabd, MSCABD_PARAM_SALVAGE, 1);
     for (argv++; *argv; argv++) {
       if ((cab = cabd->search(cabd, *argv))) {
 	for (c = cab; c; c = c->next) rip(*argv, c->base_offset, c->length);
