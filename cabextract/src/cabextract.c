@@ -1166,10 +1166,13 @@ static int ensure_filepath(char *path) {
 static char *cab_error(struct mscab_decompressor *cd) {
   switch (cd->last_error(cd)) {
   case MSPACK_ERR_OPEN:
+    return errno ? strerror(errno) : "file open error";
   case MSPACK_ERR_READ:
+    return errno ? strerror(errno) : "file read error";
   case MSPACK_ERR_WRITE:
+    return errno ? strerror(errno) : "file write error";
   case MSPACK_ERR_SEEK:
-    return errno ? strerror(errno) : "unknown file I/O error";
+    return errno ? strerror(errno) : "file seek error";
   case MSPACK_ERR_NOMEMORY:
     return "out of memory";
   case MSPACK_ERR_SIGNATURE:
