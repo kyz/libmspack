@@ -178,7 +178,7 @@ void search() {
 #define GETBYTE(n) ((int)buf[n])
 
 void getinfo(FILELEN base_offset) {
-    unsigned char buf[64], *name;
+    unsigned char buf[64];
     int header_res = 0, folder_res = 0, data_res = 0;
     int num_folders, num_files, flags, i, j;
     FILELEN files_offset, min_data_offset = filelen;
