@@ -1,3 +1,8 @@
+2018-10-22  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* amibuild.sh: include cabinfo in the Amiga distribution. Thanks to
+	Stefan Haubenthal for the suggestion.
+
 2018-10-16  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* src/cabinfo.c: thanks to Micah Snyder for sending some very corrupt

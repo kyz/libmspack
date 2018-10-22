@@ -39,7 +39,9 @@ SRCS="mspack/*.c src/cabextract.c md5.c fnmatch.c"
 rm -f *.lha
 
 ppc-amigaos-gcc $CFLAGS -DHAVE_FSEEKO -DHAVE_ICONV -DHAVE_UMASK $SRCS -o cabextract &&
-lha a cabextract_OS4.lha cabextract
+ppc-amigaos-gcc $CFLAGS -DHAVE_FSEEKO src/cabinfo.c -o cabinfo &&
+lha a cabextract_OS4.lha cabextract cabinfo
 
 m68k-amigaos-gcc $CFLAGS -DNDEBUG -noixemul $SRCS getopt.c getopt1.c -o cabextract &&
-lha a cabextract.lha cabextract
+m68k-amigaos-gcc $CFLAGS -DNDEBUG -noixemul src/cabinfo.c -o cabinfo &&
+lha a cabextract.lha cabextract cabinfo
