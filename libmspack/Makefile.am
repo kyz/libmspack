@@ -4,7 +4,7 @@ pkgconfigdir =		$(libdir)/pkgconfig
 pkgconfig_DATA = 	libmspack.pc
 
 dist-hook:
-	-rm -f $(distdir)/*.la
+	-rm -f $(distdir)/*.la $(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm
 
 ACLOCAL_AMFLAGS =	-I m4
 AM_CFLAGS =
@@ -89,11 +89,11 @@ test_chmd_order_SOURCES =	test/chmd_order.c test/md5.c test/md5.h \
 test_chmd_order_LDADD =		libmschmd.la
 test_chmd_test_SOURCES =	test/chmd_test.c libmschmd.la
 test_chmd_test_LDADD =		libmschmd.la
-test_chmd_test_DEPENDENCIES = 	libmschmd.la test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm
+test_chmd_test_DEPENDENCIES = 	libmschmd.la $(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm
 test_chminfo_SOURCES =		test/chminfo.c libmschmd.la
 test_chminfo_LDADD =		libmschmd.la
 test_kwajd_test_SOURCES =	test/kwajd_test.c libmspack.la
 test_kwajd_test_LDADD = 	libmspack.la
 
-test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm: test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm.LZXC-is-lzxc
+$(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm: $(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm.LZXC-is-lzxc
 	sed s/lzxc/LZXC/ $< >$@
