@@ -34,9 +34,9 @@
 #endif
 
 /* include <system.h> from libmspack for LD and EndGetI?? macros */
-#include <system.h>
+#include <mspack/system.h>
 /* include <cab.h> from libmspack for cab structure offsets */
-#include <cab.h>
+#include <mspack/cab.h>
 
 #if HAVE_FSEEKO
 # define FSEEK fseeko
