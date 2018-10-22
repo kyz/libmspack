@@ -1,3 +1,7 @@
+2018-10-22  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd.c: remove the only use of assert()
+
 2018-10-20  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* src/chmextract.c: add anti "../" and leading slash protection to

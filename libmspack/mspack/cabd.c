@@ -23,7 +23,9 @@
 
 #include <system.h>
 #include <cab.h>
-#include <assert.h>
+#include <mszip.h>
+#include <lzx.h>
+#include <qtm.h>
 
 /* Notes on compliance with cabinet specification:
  *
@@ -1159,8 +1161,6 @@ static int cabd_extract(struct mscab_decompressor *base,
 static int cabd_init_decomp(struct mscab_decompressor_p *self, unsigned int ct)
 {
   struct mspack_file *fh = (struct mspack_file *) self;
-
-  assert(self && self->d);
 
   self->d->comp_type = ct;
 
