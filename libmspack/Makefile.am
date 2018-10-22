@@ -42,7 +42,7 @@ libmspack_la_SOURCES =	mspack/mspack.h \
 			mspack/lzss.h mspack/lzssd.c \
 			mspack/des.h mspack/sha.h \
 			mspack/crc32.c mspack/crc32.h
-libmspack_la_LDFLAGS =	-export-symbols-regex '^mspack_' -version-info 1:0:1
+libmspack_la_LDFLAGS =	-export-symbols-regex '^mspack_' -version-info 1:0:1 -no-undefined
 
 libmscabd_la_SOURCES =	mspack/mspack.h \
 			mspack/system.h mspack/system.c \
