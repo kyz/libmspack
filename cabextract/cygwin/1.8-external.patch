@@ -1,0 +1,32 @@
+diff --git a/cabextract/src/cabinfo.c b/cabextract/src/cabinfo.c
+index b4049b3..a4b14bf 100644
+--- a/cabextract/src/cabinfo.c
++++ b/cabextract/src/cabinfo.c
+@@ -34,9 +34,9 @@
+ #endif
+ 
+ /* include <system.h> from libmspack for LD and EndGetI?? macros */
+-#include <system.h>
++#include <mspack/system.h>
+ /* include <cab.h> from libmspack for cab structure offsets */
+-#include <cab.h>
++#include <mspack/cab.h>
+ 
+ #if HAVE_FSEEKO
+ # define FSEEK fseeko
+diff --git a/libmspack/mspack/cab.h b/libmspack/mspack/cab.h
+index 5761d43..9bbf842 100644
+--- a/libmspack/mspack/cab.h
++++ b/libmspack/mspack/cab.h
+@@ -10,10 +10,6 @@
+ #ifndef MSPACK_CAB_H
+ #define MSPACK_CAB_H 1
+ 
+-#include <mszip.h>
+-#include <qtm.h>
+-#include <lzx.h>
+-
+ /* generic CAB definitions */
+ 
+ /* structure offsets */
+
