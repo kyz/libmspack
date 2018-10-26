@@ -47,15 +47,11 @@ AC_ARG_WITH([external-libmspack],
  [cabextract_external_libmspack=$withval])
 
 if test "z$cabextract_external_libmspack" != 'zno'; then
- AC_CHECK_HEADER([mspack.h], ,[AC_MSG_ERROR([Cannot find libmspack header])])
+  PKG_CHECK_MODULES([libmspack], [libmspack >= 0.8alpha])
+  AC_CHECK_HEADER([mspack.h], ,[AC_MSG_ERROR([Cannot find libmspack header])])
+  AC_CHECK_LIB([mspack],[mspack_create_cab_decompressor], ,
+   [AC_MSG_ERROR([Cannot find libmspack library])])
 fi
-
-if test "z$cabextract_external_libmspack" != 'zno'; then
- AC_CHECK_LIB([mspack],[mspack_create_cab_compressor], 
-  [LIBMSPACK_LIBS=-lmspack],
-  [AC_MSG_ERROR([Cannot find libmspack library])])
-fi
-AC_SUBST([LIBMSPACK_LIBS])
 AM_CONDITIONAL([EXTERNAL_LIBMSPACK], [test "z$cabextract_external_libmspack" != 'zno'])
 
 AC_CONFIG_FILES([Makefile cabextract.spec])

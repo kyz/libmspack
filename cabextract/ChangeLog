@@ -1,5 +1,13 @@
 2018-10-26  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* configure.ac, Makefile.am: use pkg-config's PKG_CHECK_MODULES
+	when looking for an external libmspack. You still need to supply
+	--with-external-libmspack to use an external libmspack. If you
+	don't like or use pkg-config, you can set the environment variables
+	libmspack_CFLAGS and libmspack_LIBS before running configure.
+
+2018-10-26  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* autogen.sh, distcheck.sh: I've introduced new build scripts.
 	Use cleanup.sh to remove all generated files, autogen.sh to
 	generate the configure script, rebuild.sh to (re)build and test
