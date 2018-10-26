@@ -1,3 +1,12 @@
+2018-10-26  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* autogen.sh, distcheck.sh: I've introduced new build scripts.
+	Use cleanup.sh to remove all generated files, autogen.sh to
+	generate the configure script, rebuild.sh to (re)build and test
+	cabextract, and finally use distcheck.sh to both build and
+	distcheck cabextract, both with the --with-external-libmspack
+	configure option and without.
+
 2018-10-22  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* amibuild.sh: include cabinfo in the Amiga distribution. Thanks to
