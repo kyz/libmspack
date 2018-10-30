@@ -536,7 +536,10 @@ static int chmd_fast_find(struct mschm_decompressor *base,
     struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
     struct mspack_system *sys;
     struct mspack_file *fh;
-    const unsigned char *chunk, *p, *end;
+    /* p and end are initialised to prevent MSVC warning about "potentially"
+     * uninitialised usage. This is provably untrue, but MS won't fix:
+     * https://developercommunity.visualstudio.com/content/problem/363489/c4701-false-positive-warning.html */
+    const unsigned char *chunk, *p = NULL, *end = NULL;
     int err = MSPACK_ERR_OK, result = -1;
     unsigned int n, sec;
 
