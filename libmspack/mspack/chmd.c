@@ -292,7 +292,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   }
 
   /* check both header GUIDs */
-  if (mspack_memcmp(&buf[chmhead_GUID1], &guids[0], 32L) != 0) {
+  if (memcmp(&buf[chmhead_GUID1], &guids[0], 32L) != 0) {
     D(("incorrect GUIDs"))
     return MSPACK_ERR_SIGNATURE;
   }
@@ -483,17 +483,17 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
 
       if (name[0] == ':' && name[1] == ':') {
 	/* system file */
-	if (mspack_memcmp(&name[2], &content_name[2], 31L) == 0) {
-	  if (mspack_memcmp(&name[33], &content_name[33], 8L) == 0) {
+	if (memcmp(&name[2], &content_name[2], 31L) == 0) {
+	  if (memcmp(&name[33], &content_name[33], 8L) == 0) {
 	    chm->sec1.content = fi;
 	  }
-	  else if (mspack_memcmp(&name[33], &control_name[33], 11L) == 0) {
+	  else if (memcmp(&name[33], &control_name[33], 11L) == 0) {
 	    chm->sec1.control = fi;
 	  }
-	  else if (mspack_memcmp(&name[33], &spaninfo_name[33], 8L) == 0) {
+	  else if (memcmp(&name[33], &spaninfo_name[33], 8L) == 0) {
 	    chm->sec1.spaninfo = fi;
 	  }
-	  else if (mspack_memcmp(&name[33], &rtable_name[33], 72L) == 0) {
+	  else if (memcmp(&name[33], &rtable_name[33], 72L) == 0) {
 	    chm->sec1.rtable = fi;
 	  }
 	}
@@ -827,35 +827,11 @@ static int search_chunk(struct mschmd_header *chm,
 }
 
 #if HAVE_TOWLOWER
-# if HAVE_WCTYPE_H
-#  include <wctype.h>
-# endif
+# include <wctype.h>
 # define TOLOWER(x) towlower(x)
-#elif HAVE_TOLOWER
-# if HAVE_CTYPE_H
-#  include <ctype.h>
-# endif
-# define TOLOWER(x) tolower(x)
 #else
-# define TOLOWER(x) (((x)<0||(x)>255)?(x):mspack_tolower_map[(x)])
-/* Map of char -> lowercase char for the first 256 chars. Generated with:
- * LC_CTYPE=en_GB.utf-8 perl -Mlocale -le 'print map{ord(lc chr).","} 0..255'
- */
-static const unsigned char mspack_tolower_map[256] = {
-    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,
-    28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,
-    53,54,55,56,57,58,59,60,61,62,63,64,97,98,99,100,101,102,103,104,105,106,
-    107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,91,92,93,94,
-    95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,
-    115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,
-    134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,
-    153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,
-    172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,
-    191,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,
-    242,243,244,245,246,215,248,249,250,251,252,253,254,223,224,225,226,227,228,
-    229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,
-    248,249,250,251,252,253,254,255
-};
+# include <ctype.h>
+# define TOLOWER(x) tolower(x)
 #endif
 
 /* decodes a UTF-8 character from s[] into c. Will not read past e. 

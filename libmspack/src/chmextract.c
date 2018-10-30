@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mspack.h>
-#include <ctype.h>
 #include <sys/stat.h>
 
 #include <error.h>

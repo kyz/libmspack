@@ -14,12 +14,7 @@ AC_PROG_RANLIB
 AC_EXEEXT
 
 # Checks for header files.
-AC_HEADER_STDC
-AC_HEADER_TIME
-AC_HEADER_DIRENT
-AC_CHECK_HEADERS([ctype.h errno.h fnmatch.h libintl.h limits.h locale.h stdlib.h \
-	string.h strings.h utime.h stdarg.h sys/stat.h sys/time.h sys/types.h \
-	getopt.h wchar.h wctype.h inttypes.h])
+AC_CHECK_HEADERS([getopt.h inttypes.h strings.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -34,7 +29,7 @@ AC_SYS_LARGEFILE
 AC_FUNC_FNMATCH
 AC_FUNC_FSEEKO
 AX_FUNC_MKDIR
-AC_CHECK_FUNCS([memcpy memmove strcasecmp strchr towlower umask utime utimes])
+AC_CHECK_FUNCS([towlower umask utime utimes])
 AC_CHECK_FUNCS([getopt_long],,[AC_CHECK_LIB([gnugetopt], [getopt_long],
   [AC_DEFINE([HAVE_GETOPT_LONG])],[AC_LIBOBJ(getopt) AC_LIBOBJ(getopt1)])])
 AC_REPLACE_FNMATCH

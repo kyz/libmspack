@@ -150,7 +150,7 @@ static int szddd_read_headers(struct mspack_system *sys,
     /* read and check signature */
     if (sys->read(fh, buf, 8) != 8) return MSPACK_ERR_READ;
 
-    if ((mspack_memcmp(buf, szdd_signature_expand, 8) == 0)) {
+    if ((memcmp(buf, szdd_signature_expand, 8) == 0)) {
 	/* common SZDD */
 	hdr->format = MSSZDD_FMT_NORMAL;
 
@@ -160,7 +160,7 @@ static int szddd_read_headers(struct mspack_system *sys,
 	hdr->missing_char = buf[1];
 	hdr->length = EndGetI32(&buf[2]);
     }
-    else if ((mspack_memcmp(buf, szdd_signature_qbasic, 8) == 0)) {
+    else if ((memcmp(buf, szdd_signature_qbasic, 8) == 0)) {
 	/* special QBasic SZDD */
 	hdr->format = MSSZDD_FMT_QBASIC;
 	if (sys->read(fh, buf, 4) != 4) return MSPACK_ERR_READ;

@@ -22,10 +22,7 @@
 #define _MD5_H 1
 
 #include <stdio.h>
-
-#if defined HAVE_LIMITS_H || _LIBC
-# include <limits.h>
-#endif
+#include <limits.h>
 
 /* The following contortions are an attempt to use the C preprocessor
    to determine an unsigned integral type that is 32 bits wide.  An
@@ -34,8 +31,12 @@
    the resulting executable.  Locally running cross-compiled executables
    is usually not possible.  */
 
-#ifdef _LIBC
-# include <stdint.h>
+#if HAVE_INTTYPES_H || HAVE_STDINT_H
+# if HAVE_INTTYPES_H
+#  include <inttypes.h>
+# else
+#  include <stdint.h>
+# endif
 typedef uint32_t md5_uint32;
 typedef uintptr_t md5_uintptr;
 #else

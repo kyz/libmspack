@@ -1,3 +1,16 @@
+018-10-30  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac: remove obsolescent C library tests. AC_HEADER_STDC is
+	removed, and so are most checks for standard C headers. cabextract now
+	makes these assumptions:
+	- <ctype.h> <dirent.h> <errno.h> <limits.h> <locale.h> <stdarg.h>
+	  <stdlib.h> <string.h> <sys/stat.h> <sys/types.h> <time.h> exist
+	- <time.h> is protected from double-inclusion (AC_HEADER_TIME obsolete)
+	- if you have iconv(), towlower(), utime(), utimes(), you also
+	  have their header files
+	- BSD has memcpy(), memmove(), strrchr() in <string.h> and has
+	  strcasecmp() in <strings.h>
+
 2018-10-26  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac, Makefile.am: use pkg-config's PKG_CHECK_MODULES

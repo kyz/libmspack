@@ -1,3 +1,13 @@
+2018-10-30  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac: remove obsolescent C library tests. AC_HEADER_STDC is
+	removed, and so are most checks for standard C headers. libmspack now
+	makes these assumptions:
+	- <ctype.h> <limits.h> <stdlib.h> <string.h> exist
+	- <ctype.h> defines tolower()
+	- <string.h> defines memset(), memcmp(), strlen()
+	- if towlower() exists, it's defined in <wctype.h>
+
 2018-10-22  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd.c: remove the only use of assert()

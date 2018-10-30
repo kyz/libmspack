@@ -198,9 +198,7 @@ static char *posixly_correct;
 # define my_index	strchr
 #else
 
-# if HAVE_STRING_H
-#  include <string.h>
-# endif
+# include <string.h>
 # if HAVE_STRINGS_H
 #  include <strings.h>
 # endif

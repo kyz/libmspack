@@ -25,17 +25,26 @@
 #endif
 
 #include <sys/types.h>
-
-#if STDC_HEADERS
-# include <stdlib.h>
-# include <string.h>
-#else
-# ifndef HAVE_MEMCPY
-#  define memcpy(d, s, n) bcopy ((s), (d), (n))
-# endif
-#endif
+#include <stdlib.h>
+#include <string.h>
 
 #include <md5.h>
+
+#ifdef _LIBC
+# include <endian.h>
+# if __BYTE_ORDER == __BIG_ENDIAN
+#  define WORDS_BIGENDIAN 1
+# endif
+/* We need to keep the namespace clean so define the MD5 function
+   protected using leading __ .  */
+# define md5_init_ctx __md5_init_ctx
+# define md5_process_block __md5_process_block
+# define md5_process_bytes __md5_process_bytes
+# define md5_finish_ctx __md5_finish_ctx
+# define md5_read_ctx __md5_read_ctx
+# define md5_stream __md5_stream
+# define md5_buffer __md5_buffer
+#endif
 
 #ifdef WORDS_BIGENDIAN
 # define SWAP(n)							\
@@ -47,7 +56,8 @@
 #define BLOCKSIZE 4096
 /* Ensure that BLOCKSIZE is a multiple of 64.  */
 #if BLOCKSIZE % 64 != 0
-#error "invalid BLOCKSIZE"
+/* FIXME-someday (soon?): use #error instead of this kludge.  */
+"invalid BLOCKSIZE"
 #endif
 
 /* This array contains the bytes used to pad the buffer to the next
@@ -58,8 +68,7 @@ static const unsigned char fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */ };
 /* Initialize structure containing state of computation.
    (RFC 1321, 3.3: Step 3)  */
 void
-md5_init_ctx (ctx)
-     struct md5_ctx *ctx;
+md5_init_ctx (struct md5_ctx *ctx)
 {
   ctx->A = 0x67452301;
   ctx->B = 0xefcdab89;
@@ -76,9 +85,7 @@ md5_init_ctx (ctx)
    IMPORTANT: On some systems it is required that RESBUF is correctly
    aligned for a 32 bits value.  */
 void *
-md5_read_ctx (ctx, resbuf)
-     const struct md5_ctx *ctx;
-     void *resbuf;
+md5_read_ctx (const struct md5_ctx *ctx, void *resbuf)
 {
   ((md5_uint32 *) resbuf)[0] = SWAP (ctx->A);
   ((md5_uint32 *) resbuf)[1] = SWAP (ctx->B);
@@ -94,9 +101,7 @@ md5_read_ctx (ctx, resbuf)
    IMPORTANT: On some systems it is required that RESBUF is correctly
    aligned for a 32 bits value.  */
 void *
-md5_finish_ctx (ctx, resbuf)
-     struct md5_ctx *ctx;
-     void *resbuf;
+md5_finish_ctx (struct md5_ctx *ctx, void *resbuf)
 {
   /* Take yet unprocessed bytes into account.  */
   md5_uint32 bytes = ctx->buflen;
@@ -121,11 +126,94 @@ md5_finish_ctx (ctx, resbuf)
   return md5_read_ctx (ctx, resbuf);
 }
 
+/* Compute MD5 message digest for bytes read from STREAM.  The
+   resulting message digest number will be written into the 16 bytes
+   beginning at RESBLOCK.  */
+int
+md5_stream (FILE *stream, void *resblock)
+{
+  struct md5_ctx ctx;
+  char buffer[BLOCKSIZE + 72];
+  size_t sum;
+
+  /* Initialize the computation context.  */
+  md5_init_ctx (&ctx);
+
+  /* Iterate over full file contents.  */
+  while (1)
+    {
+      /* We read the file in blocks of BLOCKSIZE bytes.  One call of the
+	 computation function processes the whole buffer so that with the
+	 next round of the loop another block can be read.  */
+      size_t n;
+      sum = 0;
+
+      /* Read block.  Take care for partial reads.  */
+      while (1)
+	{
+	  n = fread (buffer + sum, 1, BLOCKSIZE - sum, stream);
+
+	  sum += n;
+
+	  if (sum == BLOCKSIZE)
+	    break;
+
+	  if (n == 0)
+	    {
+	      /* Check for the error flag IFF N == 0, so that we don't
+		 exit the loop after a partial read due to e.g., EAGAIN
+		 or EWOULDBLOCK.  */
+	      if (ferror (stream))
+		return 1;
+	      goto process_partial_block;
+	    }
+
+	  /* We've read at least one byte, so ignore errors.  But always
+	     check for EOF, since feof may be true even though N > 0.
+	     Otherwise, we could end up calling fread after EOF.  */
+	  if (feof (stream))
+	    goto process_partial_block;
+	}
+
+      /* Process buffer with BLOCKSIZE bytes.  Note that
+			BLOCKSIZE % 64 == 0
+       */
+      md5_process_block (buffer, BLOCKSIZE, &ctx);
+    }
+
+ process_partial_block:;
+
+  /* Process any remaining bytes.  */
+  if (sum > 0)
+    md5_process_bytes (buffer, sum, &ctx);
+
+  /* Construct result in desired memory.  */
+  md5_finish_ctx (&ctx, resblock);
+  return 0;
+}
+
+/* Compute MD5 message digest for LEN bytes beginning at BUFFER.  The
+   result is always in little endian byte order, so that a byte-wise
+   output yields to the wanted ASCII representation of the message
+   digest.  */
+void *
+md5_buffer (const char *buffer, size_t len, void *resblock)
+{
+  struct md5_ctx ctx;
+
+  /* Initialize the computation context.  */
+  md5_init_ctx (&ctx);
+
+  /* Process whole buffer but last len % 64 bytes.  */
+  md5_process_bytes (buffer, len, &ctx);
+
+  /* Put result in desired memory area.  */
+  return md5_finish_ctx (&ctx, resblock);
+}
+
+
 void
-md5_process_bytes (buffer, len, ctx)
-     const void *buffer;
-     size_t len;
-     struct md5_ctx *ctx;
+md5_process_bytes ( const void *buffer, size_t len, struct md5_ctx *ctx)
 {
   /* When we already have some bits in our internal buffer concatenate
      both inputs first.  */
@@ -210,13 +298,10 @@ md5_process_bytes (buffer, len, ctx)
    It is assumed that LEN % 64 == 0.  */
 
 void
-md5_process_block (buffer, len, ctx)
-     const void *buffer;
-     size_t len;
-     struct md5_ctx *ctx;
+md5_process_block (const void *buffer, size_t len, struct md5_ctx *ctx)
 {
   md5_uint32 correct_words[16];
-  const md5_uint32 *words = buffer;
+  const md5_uint32 *words = (const md5_uint32 *) buffer;
   size_t nwords = len / sizeof (md5_uint32);
   const md5_uint32 *endp = words + nwords;
   md5_uint32 A = ctx->A;

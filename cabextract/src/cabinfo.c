@@ -20,18 +20,9 @@
 # include <config.h>
 #endif
 #include <stdio.h>
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#if HAVE_STDLIB_H
-# include <stdlib.h>
-#endif
-#if HAVE_STRING_H
-# include <string.h>
-#endif
-#if HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
 /* include <system.h> from libmspack for LD and EndGetI?? macros */
 #include <mspack/system.h>

@@ -10,9 +10,6 @@ END
 
 cat >config.h <<END
 #define inline __inline
-#define HAVE_STRING_H 1
-#define HAVE_LIMITS_H 1
-#define HAVE_MEMCMP 1
 END
 
 cd mspack

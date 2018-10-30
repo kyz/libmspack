@@ -1,4 +1,4 @@
-/* cabextract 1.7 - a program to extract Microsoft Cabinet files
+/* cabextract 1.8 - a program to extract Microsoft Cabinet files
  * (C) 2000-2018 Stuart Caie <kyzer@cabextract.org.uk>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,110 +26,38 @@
 # include <config.h>
 #endif
 
-#include <stdio.h> /* everyone has this! */
+#include <sys/types.h>
 
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fnmatch.h>
+#include <limits.h>
+#include <locale.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_STRINGS_H
+# include <strings.h> /* BSD defines strcasecmp() here */
 #endif
-
-#if HAVE_CTYPE_H
-# include <ctype.h>
-#endif
-
-#if HAVE_WCTYPE_H
-# include <wctype.h>
-#endif
-
-#if HAVE_ERRNO_H
-# include <errno.h>
-#endif
-
-#if HAVE_FNMATCH_H
-# include <fnmatch.h>
-#endif
+#include <sys/stat.h>
+#include <time.h>
 
 #if HAVE_ICONV
 # include <iconv.h>
 #endif
-
-#if HAVE_LIMITS_H
-# include <limits.h>
+#if HAVE_TOWLOWER
+# include <wctype.h>
 #endif
-
-#if HAVE_LOCALE_H
-# include <locale.h>
+#if HAVE_UTIME
+# include <utime.h>
 #endif
-
-#if HAVE_STDARG_H
-# include <stdarg.h>
-#endif
-
-#if HAVE_STDLIB_H
-# include <stdlib.h>
-#endif
-
-#if HAVE_STRING_H
-# include <string.h>
-#endif
-
-#if HAVE_STRINGS_H
-# include <strings.h>
-#endif
-
-#if HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
-
-#if TIME_WITH_SYS_TIME
+#if HAVE_UTIMES
 # include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
 #endif
 
-#if HAVE_UTIME || HAVE_UTIMES
-# if HAVE_UTIME_H
-#  include <utime.h>
-# else
-#  include <sys/utime.h>
-# endif
-#endif
-
-#if HAVE_DIRENT_H
-# include <dirent.h>
-#else
-# define dirent direct
-# if HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
-# if HAVE_SYS_DIR_H
-#  include <sys/dir.h>
-# endif
-# if HAVE_NDIR_H
-#  include <ndir.h>
-# endif
-#endif
-
-#if !STDC_HEADERS
-# if !HAVE_STRCHR
-#  define strchr index
-#  define strrchr rindex
-# endif
-# if !HAVE_STRCASECMP
-#  define strcasecmp strcmpi
-# endif
-# if !HAVE_MEMCPY
-#  define memcpy(d,s,n) bcopy((s),(d),(n))
-# endif
-# if !HAVE_MEMMOVE
-#  define memmove(d,s,n) bcopy((s),(d),(n))
-# endif
-#endif
-
+/* ensure mkdir(pathname, mode) exists */
 #if HAVE_MKDIR
 # if MKDIR_TAKES_ONE_ARG
 #  define mkdir(a, b) mkdir(a)
@@ -275,7 +203,6 @@ static struct mspack_system cabextract_system = {
 int main(int argc, char *argv[]) {
   int i, err;
 
-#if HAVE_LOCALE_H
    /* attempt to set a UTF8-based locale, so that tolower()/towlower()
     * in create_output_name() lowercase more than just A-Z in ASCII.
     *
@@ -290,7 +217,6 @@ int main(int argc, char *argv[]) {
    for (i = 0; i < (sizeof(locales)/sizeof(*locales)); i++) {
       if (setlocale(LC_CTYPE, locales[i])) break;
    }
-#endif
 
   /* parse options */
   while ((i = getopt_long(argc, argv, OPTSTRING, optlist, NULL)) != -1) {
