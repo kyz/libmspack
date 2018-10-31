@@ -1,5 +1,14 @@
 2018-10-31  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* Makefile.am, test/*_test.c: use the automake test-suite system
+	with the test-suite programs (cabd_test, chmd_test, kwajd_test).
+	This also fixes a longstanding bugbear that these programs don't
+	access their test files using an absolute path. Now this is passed
+	to them and you can run them from any directory. Thanks to Richard
+	Jones for requesting this.
+
+2018-10-31  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* configure.ac: require at least automake 1.11, use AM_SILENT_RULES
 	unconditionally
 

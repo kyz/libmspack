@@ -10,6 +10,10 @@
 #include <mspack.h>
 #include <system.h>
 
+#define __tf3(x) #x
+#define __tf2(x) __tf3(x)
+#define TESTFILE(fname) (__tf2(TEST_FILES) "/" fname)
+
 unsigned int test_count = 0;
 
 #define TEST(x) do {\
@@ -43,7 +47,7 @@ void cabd_open_test_02() {
   cabd = mspack_create_cab_decompressor(NULL);
   TEST(cabd != NULL);
 
-  cab = cabd->open(cabd, "test_files/cabd/normal_2files_1folder.cab");
+  cab = cabd->open(cabd, TESTFILE("normal_2files_1folder.cab"));
   TEST(cab != NULL);
 
   TEST(cab->next == NULL);
@@ -90,14 +94,14 @@ void cabd_open_test_03() {
   struct mscabd_cabinet *cab;
   unsigned int i;
   const char *files[] = {
-    "test_files/cabd/reserve_---.cab",
-    "test_files/cabd/reserve_--D.cab",
-    "test_files/cabd/reserve_-F-.cab",
-    "test_files/cabd/reserve_-FD.cab",
-    "test_files/cabd/reserve_H--.cab",
-    "test_files/cabd/reserve_H-D.cab",
-    "test_files/cabd/reserve_HF-.cab",
-    "test_files/cabd/reserve_HFD.cab"
+    TESTFILE("reserve_---.cab"),
+    TESTFILE("reserve_--D.cab"),
+    TESTFILE("reserve_-F-.cab"),
+    TESTFILE("reserve_-FD.cab"),
+    TESTFILE("reserve_H--.cab"),
+    TESTFILE("reserve_H-D.cab"),
+    TESTFILE("reserve_HF-.cab"),
+    TESTFILE("reserve_HFD.cab"),
   };
 
   cabd = mspack_create_cab_decompressor(NULL);
@@ -126,23 +130,23 @@ void cabd_open_test_04() {
 
   /* cab has enough data for a header, but does not contain real cab data
    * result should be MSPACK_ERR_SIGNATURE */
-  cab = cabd->open(cabd, "test_files/cabd/bad_signature.cab");
+  cab = cabd->open(cabd, TESTFILE("bad_signature.cab"));
   TEST(cab == NULL);
 
   /* cab has 0 folders */
-  cab = cabd->open(cabd, "test_files/cabd/bad_nofolders.cab");
+  cab = cabd->open(cabd, TESTFILE("bad_nofolders.cab"));
   TEST(cab == NULL);
 
   /* cab has 0 files */
-  cab = cabd->open(cabd, "test_files/cabd/bad_nofiles.cab");
+  cab = cabd->open(cabd, TESTFILE("bad_nofiles.cab"));
   TEST(cab == NULL);
 
   /* second file in the cab has a folder index for a non-existant folder */
-  cab = cabd->open(cabd, "test_files/cabd/bad_folderindex.cab");
+  cab = cabd->open(cabd, TESTFILE("bad_folderindex.cab"));
   TEST(cab == NULL);
 
   /* cab has one file with empty filename */
-  cab = cabd->open(cabd, "test_files/cabd/filename-read-violation-1.cab");
+  cab = cabd->open(cabd, TESTFILE("filename-read-violation-1.cab"));
   TEST(cab == NULL);
 
   mspack_destroy_cab_decompressor(cabd);
@@ -158,25 +162,25 @@ void cabd_open_test_05() {
   struct mscabd_cabinet *cab;
   unsigned int i;
   const char *files[] = {
-    "test_files/cabd/partial_shortheader.cab",
-    "test_files/cabd/partial_shortextheader.cab",
-    "test_files/cabd/partial_nofolder.cab",
-    "test_files/cabd/partial_shortfolder.cab",
-    "test_files/cabd/partial_nofiles.cab",
-    "test_files/cabd/partial_shortfile1.cab",
-    "test_files/cabd/partial_shortfile2.cab"
+    TESTFILE("partial_shortheader.cab"),
+    TESTFILE("partial_shortextheader.cab"),
+    TESTFILE("partial_nofolder.cab"),
+    TESTFILE("partial_shortfolder.cab"),
+    TESTFILE("partial_nofiles.cab"),
+    TESTFILE("partial_shortfile1.cab"),
+    TESTFILE("partial_shortfile2.cab"),
   };
   const char *str_files[] = {
-    "test_files/cabd/partial_str_nopname.cab",
-    "test_files/cabd/partial_str_shortpname.cab",
-    "test_files/cabd/partial_str_nopinfo.cab",
-    "test_files/cabd/partial_str_shortpinfo.cab",
-    "test_files/cabd/partial_str_nonname.cab",
-    "test_files/cabd/partial_str_shortnname.cab",
-    "test_files/cabd/partial_str_noninfo.cab",
-    "test_files/cabd/partial_str_shortninfo.cab",
-    "test_files/cabd/partial_str_nofname.cab",
-    "test_files/cabd/partial_str_shortfname.cab",
+    TESTFILE("partial_str_nopname.cab"),
+    TESTFILE("partial_str_shortpname.cab"),
+    TESTFILE("partial_str_nopinfo.cab"),
+    TESTFILE("partial_str_shortpinfo.cab"),
+    TESTFILE("partial_str_nonname.cab"),
+    TESTFILE("partial_str_shortnname.cab"),
+    TESTFILE("partial_str_noninfo.cab"),
+    TESTFILE("partial_str_shortninfo.cab"),
+    TESTFILE("partial_str_nofname.cab"),
+    TESTFILE("partial_str_shortfname.cab"),
   };
 
   cabd = mspack_create_cab_decompressor(NULL);
@@ -196,7 +200,7 @@ void cabd_open_test_05() {
   }
 
   /* lack of data blocks should NOT be a problem for merely reading */
-  cab = cabd->open(cabd, "test_files/cabd/partial_nodata.cab");
+  cab = cabd->open(cabd, TESTFILE("partial_nodata.cab"));
   TEST(cab != NULL);
 
   cabd->close(cabd, cab);
@@ -211,7 +215,7 @@ void cabd_open_test_06() {
   cabd = mspack_create_cab_decompressor(NULL);
   TEST(cabd != NULL);
 
-  cab = cabd->open(cabd, "test_files/cabd/normal_255c_filename.cab");
+  cab = cabd->open(cabd, TESTFILE("normal_255c_filename.cab"));
   TEST(cab != NULL);
 
   cabd->close(cabd, cab);
@@ -243,7 +247,7 @@ void cabd_search_test_02() {
   TEST(cabd != NULL);
 
   cabd->set_param(cabd, MSCABD_PARAM_SEARCHBUF, 1);
-  cab = cabd->search(cabd, "test_files/cabd/search_basic.cab");
+  cab = cabd->search(cabd, TESTFILE("search_basic.cab"));
   cabd->set_param(cabd, MSCABD_PARAM_SEARCHBUF, 32768);
 
   TEST(cab != NULL);
@@ -278,7 +282,7 @@ void cabd_search_test_03() {
    * (heh) and reserved fields in the real cab are filled in so the fake one
    * looks real to the scanner but not the real reader
    */
-  cab = cabd->search(cabd, "test_files/cabd/search_tricky1.cab");
+  cab = cabd->search(cabd, TESTFILE("search_tricky1.cab"));
   TEST(cab != NULL);
   TEST(cab->next == NULL);
   TEST(cab->files != NULL);
@@ -299,8 +303,8 @@ void cabd_merge_test_01() {
   cabd = mspack_create_cab_decompressor(NULL);
   TEST(cabd != NULL);
 
-  cab1 = cabd->open(cabd, "test_files/cabd/multi_basic_pt1.cab");
-  cab2 = cabd->open(cabd, "test_files/cabd/multi_basic_pt2.cab");
+  cab1 = cabd->open(cabd, TESTFILE("multi_basic_pt1.cab"));
+  cab2 = cabd->open(cabd, TESTFILE("multi_basic_pt2.cab"));
   TEST(cab1 != NULL);
   TEST(cab2 != NULL);
   TEST(cabd->append(cabd,  cab1, NULL) != MSPACK_ERR_OK);
@@ -330,11 +334,11 @@ void cabd_merge_test_02() {
   cabd = mspack_create_cab_decompressor(NULL);
   TEST(cabd != NULL);
 
-  cab[0] = cabd->open(cabd, "test_files/cabd/multi_basic_pt1.cab");
-  cab[1] = cabd->open(cabd, "test_files/cabd/multi_basic_pt2.cab");
-  cab[2] = cabd->open(cabd, "test_files/cabd/multi_basic_pt3.cab");
-  cab[3] = cabd->open(cabd, "test_files/cabd/multi_basic_pt4.cab");
-  cab[4] = cabd->open(cabd, "test_files/cabd/multi_basic_pt5.cab");
+  cab[0] = cabd->open(cabd, TESTFILE("multi_basic_pt1.cab"));
+  cab[1] = cabd->open(cabd, TESTFILE("multi_basic_pt2.cab"));
+  cab[2] = cabd->open(cabd, TESTFILE("multi_basic_pt3.cab"));
+  cab[3] = cabd->open(cabd, TESTFILE("multi_basic_pt4.cab"));
+  cab[4] = cabd->open(cabd, TESTFILE("multi_basic_pt5.cab"));
   TEST(cab[0] != NULL);
   TEST(cab[1] != NULL);
   TEST(cab[2] != NULL);
@@ -372,16 +376,16 @@ void cabd_extract_test_01() {
     struct mscabd_file *file;
     unsigned int i;
     const char *files[] = {
-        "test_files/cabd/cve-2010-2800-mszip-infinite-loop.cab",
-        "test_files/cabd/cve-2014-9556-qtm-infinite-loop.cab",
-        "test_files/cabd/cve-2015-4470-mszip-over-read.cab",
-        "test_files/cabd/cve-2015-4471-lzx-under-read.cab",
-        "test_files/cabd/filename-read-violation-2.cab",
-        "test_files/cabd/filename-read-violation-3.cab",
-        "test_files/cabd/filename-read-violation-4.cab",
-        "test_files/cabd/lzx-main-tree-no-lengths.cab",
-        "test_files/cabd/lzx-premature-matches.cab",
-        "test_files/cabd/qtm-max-size-block.cab"
+        TESTFILE("cve-2010-2800-mszip-infinite-loop.cab"),
+        TESTFILE("cve-2014-9556-qtm-infinite-loop.cab"),
+        TESTFILE("cve-2015-4470-mszip-over-read.cab"),
+        TESTFILE("cve-2015-4471-lzx-under-read.cab"),
+        TESTFILE("filename-read-violation-2.cab"),
+        TESTFILE("filename-read-violation-3.cab"),
+        TESTFILE("filename-read-violation-4.cab"),
+        TESTFILE("lzx-main-tree-no-lengths.cab"),
+        TESTFILE("lzx-premature-matches.cab"),
+        TESTFILE("qtm-max-size-block.cab"),
     };
 
     cabd = mspack_create_cab_decompressor(NULL);
@@ -413,7 +417,7 @@ void cabd_extract_test_02() {
      */
     cabd = mspack_create_cab_decompressor(NULL);
     TEST(cabd != NULL);
-    cab = cabd->open(cabd, "test_files/cabd/cve-2014-9732-folders-segfault.cab");
+    cab = cabd->open(cabd, TESTFILE("cve-2014-9732-folders-segfault.cab"));
     TEST(cab != NULL);
     err = cabd->extract(cabd, cab->files, "/dev/null");
     TEST(err == MSPACK_ERR_OK);

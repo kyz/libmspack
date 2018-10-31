@@ -10,6 +10,10 @@
 #include <mspack.h>
 #include <system.h>
 
+#define __tf3(x) #x
+#define __tf2(x) __tf3(x)
+#define TESTFILE(fname) (__tf2(TEST_FILES) "/" fname)
+
 unsigned int test_count = 0;
 #define TEST(x) do {\
     test_count++; \
@@ -22,7 +26,7 @@ void chmd_open_test_01() {
     struct mschmd_header *chm;
     unsigned int i;
     const char *files[] = {
-        "test_files/chmd/cve-2017-6419-lzx-negative-spaninfo.chm"
+        TESTFILE("cve-2017-6419-lzx-negative-spaninfo.chm"),
     };
 
     chmd =  mspack_create_chm_decompressor(NULL);
@@ -41,7 +45,7 @@ void chmd_open_test_02() {
     struct mschmd_file *f;
     unsigned int i;
     const char *files[] = {
-        "test_files/chmd/blank-filenames.chm"
+        TESTFILE("blank-filenames.chm"),
     };
 
     chmd =  mspack_create_chm_decompressor(NULL);
@@ -67,9 +71,9 @@ void chmd_search_test_01() {
     struct mschmd_file *f, result;
     unsigned int i;
     const char *files[] = {
-        "test_files/chmd/cve-2015-4468-namelen-bounds.chm",
-        "test_files/chmd/cve-2015-4469-namelen-bounds.chm",
-        "test_files/chmd/cve-2015-4472-namelen-bounds.chm"
+        TESTFILE("cve-2015-4468-namelen-bounds.chm"),
+        TESTFILE("cve-2015-4469-namelen-bounds.chm"),
+        TESTFILE("cve-2015-4472-namelen-bounds.chm"),
     };
 
     chmd =  mspack_create_chm_decompressor(NULL);
@@ -98,7 +102,7 @@ void chmd_extract_test_01() {
     struct mschmd_file *f;
     unsigned int i;
     const char *files[] = {
-        "test_files/chmd/cve-2015-4467-reset-interval-zero.chm",
+        TESTFILE("cve-2015-4467-reset-interval-zero.chm"),
     };
 
     chmd = mspack_create_chm_decompressor(NULL);

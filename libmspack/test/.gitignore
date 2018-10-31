@@ -1,4 +1,6 @@
+*.log
 *.o
+*.trs
 .deps
 .dirstamp
 .libs
