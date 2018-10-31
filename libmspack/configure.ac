@@ -16,7 +16,6 @@ AC_ARG_ENABLE(debug,
 if test x$enable_debug = xyes; then
   AC_DEFINE(DEBUG, 1, [Turn debugging mode on?])
 fi
-AM_CONDITIONAL(DEBUG, test x$enable_debug = 'xyes')
 
 # Checks for programs.
 AC_PROG_CC

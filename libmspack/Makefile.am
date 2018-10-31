@@ -9,9 +9,6 @@ dist-hook:
 ACLOCAL_AMFLAGS =	-I m4
 AM_CFLAGS =
 # add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system
-if DEBUG
-AM_CFLAGS +=		-DDEBUG
-endif
 if GCC
 AM_CFLAGS +=		-Wall -Wextra -Wno-unused-parameter -Wno-unused-result
 endif
