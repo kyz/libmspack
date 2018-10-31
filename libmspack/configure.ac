@@ -24,7 +24,6 @@ AM_CONDITIONAL(GCC, test x$GCC = 'xyes')
 AM_PROG_AR
 AC_PROG_INSTALL
 LT_INIT
-AC_EXEEXT
 
 # Checks for header files.
 AC_CHECK_HEADERS([inttypes.h])
