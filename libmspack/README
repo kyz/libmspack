@@ -43,7 +43,7 @@ perform a thorough clean, deleting all auto-generated files.
 In addition to gcc, you also need the following for building from repository:
 
 - at least autoconf 2.57
-- at least automake 1.7
+- at least automake 1.11
 - libtool
 
 This is an alpha release. Unless you are in a position to package the

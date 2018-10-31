@@ -1,3 +1,8 @@
+2018-10-31  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac: require at least automake 1.11, use AM_SILENT_RULES
+	unconditionally
+
 2018-10-30  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac: remove obsolescent C library tests. AC_HEADER_STDC is
