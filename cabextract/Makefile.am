@@ -25,7 +25,7 @@ cabextract_LDADD =	@LIBOBJS@ @LIBICONV@
 if !EXTERNAL_LIBMSPACK
 cabextract_LDADD +=	libmscab.a
 noinst_LIBRARIES =	libmscab.a
-libmscab_a_SOURCES =    $(bundled_mspack)
-libmscab_a_CFLAGS =	-I$(srcdir)/mspack -DMSPACK_NO_DEFAULT_SYSTEM
+libmscab_a_SOURCES =	$(bundled_mspack)
+AM_CPPFLAGS =		-I$(srcdir)/mspack -DMSPACK_NO_DEFAULT_SYSTEM
 endif
 
