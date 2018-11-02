@@ -70,7 +70,7 @@ extern "C" {
 #if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
      (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
      defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE) || \
-     sizeof(off_t) >= 8)
+     SIZEOF_OFF_T >= 8)
 # define LARGEFILE_SUPPORT 1
 # define LD PRId64
 # define LU PRIu64
