@@ -1126,11 +1126,9 @@ static int cabd_extract(struct mscab_decompressor *base,
      *   and pass back MSPACK_ERR_READ
      */
     self->d->outfh = NULL;
-    if ((self->d->comp_type & cffoldCOMPTYPE_MASK) != cffoldCOMPTYPE_LZX) {
-      if ((bytes = file->offset - self->d->offset)) {
-          error = self->d->decompress(self->d->state, bytes);
-          self->error = (error == MSPACK_ERR_READ) ? self->read_error : error;
-      }
+    if ((bytes = file->offset - self->d->offset)) {
+        error = self->d->decompress(self->d->state, bytes);
+        self->error = (error == MSPACK_ERR_READ) ? self->read_error : error;
     }
 
     /* if getting to the correct offset was error free, unpack file */

@@ -75,7 +75,8 @@ src_oabextract_LDADD =		libmspack.la
 test_cabd_md5_SOURCES =		test/cabd_md5.c test/md5.c test/md5.h \
 				test/md5_fh.h test/error.h libmscabd.la
 test_cabd_md5_LDADD =		libmscabd.la
-test_cabd_test_SOURCES =	test/cabd_test.c libmscabd.la
+test_cabd_test_SOURCES =	test/cabd_test.c test/md5.c test/md5.h \
+				test/md5_fh.h libmscabd.la
 test_cabd_test_CPPFLAGS =	$(AM_CPPFLAGS) -DTEST_FILES=$(abs_srcdir)/test/test_files/cabd
 test_cabd_test_LDADD =		libmscabd.la
 test_chmd_find_SOURCES =	test/chmd_find.c test/error.h libmschmd.la

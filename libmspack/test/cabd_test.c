@@ -429,6 +429,70 @@ void cabd_extract_test_02() {
     mspack_destroy_cab_decompressor(cabd);
 }
 
+#include <md5_fh.h>
+
+/* test that extraction works with all compression methods */
+void cabd_extract_test_03() {
+    struct mscab_decompressor *cabd;
+    struct mscabd_cabinet *cab;
+
+    cabd = mspack_create_cab_decompressor(&read_files_write_md5);
+    TEST(cabd != NULL);
+    cab = cabd->open(cabd, TESTFILE("mszip_lzx_qtm.cab"));
+    TEST(cab != NULL);
+
+    /* extract mszip.txt */
+    TEST(cabd->extract(cabd, cab->files, NULL) == MSPACK_ERR_OK);
+    TEST(memcmp(md5_string, "940cba86658fbceb582faecd2b5975d1", 33) == 0);
+    /* extract lzx.txt */
+    TEST(cabd->extract(cabd, cab->files->next, NULL) == MSPACK_ERR_OK);
+    TEST(memcmp(md5_string, "703474293b614e7110b3eb8ac2762b53", 33) == 0);
+    /* extract qtm.txt */
+    TEST(cabd->extract(cabd, cab->files->next->next, NULL) == MSPACK_ERR_OK);
+    TEST(memcmp(md5_string, "98fcfa4962a0f169a3c7fdbcb445cf17", 33) == 0);
+
+    cabd->close(cabd, cab);
+    mspack_destroy_cab_decompressor(cabd);
+}
+
+
+/* test that extraction works with multiple compression methods in any order */
+void cabd_extract_test_04() {
+    struct mscab_decompressor *cabd;
+    struct mscabd_cabinet *cab;
+    struct mscabd_file *f, *files[4];
+    char file_md5s[4][33];
+    int i, err;
+
+    cabd = mspack_create_cab_decompressor(&read_files_write_md5);
+    TEST(cabd != NULL);
+    cab = cabd->open(cabd, TESTFILE("normal_2files_2folders.cab"));
+    TEST(cab != NULL);
+
+    /* extract each file once, in order, keep its md5 checksum */
+    for (f = cab->files, i = 0; i < 4 && f; i++, f=f->next) {
+        files[i] = f;
+        err = cabd->extract(cabd, files[i], NULL);
+        TEST(err == MSPACK_ERR_OK);
+        memcpy(file_md5s[i], md5_string, 33);
+    }
+    TEST(i == 4);
+
+    /* check extracting in any other permutation gives same result */
+#define T1(i) TEST(cabd->extract(cabd, files[i], NULL) == MSPACK_ERR_OK); \
+              TEST(memcmp(file_md5s[i], md5_string, 33) == 0)
+#define T(a,b,c,d) T1(a); T1(b); T1(c); T1(d)
+    /*------*/  T(0,1,3,2); T(0,2,1,3); T(0,2,3,1); T(0,3,1,2); T(0,3,2,1);
+    T(1,0,2,3); T(1,0,3,2); T(1,2,0,3); T(1,2,3,0); T(1,3,0,2); T(1,3,2,0);
+    T(2,0,1,3); T(2,0,3,1); T(2,1,0,3); T(2,1,3,0); T(2,3,0,1); T(2,3,1,0);
+    T(3,0,1,2); T(3,0,2,1); T(3,1,0,2); T(3,1,2,0); T(3,2,0,1); T(3,2,1,0);
+#undef T
+#undef T1
+
+    cabd->close(cabd, cab);
+    mspack_destroy_cab_decompressor(cabd);
+}
+
 int main() {
   int selftest;
 
@@ -451,6 +515,8 @@ int main() {
 
   cabd_extract_test_01();
   cabd_extract_test_02();
+  cabd_extract_test_03();
+  cabd_extract_test_04();
 
   printf("ALL %d TESTS PASSED.\n", test_count);
   return 0;

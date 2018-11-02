@@ -1,3 +1,18 @@
+2018-11-01  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd_extract(): would not do decompression for random-access
+	offsets if the folder type was LZX. This is a fairly major bug,
+	and affects any decompression where you skip directly to a file,
+	or decompress data out-of-order. Thanks to austin987 for alerting
+	me to this.
+
+	This bug was introduced by the recent 'salvage mode' patch. Even
+	though I'd reviewed all the differences in clamav's copy of
+	libmspack and said "wtf" to this particular change, I didn't
+	notice it was still in the resulting patch I merged. Mea culpa :)
+
+	* test/cabd_test.c: now has a regression test to cover this
+
 2018-10-31  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* Makefile.am, test/*_test.c: use the automake test-suite system
