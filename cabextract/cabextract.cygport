@@ -8,6 +8,3 @@ HOMEPAGE="https://www.cabextract.org.uk/"
 SRC_URI="https://www.cabextract.org.uk/${P}.tar.gz"
 DEPEND="libmspack0 libiconv2 libiconv-devel gettext-devel libiconv-devel libmspack-devel"
 CYGCONF_ARGS="--with-external-libmspack"
-
-# patch has been applied upstream, will not be needed for 1.9
-PATCH_URI=1.8-external.patch

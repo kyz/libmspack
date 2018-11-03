@@ -8,18 +8,8 @@ HOMEPAGE="https://www.cabextract.org.uk/libmspack/"
 SRC_URI="https://www.cabextract.org.uk/libmspack/${P}alpha.tar.gz"
 SRC_DIR="${P}alpha"
 
-# these have been fixed upstream and can be removed for 0.9
-PATCH_URI="0.4-no-undefined.patch 0.8-test-file-srcdir.patch"
-
 DIFF_EXCLUDES="Doxyfile Makefile"
 
 PKG_NAMES="libmspack0 libmspack-devel"
 libmspack0_CONTENTS="usr/bin/cygmspack-0.dll usr/share/doc/"
-libmspack_devel_CONTENTS="usr/bin/*.exe usr/include/ usr/lib/"
-
-src_test() {
-	lndirs ${S}/test ${B}/test
-	cd ${B}/test
-	./cabd_test
-	./chmd_test
-}
+libmspack_devel_CONTENTS="usr/include/ usr/lib/"
