@@ -43,5 +43,5 @@ AC_CHECK_FUNCS([towlower])
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
 
-AC_CONFIG_FILES([Makefile doc/Makefile doc/Doxyfile libmspack.pc])
+AC_CONFIG_FILES([Makefile libmspack.pc])
 AC_OUTPUT

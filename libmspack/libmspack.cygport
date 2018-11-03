@@ -8,8 +8,6 @@ HOMEPAGE="https://www.cabextract.org.uk/libmspack/"
 SRC_URI="https://www.cabextract.org.uk/libmspack/${P}alpha.tar.gz"
 SRC_DIR="${P}alpha"
 
-DIFF_EXCLUDES="Doxyfile Makefile"
-
 PKG_NAMES="libmspack0 libmspack-devel"
 libmspack0_CONTENTS="usr/bin/cygmspack-0.dll usr/share/doc/"
 libmspack_devel_CONTENTS="usr/include/ usr/lib/"
