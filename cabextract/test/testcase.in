@@ -1,0 +1,20 @@
+cabextract=@abs_top_builddir@/cabextract@EXEEXT@
+cd "@abs_srcdir@"
+
+failed=`mktemp`
+expected=$failed.expected
+actual=$failed.actual
+
+trap cleanup 0 1 2
+cleanup() {
+    rm -f $expected $actual $failed
+}
+
+compare_with() {
+    cat >$expected
+    if diff -u $expected $actual; then
+        :
+    else
+        echo failed >$failed
+    fi
+}

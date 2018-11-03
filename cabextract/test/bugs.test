@@ -1,0 +1,10 @@
+#!/bin/sh
+# test that known crash bugs remain fixed
+. test/testcase
+
+$cabextract -t $test_files/bugs/*.cab
+
+# fail if exit code indicates a crash (SIGBUS, SIGSEGV, etc.)
+if [ $? -ge 128 ]; then
+    exit 1
+fi

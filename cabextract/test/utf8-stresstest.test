@@ -1,4 +1,10 @@
-Viewing cabinet: utf8-stresstest.cab
+#!/bin/sh
+# test cabextract handles bad UTF-8 filenames
+. test/testcase
+
+$cabextract -l cabs/utf8-stresstest.cab >$actual
+compare_with <<'EOF'
+Viewing cabinet: cabs/utf8-stresstest.cab
  File size | Date       Time     | Name
 -----------+---------------------+-------------
          0 | 12.03.1997 11:13:52 | κόσμε
@@ -82,3 +88,8 @@ Viewing cabinet: utf8-stresstest.cab
          0 | 12.03.1997 11:13:52 | 🿾🿿𯿾𯿿𿿾𿿿񏿾񏿿񟿾񟿿񯿾񯿿񿿾񿿿򏿾򏿿
 
 All done, no errors.
+EOF
+
+if [ -s $failed ]; then
+    exit 1;
+fi

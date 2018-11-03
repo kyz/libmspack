@@ -29,3 +29,8 @@ libmscab_a_SOURCES =	$(bundled_mspack)
 AM_CPPFLAGS =		-I$(srcdir)/mspack -DMSPACK_NO_DEFAULT_SYSTEM
 endif
 
+check_PROGRAMS =	cabextract
+TESTS =			test/bugs.test test/case.test test/dirwalk-vulns.test \
+			test/encoding.test test/mixed.test test/search.test \
+			test/simple.test test/split.test test/utf8-stresstest.test
+EXTRA_DIST +=		$(TESTS) test/bugs test/cabs

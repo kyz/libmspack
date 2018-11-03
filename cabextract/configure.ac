@@ -49,5 +49,5 @@ if test "z$cabextract_external_libmspack" != 'zno'; then
 fi
 AM_CONDITIONAL([EXTERNAL_LIBMSPACK], [test "z$cabextract_external_libmspack" != 'zno'])
 
-AC_CONFIG_FILES([Makefile cabextract.spec])
+AC_CONFIG_FILES([Makefile cabextract.spec test/testcase])
 AC_OUTPUT

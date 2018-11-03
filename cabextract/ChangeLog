@@ -1,4 +1,10 @@
-018-10-30  Stuart Caie <kyzer@cabextract.org.uk>
+2018-11-03 Stuart Caie <kyzer@cabextract.org.uk>
+
+	* test: use the autotools test system instead of a custom makefile.
+	You can now use 'make check' to test cabextract, and the test files
+	are now distributed with cabextract.
+
+2018-10-30  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac: remove obsolescent C library tests. AC_HEADER_STDC is
 	removed, and so are most checks for standard C headers. cabextract now

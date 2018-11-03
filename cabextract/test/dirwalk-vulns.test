@@ -1,4 +1,10 @@
-Viewing cabinet: dirwalk-vulns.cab
+#!/bin/sh
+# test cabextract prevents directory path manipulation
+. test/testcase
+
+$cabextract -l cabs/dirwalk-vulns.cab >$actual
+compare_with <<'EOF'
+Viewing cabinet: cabs/dirwalk-vulns.cab
  File size | Date       Time     | Name
 -----------+---------------------+-------------
          0 | 12.03.1997 11:13:52 | absolute/path
@@ -32,3 +38,8 @@ Viewing cabinet: dirwalk-vulns.cab
          0 | 12.03.1997 11:13:52 | innocuous������/xx/xx/relative/path6b
 
 All done, no errors.
+EOF
+
+if [ -s $failed ]; then
+    exit 1;
+fi
