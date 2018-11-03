@@ -1,3 +1,11 @@
+New in 1.9
+* Fixed invisible bad extraction when using cabextract -F (broken in 1.8)
+* Fixed configure --with-external-libmspack which was broken in 1.8
+* configure --with-external-libmspack will now use pkg-config. To configure
+  it manually, set environment variables libmspack_CFLAGS and libmspack_LIBS
+  before running configure.
+* Now includes the test suite (make check)
+
 New in 1.8
 * cabextract -f now extracts even more badly damaged files than before
 
