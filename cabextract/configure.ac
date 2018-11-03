@@ -11,7 +11,6 @@ AC_PROG_CC
 AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_RANLIB
-AC_EXEEXT
 
 # Checks for header files.
 AC_CHECK_HEADERS([getopt.h inttypes.h strings.h])
