@@ -7,7 +7,7 @@ tmpdir=`mktemp -d`
 
 trap cleanup2 0 1 2
 cleanup2() {
-    cd ..
+    cd /
     rm -rf $tmpdir
     cleanup
 }
@@ -17,9 +17,9 @@ $cabextract -q -d $tmpdir cabs/large-files-cab.cab
 
 # generate large-search.cab
 ( echo 'first spacer';  perl cabs/large-cab.pl 1 1; \
-  echo 'second spacer'; perl cabs/large-cab.pl 65535 65505; cat simple.cab; \
-  echo 'third spacer';  perl cabs/large-cab.pl 65535 65505; cat simple.cab; \
-  echo 'fourth spacer'; cat simple.cab ) > $tmpdir/large-search.cab
+  echo 'second spacer'; perl cabs/large-cab.pl 65535 65505; cat cabs/simple.cab; \
+  echo 'third spacer';  perl cabs/large-cab.pl 65535 65505; cat cabs/simple.cab; \
+  echo 'fourth spacer'; cat cabs/simple.cab ) > $tmpdir/large-search.cab
 
 cd $tmpdir
 
