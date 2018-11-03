@@ -8,14 +8,20 @@ bundled_mspack =	mspack/mspack.h \
 			mspack/qtm.h mspack/qtmd.c \
 			mspack/readbits.h mspack/readhuff.h
 
+TESTS =			test/bugs.test test/case.test test/dirwalk-vulns.test \
+			test/encoding.test test/mixed.test test/search.test \
+			test/simple.test test/split.test test/utf8-stresstest.test
+
 EXTRA_DIST =		cabextract.spec \
 			doc/cabextract.1 doc/ja/cabextract.1 \
 			doc/magic doc/wince_cab_format.html \
 			fnmatch_.h getopt.h src/cabsplit \
 			src/wince_info src/wince_rename \
-			mspack/ChangeLog $(bundled_mspack)
+			mspack/ChangeLog $(bundled_mspack) \
+			$(TESTS) test/bugs test/cabs
 
 bin_PROGRAMS =		cabextract
+check_PROGRAMS =	cabextract
 noinst_PROGRAMS =	src/cabinfo
 man_MANS =		doc/cabextract.1
 
@@ -28,9 +34,3 @@ noinst_LIBRARIES =	libmscab.a
 libmscab_a_SOURCES =	$(bundled_mspack)
 AM_CPPFLAGS =		-I$(srcdir)/mspack -DMSPACK_NO_DEFAULT_SYSTEM
 endif
-
-check_PROGRAMS =	cabextract
-TESTS =			test/bugs.test test/case.test test/dirwalk-vulns.test \
-			test/encoding.test test/mixed.test test/search.test \
-			test/simple.test test/split.test test/utf8-stresstest.test
-EXTRA_DIST +=		$(TESTS) test/bugs test/cabs
