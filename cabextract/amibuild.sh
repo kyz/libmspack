@@ -26,3 +26,5 @@ lha a cabextract_OS4.lha cabextract cabinfo
 m68k-amigaos-gcc $CFLAGS -noixemul $SRCS getopt.c getopt1.c -o cabextract &&
 m68k-amigaos-gcc $CFLAGS -noixemul src/cabinfo.c -o cabinfo &&
 lha a cabextract.lha cabextract cabinfo
+
+rm cabextract cabinfo fnmatch.h
