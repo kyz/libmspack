@@ -87,6 +87,4 @@ Testing cabinet: cabs/split-5.cab
 All done, no errors.
 EOF
 
-if [ -s $failed ]; then
-    exit 1;
-fi
+read status < $status && test "x$status" = xsuccess

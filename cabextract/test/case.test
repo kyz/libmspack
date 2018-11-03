@@ -70,6 +70,4 @@ Viewing cabinet: cabs/case.cab
 All done, no errors.
 EOF
 
-if [ -s $failed ]; then
-    exit 1;
-fi
+read status < $status && test "x$status" = xsuccess

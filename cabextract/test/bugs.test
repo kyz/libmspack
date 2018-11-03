@@ -5,6 +5,4 @@
 $cabextract -t $test_files/bugs/*.cab
 
 # fail if exit code indicates a crash (SIGBUS, SIGSEGV, etc.)
-if [ $? -ge 128 ]; then
-    exit 1
-fi
+test $? -le 1
