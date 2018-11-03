@@ -14,13 +14,13 @@ AM_CFLAGS +=		-Wall -Wextra -Wno-unused-parameter -Wno-unused-result
 endif
 AM_CPPFLAGS =		-I$(srcdir)/mspack -I$(srcdir)/test
 
-bin_PROGRAMS = 		src/cabrip src/chmextract src/msexpand src/oabextract
 include_HEADERS =	mspack/mspack.h
 lib_LTLIBRARIES =	libmspack.la
 pkgconfig_DATA =	libmspack.pc
 
 noinst_LTLIBRARIES =	libmscabd.la libmschmd.la
-noinst_PROGRAMS =	examples/cabd_memory examples/multifh test/cabd_md5 \
+noinst_PROGRAMS =	examples/cabd_memory examples/cabrip examples/chmextract \
+			examples/msexpand examples/multifh examples/oabextract test/cabd_md5 \
 			test/chmd_find test/chmd_md5 test/chmd_order test/chminfo
 check_PROGRAMS =	test/cabd_test test/chmd_test test/kwajd_test
 
@@ -60,17 +60,16 @@ libmschmd_la_LDFLAGS =	-export-symbols-regex '^mspack_'
 
 examples_cabd_memory_SOURCES =	examples/cabd_memory.c libmscabd.la
 examples_cabd_memory_LDADD =	libmscabd.la
+examples_cabrip_SOURCES =	examples/cabrip.c libmspack.la
+examples_cabrip_LDADD =		libmspack.la
+examples_chmextract_SOURCES =	examples/chmextract.c test/error.h libmspack.la
+examples_chmextract_LDADD =	libmspack.la
+examples_msexpand_SOURCES =	examples/msexpand.c test/error.h libmspack.la
+examples_msexpand_LDADD =	libmspack.la
 examples_multifh_SOURCES =	examples/multifh.c libmscabd.la
 examples_multifh_LDADD =	libmscabd.la
-
-src_cabrip_SOURCES =		src/cabrip.c libmspack.la
-src_cabrip_LDADD =		libmspack.la
-src_chmextract_SOURCES =	src/chmextract.c test/error.h libmspack.la
-src_chmextract_LDADD =		libmspack.la
-src_msexpand_SOURCES =		src/msexpand.c test/error.h libmspack.la
-src_msexpand_LDADD =		libmspack.la
-src_oabextract_SOURCES =	src/oabextract.c test/error.h libmspack.la
-src_oabextract_LDADD =		libmspack.la
+examples_oabextract_SOURCES =	examples/oabextract.c test/error.h libmspack.la
+examples_oabextract_LDADD =	libmspack.la
 
 test_cabd_md5_SOURCES =		test/cabd_md5.c test/md5.c test/md5.h \
 				test/md5_fh.h test/error.h libmscabd.la

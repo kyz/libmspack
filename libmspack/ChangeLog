@@ -1,3 +1,11 @@
+2018-11-03  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* Makefile.am, src: move the "useful" programs in src/ to examples/
+	and don't auto-install them. Even though they're useful, they are
+	intended as examples and aren't productised (no commmand-line
+	options, no man pages, etc.) -- if you disagree, feel free to
+	send in a patch
+
 2018-11-01  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd_extract(): would not do decompression for random-access
