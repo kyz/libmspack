@@ -1,5 +1,5 @@
 NAME=libmspack
-VERSION=0.8
+VERSION=0.9
 RELEASE=1
 CATEGORY=Libs
 SUMMARY="A library for Microsoft compression formats"
