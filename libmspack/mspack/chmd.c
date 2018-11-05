@@ -121,7 +121,7 @@ void mspack_destroy_chm_decompressor(struct mschm_decompressor *base) {
  * Calls chmd_real_open() with entire=1.
  */
 static struct mschmd_header *chmd_open(struct mschm_decompressor *base,
-				       const char *filename)
+                                       const char *filename)
 {
   return chmd_real_open(base, filename, 1);
 }
@@ -133,7 +133,7 @@ static struct mschmd_header *chmd_open(struct mschm_decompressor *base,
  * the file headers. Calls chmd_real_open() with entire=0
  */
 static struct mschmd_header *chmd_fast_open(struct mschm_decompressor *base,
-					    const char *filename)
+                                            const char *filename)
 {
   return chmd_real_open(base, filename, 0);
 }
@@ -146,7 +146,7 @@ static struct mschmd_header *chmd_fast_open(struct mschm_decompressor *base,
  * either read all headers, or a bare mininum.
  */
 static struct mschmd_header *chmd_real_open(struct mschm_decompressor *base,
-					    const char *filename, int entire)
+                                            const char *filename, int entire)
 {
   struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mschmd_header *chm = NULL;
@@ -162,16 +162,16 @@ static struct mschmd_header *chmd_real_open(struct mschm_decompressor *base,
       chm->filename = filename;
       error = chmd_read_headers(sys, fh, chm, entire);
       if (error) {
-	/* if the error is DATAFORMAT, and there are some results, return
-	 * partial results with a warning, rather than nothing */
-	if (error == MSPACK_ERR_DATAFORMAT && (chm->files || chm->sysfiles)) {
-	  sys->message(fh, "WARNING; contents are corrupt");
-	  error = MSPACK_ERR_OK;
-	}
-	else {
-	  chmd_close(base, chm);
-	  chm = NULL;
-	}
+        /* if the error is DATAFORMAT, and there are some results, return
+         * partial results with a warning, rather than nothing */
+        if (error == MSPACK_ERR_DATAFORMAT && (chm->files || chm->sysfiles)) {
+          sys->message(fh, "WARNING; contents are corrupt");
+          error = MSPACK_ERR_OK;
+        }
+        else {
+          chmd_close(base, chm);
+          chm = NULL;
+        }
       }
       self->error = error;
     }
@@ -192,7 +192,7 @@ static struct mschmd_header *chmd_real_open(struct mschm_decompressor *base,
  * frees all memory associated with a given mschmd_header
  */
 static void chmd_close(struct mschm_decompressor *base,
-		       struct mschmd_header *chm)
+                       struct mschmd_header *chm)
 {
   struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mschmd_file *fi, *nfi;
@@ -251,16 +251,16 @@ static const unsigned char guids[32] = {
 
 /* reads an encoded integer into a variable; 7 bits of data per byte,
  * the high bit is used to indicate that there is another byte */
-#define READ_ENCINT(var) do {			\
-    (var) = 0;					\
-    do {					\
-	if (p >= end) goto chunk_end;		\
-	(var) = ((var) << 7) | (*p & 0x7F);	\
-    } while (*p++ & 0x80);			\
+#define READ_ENCINT(var) do {                   \
+    (var) = 0;                                  \
+    do {                                        \
+        if (p >= end) goto chunk_end;           \
+        (var) = ((var) << 7) | (*p & 0x7F);     \
+    } while (*p++ & 0x80);                      \
 } while (0)
 
 static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
-			     struct mschmd_header *chm, int entire)
+                             struct mschmd_header *chm, int entire)
 {
   unsigned int section, name_len, x, errors, num_chunks;
   unsigned char buf[0x54], *chunk = NULL, *name, *p, *end;
@@ -435,7 +435,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
       sys->message(fh, "WARNING; PMGL quickref area is too small");
     }
     if (EndGetI32(&chunk[pmgl_QuickRefSize]) > 
-	((int)chm->chunk_size - pmgl_Entries))
+        ((int)chm->chunk_size - pmgl_Entries))
     {
       sys->message(fh, "WARNING; PMGL quickref area is too large");
     }
@@ -459,51 +459,51 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
        * offset 0 with length 0. We want to keep empty files, but not
        * directory names, which end with a "/" */
       if ((offset == 0) && (length == 0)) {
-	if ((name_len > 0) && (name[name_len-1] == '/')) continue;
+        if ((name_len > 0) && (name[name_len-1] == '/')) continue;
       }
 
       if (section > 1) {
-	sys->message(fh, "invalid section number '%u'.", section);
-	continue;
+        sys->message(fh, "invalid section number '%u'.", section);
+        continue;
       }
 
       if (!(fi = (struct mschmd_file *) sys->alloc(sys, sizeof(struct mschmd_file) + name_len + 1))) {
-	sys->free(chunk);
-	return MSPACK_ERR_NOMEMORY;
+        sys->free(chunk);
+        return MSPACK_ERR_NOMEMORY;
       }
 
       fi->next     = NULL;
       fi->filename = (char *) &fi[1];
       fi->section  = ((section == 0) ? (struct mschmd_section *) (&chm->sec0)
-		                     : (struct mschmd_section *) (&chm->sec1));
+                                     : (struct mschmd_section *) (&chm->sec1));
       fi->offset   = offset;
       fi->length   = length;
       sys->copy(name, fi->filename, (size_t) name_len);
       fi->filename[name_len] = '\0';
 
       if (name[0] == ':' && name[1] == ':') {
-	/* system file */
-	if (memcmp(&name[2], &content_name[2], 31L) == 0) {
-	  if (memcmp(&name[33], &content_name[33], 8L) == 0) {
-	    chm->sec1.content = fi;
-	  }
-	  else if (memcmp(&name[33], &control_name[33], 11L) == 0) {
-	    chm->sec1.control = fi;
-	  }
-	  else if (memcmp(&name[33], &spaninfo_name[33], 8L) == 0) {
-	    chm->sec1.spaninfo = fi;
-	  }
-	  else if (memcmp(&name[33], &rtable_name[33], 72L) == 0) {
-	    chm->sec1.rtable = fi;
-	  }
-	}
-	fi->next = chm->sysfiles;
-	chm->sysfiles = fi;
+        /* system file */
+        if (memcmp(&name[2], &content_name[2], 31L) == 0) {
+          if (memcmp(&name[33], &content_name[33], 8L) == 0) {
+            chm->sec1.content = fi;
+          }
+          else if (memcmp(&name[33], &control_name[33], 11L) == 0) {
+            chm->sec1.control = fi;
+          }
+          else if (memcmp(&name[33], &spaninfo_name[33], 8L) == 0) {
+            chm->sec1.spaninfo = fi;
+          }
+          else if (memcmp(&name[33], &rtable_name[33], 72L) == 0) {
+            chm->sec1.rtable = fi;
+          }
+        }
+        fi->next = chm->sysfiles;
+        chm->sysfiles = fi;
       }
       else {
-	/* normal file */
-	if (link) link->next = fi; else chm->files = fi;
-	link = fi;
+        /* normal file */
+        if (link) link->next = fi; else chm->files = fi;
+        link = fi;
       }
     }
 
@@ -530,8 +530,8 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
  * or a PMGI index entry point to an already visited chunk)
  */
 static int chmd_fast_find(struct mschm_decompressor *base,
-			  struct mschmd_header *chm, const char *filename,
-			  struct mschmd_file *f_ptr, int f_size)
+                          struct mschmd_header *chm, const char *filename,
+                          struct mschmd_file *f_ptr, int f_size)
 {
     struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
     struct mspack_system *sys;
@@ -544,7 +544,7 @@ static int chmd_fast_find(struct mschm_decompressor *base,
     unsigned int n, sec;
 
     if (!self || !chm || !f_ptr || (f_size != sizeof(struct mschmd_file))) {
-	return MSPACK_ERR_ARGS;
+        return MSPACK_ERR_ARGS;
     }
     sys = self->system;
 
@@ -552,59 +552,59 @@ static int chmd_fast_find(struct mschm_decompressor *base,
     memset(f_ptr, 0, f_size);
 
     if (!(fh = sys->open(sys, chm->filename, MSPACK_SYS_OPEN_READ))) {
-	return MSPACK_ERR_OPEN;
+        return MSPACK_ERR_OPEN;
     }
 
     /* go through PMGI chunk hierarchy to reach PMGL chunk */
     if (chm->index_root < chm->num_chunks) {
-	n = chm->index_root;
-	for (;;) {
-	    if (!(chunk = read_chunk(self, chm, fh, n))) {
-		sys->close(fh);
-		return self->error;
-	    }
+        n = chm->index_root;
+        for (;;) {
+            if (!(chunk = read_chunk(self, chm, fh, n))) {
+                sys->close(fh);
+                return self->error;
+            }
 
-	    /* search PMGI/PMGL chunk. exit early if no entry found */
-	    if ((result = search_chunk(chm, chunk, filename, &p, &end)) <= 0) {
-		break;
-	    }
+            /* search PMGI/PMGL chunk. exit early if no entry found */
+            if ((result = search_chunk(chm, chunk, filename, &p, &end)) <= 0) {
+                break;
+            }
 
-	    /* found result. loop around for next chunk if this is PMGI */
-	    if (chunk[3] == 0x4C) break; else READ_ENCINT(n);
-	}
+            /* found result. loop around for next chunk if this is PMGI */
+            if (chunk[3] == 0x4C) break; else READ_ENCINT(n);
+        }
     }
     else {
-	/* PMGL chunks only, search from first_pmgl to last_pmgl */
-	for (n = chm->first_pmgl; n <= chm->last_pmgl;
-	     n = EndGetI32(&chunk[pmgl_NextChunk]))
-	{
-	    if (!(chunk = read_chunk(self, chm, fh, n))) {
-		err = self->error;
-		break;
-	    }
+        /* PMGL chunks only, search from first_pmgl to last_pmgl */
+        for (n = chm->first_pmgl; n <= chm->last_pmgl;
+             n = EndGetI32(&chunk[pmgl_NextChunk]))
+        {
+            if (!(chunk = read_chunk(self, chm, fh, n))) {
+                err = self->error;
+                break;
+            }
 
-	    /* search PMGL chunk. exit if file found */
-	    if ((result = search_chunk(chm, chunk, filename, &p, &end)) > 0) {
-		break;
-	    }
+            /* search PMGL chunk. exit if file found */
+            if ((result = search_chunk(chm, chunk, filename, &p, &end)) > 0) {
+                break;
+            }
 
             /* stop simple infinite loops: can't visit the same chunk twice */
             if ((int)n == EndGetI32(&chunk[pmgl_NextChunk])) {
                 break;
             }
-	}
+        }
     }
 
     /* if we found a file, read it */
     if (result > 0) {
-	READ_ENCINT(sec);
-	f_ptr->section  = (sec == 0) ? (struct mschmd_section *) &chm->sec0
-	                             : (struct mschmd_section *) &chm->sec1;
-	READ_ENCINT(f_ptr->offset);
-	READ_ENCINT(f_ptr->length);
+        READ_ENCINT(sec);
+        f_ptr->section  = (sec == 0) ? (struct mschmd_section *) &chm->sec0
+                                     : (struct mschmd_section *) &chm->sec1;
+        READ_ENCINT(f_ptr->offset);
+        READ_ENCINT(f_ptr->length);
     }
     else if (result < 0) {
-	err = MSPACK_ERR_DATAFORMAT;
+        err = MSPACK_ERR_DATAFORMAT;
     }
 
     sys->close(fh);
@@ -620,9 +620,9 @@ static int chmd_fast_find(struct mschm_decompressor *base,
  * so it doesn't need to be read from disk more than once
  */
 static unsigned char *read_chunk(struct mschm_decompressor_p *self,
-				 struct mschmd_header *chm,
-				 struct mspack_file *fh,
-				 unsigned int chunk_num)
+                                 struct mschmd_header *chm,
+                                 struct mspack_file *fh,
+                                 unsigned int chunk_num)
 {
     struct mspack_system *sys = self->system;
     unsigned char *buf;
@@ -632,12 +632,12 @@ static unsigned char *read_chunk(struct mschm_decompressor_p *self,
     
     /* ensure chunk cache is available */
     if (!chm->chunk_cache) {
-	size_t size = sizeof(unsigned char *) * chm->num_chunks;
-	if (!(chm->chunk_cache = (unsigned char **) sys->alloc(sys, size))) {
-	    self->error = MSPACK_ERR_NOMEMORY;
-	    return NULL;
-	}
-	memset(chm->chunk_cache, 0, size);
+        size_t size = sizeof(unsigned char *) * chm->num_chunks;
+        if (!(chm->chunk_cache = (unsigned char **) sys->alloc(sys, size))) {
+            self->error = MSPACK_ERR_NOMEMORY;
+            return NULL;
+        }
+        memset(chm->chunk_cache, 0, size);
     }
 
     /* try to answer out of chunk cache */
@@ -645,31 +645,31 @@ static unsigned char *read_chunk(struct mschm_decompressor_p *self,
 
     /* need to read chunk - allocate memory for it */
     if (!(buf = (unsigned char *) sys->alloc(sys, chm->chunk_size))) {
-	self->error = MSPACK_ERR_NOMEMORY;
-	return NULL;
+        self->error = MSPACK_ERR_NOMEMORY;
+        return NULL;
     }
 
     /* seek to block and read it */
     if (sys->seek(fh, (off_t) (chm->dir_offset + (chunk_num * chm->chunk_size)),
-		      MSPACK_SYS_SEEK_START))
+                      MSPACK_SYS_SEEK_START))
     {
-	self->error = MSPACK_ERR_SEEK;
-	sys->free(buf);
-	return NULL;
+        self->error = MSPACK_ERR_SEEK;
+        sys->free(buf);
+        return NULL;
     }
     if (sys->read(fh, buf, (int)chm->chunk_size) != (int)chm->chunk_size) {
-	self->error = MSPACK_ERR_READ;
-	sys->free(buf);
-	return NULL;
+        self->error = MSPACK_ERR_READ;
+        sys->free(buf);
+        return NULL;
     }
 
     /* check the signature. Is is PMGL or PMGI? */
     if (!((buf[0] == 0x50) && (buf[1] == 0x4D) && (buf[2] == 0x47) &&
-	  ((buf[3] == 0x4C) || (buf[3] == 0x49))))
+          ((buf[3] == 0x4C) || (buf[3] == 0x49))))
     {
-	self->error = MSPACK_ERR_SEEK;
-	sys->free(buf);
-	return NULL;
+        self->error = MSPACK_ERR_SEEK;
+        sys->free(buf);
+        return NULL;
     }
 
     /* all OK. Store chunk in cache and return it */
@@ -687,10 +687,10 @@ static unsigned char *read_chunk(struct mschm_decompressor_p *self,
  * chunk that may eventually contain that entry has been found.
  */
 static int search_chunk(struct mschmd_header *chm,
-			const unsigned char *chunk,
-			const char *filename,
-			const unsigned char **result,
-			const unsigned char **result_end)
+                        const unsigned char *chunk,
+                        const char *filename,
+                        const unsigned char **result,
+                        const unsigned char **result_end)
 {
     const unsigned char *start, *end, *p;
     unsigned int qr_size, num_entries, qr_entries, qr_density, name_len;
@@ -702,12 +702,12 @@ static int search_chunk(struct mschmd_header *chm,
     /* PMGL chunk or PMGI chunk? (note: read_chunk() has already
      * checked the rest of the characters in the chunk signature) */
     if (chunk[3] == 0x4C) {
-	is_pmgl = 1;
-	entries_off = pmgl_Entries;
+        is_pmgl = 1;
+        entries_off = pmgl_Entries;
     }
     else {
-	is_pmgl = 0;
-	entries_off = pmgi_Entries;
+        is_pmgl = 0;
+        entries_off = pmgi_Entries;
     }
 
     /*  Step 1: binary search first filename of each QR entry
@@ -728,55 +728,55 @@ static int search_chunk(struct mschmd_header *chm,
     qr_entries  = (num_entries + qr_density-1) / qr_density;
 
     if (num_entries == 0) {
-	D(("chunk has no entries"))
-	return -1;
+        D(("chunk has no entries"))
+        return -1;
     }
 
     if (qr_size > chm->chunk_size) {
-	D(("quickref size > chunk size"))
-	return -1;
+        D(("quickref size > chunk size"))
+        return -1;
     }
 
     *result_end = end;
 
     if (((int)qr_entries * 2) > (start - end)) {
-	D(("WARNING; more quickrefs than quickref space"))
-	qr_entries = 0; /* but we can live with it */
+        D(("WARNING; more quickrefs than quickref space"))
+        qr_entries = 0; /* but we can live with it */
     }
 
     if (qr_entries > 0) {
-	L = 0;
-	R = qr_entries - 1;
-	do {
-	    /* pick new midpoint */
-	    M = (L + R) >> 1;
+        L = 0;
+        R = qr_entries - 1;
+        do {
+            /* pick new midpoint */
+            M = (L + R) >> 1;
 
-	    /* compare filename with entry QR points to */
-	    p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
-	    READ_ENCINT(name_len);
-	    if (name_len > (unsigned int) (end - p)) goto chunk_end;
-	    cmp = compare(filename, (char *)p, fname_len, name_len);
+            /* compare filename with entry QR points to */
+            p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
+            READ_ENCINT(name_len);
+            if (name_len > (unsigned int) (end - p)) goto chunk_end;
+            cmp = compare(filename, (char *)p, fname_len, name_len);
 
-	    if (cmp == 0) break;
-	    else if (cmp < 0) { if (M) R = M - 1; else return 0; }
-	    else if (cmp > 0) L = M + 1;
-	} while (L <= R);
-	M = (L + R) >> 1;
+            if (cmp == 0) break;
+            else if (cmp < 0) { if (M) R = M - 1; else return 0; }
+            else if (cmp > 0) L = M + 1;
+        } while (L <= R);
+        M = (L + R) >> 1;
 
-	if (cmp == 0) {
-	    /* exact match! */
-	    p += name_len;
-	    *result = p;
-	    return 1;
-	}
+        if (cmp == 0) {
+            /* exact match! */
+            p += name_len;
+            *result = p;
+            return 1;
+        }
 
-	/* otherwise, read the group of entries for QR entry M */
-	p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
-	num_entries -= (M * qr_density);
-	if (num_entries > qr_density) num_entries = qr_density;
+        /* otherwise, read the group of entries for QR entry M */
+        p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
+        num_entries -= (M * qr_density);
+        if (num_entries > qr_density) num_entries = qr_density;
     }
     else {
-	p = &chunk[entries_off];
+        p = &chunk[entries_off];
     }
 
     /* Step 2: linear search through the set of entries reached in step 1.
@@ -790,32 +790,32 @@ static int search_chunk(struct mschmd_header *chm,
      */
     *result = NULL;
     while (num_entries-- > 0) {
-	READ_ENCINT(name_len);
-	if (name_len > (unsigned int) (end - p)) goto chunk_end;
-	cmp = compare(filename, (char *)p, fname_len, name_len);
-	p += name_len;
+        READ_ENCINT(name_len);
+        if (name_len > (unsigned int) (end - p)) goto chunk_end;
+        cmp = compare(filename, (char *)p, fname_len, name_len);
+        p += name_len;
 
-	if (cmp == 0) {
-	    /* entry found */
-	    *result = p;
-	    return 1;
-	}
+        if (cmp == 0) {
+            /* entry found */
+            *result = p;
+            return 1;
+        }
 
-	if (cmp < 0) {
-	    /* entry not found (PMGL) / maybe found (PMGI) */
-	    break;
-	}
+        if (cmp < 0) {
+            /* entry not found (PMGL) / maybe found (PMGI) */
+            break;
+        }
 
-	/* read and ignore the rest of this entry */
-	if (is_pmgl) {
-	    READ_ENCINT(R); /* skip section */
-	    READ_ENCINT(R); /* skip offset */
-	    READ_ENCINT(R); /* skip length */
-	}
-	else {
-	    *result = p; /* store potential final result */
-	    READ_ENCINT(R); /* skip chunk number */
-	}
+        /* read and ignore the rest of this entry */
+        if (is_pmgl) {
+            READ_ENCINT(R); /* skip section */
+            READ_ENCINT(R); /* skip offset */
+            READ_ENCINT(R); /* skip length */
+        }
+        else {
+            *result = p; /* store potential final result */
+            READ_ENCINT(R); /* skip chunk number */
+        }
     }
 
      /* PMGL? not found. PMGI? maybe found */
@@ -838,23 +838,23 @@ static int search_chunk(struct mschmd_header *chm,
  * doesn't test that extension bytes are %10xxxxxx.
  * allows some overlong encodings.
  */
-#define GET_UTF8_CHAR(s, e, c) do {					\
-    unsigned char x = *s++;						\
-    if (x < 0x80) c = x;						\
-    else if (x >= 0xC2 && x < 0xE0 && s < e) {				\
-	c = (x & 0x1F) << 6 | (*s++ & 0x3F);				\
-    }									\
-    else if (x >= 0xE0 && x < 0xF0 && s+1 < e) {			\
-	c = (x & 0x0F) << 12 | (s[0] & 0x3F) << 6 | (s[1] & 0x3F);	\
-	s += 2;								\
-    }									\
-    else if (x >= 0xF0 && x <= 0xF5 && s+2 < e) {			\
-	c = (x & 0x07) << 18 | (s[0] & 0x3F) << 12 |			\
-	    (s[1] & 0x3F) << 6 | (s[2] & 0x3F);				\
-	if (c > 0x10FFFF) c = 0xFFFD;					\
-	s += 3;								\
-    }									\
-    else c = 0xFFFD;							\
+#define GET_UTF8_CHAR(s, e, c) do {                                     \
+    unsigned char x = *s++;                                             \
+    if (x < 0x80) c = x;                                                \
+    else if (x >= 0xC2 && x < 0xE0 && s < e) {                          \
+        c = (x & 0x1F) << 6 | (*s++ & 0x3F);                            \
+    }                                                                   \
+    else if (x >= 0xE0 && x < 0xF0 && s+1 < e) {                        \
+        c = (x & 0x0F) << 12 | (s[0] & 0x3F) << 6 | (s[1] & 0x3F);      \
+        s += 2;                                                         \
+    }                                                                   \
+    else if (x >= 0xF0 && x <= 0xF5 && s+2 < e) {                       \
+        c = (x & 0x07) << 18 | (s[0] & 0x3F) << 12 |                    \
+            (s[1] & 0x3F) << 6 | (s[2] & 0x3F);                         \
+        if (c > 0x10FFFF) c = 0xFFFD;                                   \
+        s += 3;                                                         \
+    }                                                                   \
+    else c = 0xFFFD;                                                    \
 } while (0)
 
 /* case-insensitively compares two UTF8 encoded strings. String length for
@@ -866,12 +866,12 @@ static inline int compare(const char *s1, const char *s2, int l1, int l2) {
     int c1, c2;
 
     while (p1 < e1 && p2 < e2) {
-	GET_UTF8_CHAR(p1, e1, c1);
-	GET_UTF8_CHAR(p2, e2, c2);
-	if (c1 == c2) continue;
-	c1 = TOLOWER(c1);
-	c2 = TOLOWER(c2);
-	if (c1 != c2) return c1 - c2;
+        GET_UTF8_CHAR(p1, e1, c1);
+        GET_UTF8_CHAR(p2, e2, c2);
+        if (c1 == c2) continue;
+        c1 = TOLOWER(c1);
+        c2 = TOLOWER(c2);
+        if (c1 != c2) return c1 - c2;
     }
     return l1 - l2;
 }
@@ -883,7 +883,7 @@ static inline int compare(const char *s1, const char *s2, int l1, int l2) {
  * extracts a file from a CHM helpfile
  */
 static int chmd_extract(struct mschm_decompressor *base,
-			struct mschmd_file *file, const char *filename)
+                        struct mschmd_file *file, const char *filename)
 {
   struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
   struct mspack_system *sys;
@@ -937,7 +937,7 @@ static int chmd_extract(struct mschm_decompressor *base,
   case 0: /* Uncompressed section file */
     /* simple seek + copy */
     if (sys->seek(self->d->infh, file->section->chm->sec0.offset
-		  + file->offset, MSPACK_SYS_SEEK_START))
+                  + file->offset, MSPACK_SYS_SEEK_START))
     {
       self->error = MSPACK_ERR_SEEK;
     }
@@ -945,17 +945,17 @@ static int chmd_extract(struct mschm_decompressor *base,
       unsigned char buf[512];
       off_t length = file->length;
       while (length > 0) {
-	int run = sizeof(buf);
-	if ((off_t)run > length) run = (int)length;
-	if (sys->read(self->d->infh, &buf[0], run) != run) {
-	  self->error = MSPACK_ERR_READ;
-	  break;
-	}
-	if (sys->write(fh, &buf[0], run) != run) {
-	  self->error = MSPACK_ERR_WRITE;
-	  break;
-	}
-	length -= run;
+        int run = sizeof(buf);
+        if ((off_t)run > length) run = (int)length;
+        if (sys->read(self->d->infh, &buf[0], run) != run) {
+          self->error = MSPACK_ERR_READ;
+          break;
+        }
+        if (sys->write(fh, &buf[0], run) != run) {
+          self->error = MSPACK_ERR_WRITE;
+          break;
+        }
+        length -= run;
       }
     }
     break;
@@ -966,8 +966,8 @@ static int chmd_extract(struct mschm_decompressor *base,
      */
     if (!self->d->state || (file->offset < self->d->offset)) {
       if (self->d->state) {
-	lzxd_free(self->d->state);
-	self->d->state = NULL;
+        lzxd_free(self->d->state);
+        self->d->state = NULL;
       }
       if (chmd_init_decomp(self, file)) break;
     }
@@ -1031,7 +1031,7 @@ static int chmd_sys_write(struct mspack_file *file, void *buffer, int bytes) {
  * file.
  */
 static int chmd_init_decomp(struct mschm_decompressor_p *self,
-			    struct mschmd_file *file)
+                            struct mschmd_file *file)
 {
   int window_size, window_bits, reset_interval, entry, err;
   struct mspack_system *sys = self->system;
@@ -1138,9 +1138,9 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
 
   /* initialise LZX stream */
   self->d->state = lzxd_init(&self->d->sys, self->d->infh,
-			     (struct mspack_file *) self, window_bits,
-			     reset_interval / LZX_FRAME_SIZE,
-			     4096, length, 0);
+                             (struct mspack_file *) self, window_bits,
+                             reset_interval / LZX_FRAME_SIZE,
+                             4096, length, 0);
   if (!self->d->state) self->error = MSPACK_ERR_NOMEMORY;
   return self->error;
 }
@@ -1153,8 +1153,8 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
  * Returns non-zero for success, zero for failure.
  */
 static int read_reset_table(struct mschm_decompressor_p *self,
-			    struct mschmd_sec_mscompressed *sec,
-			    int entry, off_t *length_ptr, off_t *offset_ptr)
+                            struct mschmd_sec_mscompressed *sec,
+                            int entry, off_t *length_ptr, off_t *offset_ptr)
 {
     struct mspack_system *sys = self->system;
     unsigned char *data;
@@ -1166,25 +1166,25 @@ static int read_reset_table(struct mschm_decompressor_p *self,
 
     /* read ResetTable file */
     if (sec->rtable->length < lzxrt_headerSIZEOF) {
-	D(("ResetTable file is too short"))
-	return 0;
+        D(("ResetTable file is too short"))
+        return 0;
     }
     if (!(data = read_sys_file(self, sec->rtable))) {
-	D(("can't read reset table"))
-	return 0;
+        D(("can't read reset table"))
+        return 0;
     }
 
     /* check sanity of reset table */
     if (EndGetI32(&data[lzxrt_FrameLen]) != LZX_FRAME_SIZE) {
-	D(("bad reset table frame length"))
-	sys->free(data);
-	return 0;
+        D(("bad reset table frame length"))
+        sys->free(data);
+        return 0;
     }
 
     /* get the uncompressed length of the LZX stream */
     if (read_off64(length_ptr, &data[lzxrt_UncompLen], sys, self->d->infh)) {
-	sys->free(data);
-	return 0;
+        sys->free(data);
+        return 0;
     }
 
     entrysize = EndGetI32(&data[lzxrt_EntrySize]);
@@ -1192,25 +1192,25 @@ static int read_reset_table(struct mschm_decompressor_p *self,
 
     /* ensure reset table entry for this offset exists */
     if (entry < EndGetI32(&data[lzxrt_NumEntries]) &&
-	pos <= (sec->rtable->length - entrysize))
+        pos <= (sec->rtable->length - entrysize))
     {
-	switch (entrysize) {
-	case 4:
-	    *offset_ptr = EndGetI32(&data[pos]);
-	    err = 0;
-	    break;
-	case 8:
-	    err = read_off64(offset_ptr, &data[pos], sys, self->d->infh);
-	    break;
-	default:
-	    D(("reset table entry size neither 4 nor 8"))
-	    err = 1;
-	    break;
-	}
+        switch (entrysize) {
+        case 4:
+            *offset_ptr = EndGetI32(&data[pos]);
+            err = 0;
+            break;
+        case 8:
+            err = read_off64(offset_ptr, &data[pos], sys, self->d->infh);
+            break;
+        default:
+            D(("reset table entry size neither 4 nor 8"))
+            err = 1;
+            break;
+        }
     }
     else {
-	D(("bad reset interval"))
-	err = 1;
+        D(("bad reset interval"))
+        err = 1;
     }
 
     /* free the reset table */
@@ -1227,8 +1227,8 @@ static int read_reset_table(struct mschm_decompressor_p *self,
  * Returns zero for success or a non-zero error code for failure.
  */
 static int read_spaninfo(struct mschm_decompressor_p *self,
-			 struct mschmd_sec_mscompressed *sec,
-			 off_t *length_ptr)
+                         struct mschmd_sec_mscompressed *sec,
+                         off_t *length_ptr)
 {
     struct mspack_system *sys = self->system;
     unsigned char *data;
@@ -1239,14 +1239,14 @@ static int read_spaninfo(struct mschm_decompressor_p *self,
 
     /* check it's large enough */
     if (sec->spaninfo->length != 8) {
-	D(("SpanInfo file is wrong size"))
-	return MSPACK_ERR_DATAFORMAT;
+        D(("SpanInfo file is wrong size"))
+        return MSPACK_ERR_DATAFORMAT;
     }
 
     /* read the SpanInfo file */
     if (!(data = read_sys_file(self, sec->spaninfo))) {
-	D(("can't read SpanInfo file"))
-	return self->error;
+        D(("can't read SpanInfo file"))
+        return self->error;
     }
 
     /* get the uncompressed length of the LZX stream */
@@ -1270,8 +1270,8 @@ static int read_spaninfo(struct mschm_decompressor_p *self,
  * for success, non-zero for both failure and the file not existing.
  */
 static int find_sys_file(struct mschm_decompressor_p *self,
-			 struct mschmd_sec_mscompressed *sec,
-			 struct mschmd_file **f_ptr, const char *name)
+                         struct mschmd_sec_mscompressed *sec,
+                         struct mschmd_file **f_ptr, const char *name)
 {
     struct mspack_system *sys = self->system;
     struct mschmd_file result;
@@ -1282,13 +1282,13 @@ static int find_sys_file(struct mschm_decompressor_p *self,
     /* try using fast_find to find the file - return DATAFORMAT error if
      * it fails, or successfully doesn't find the file */
     if (chmd_fast_find((struct mschm_decompressor *) self, sec->base.chm,
-		       name, &result, (int)sizeof(result)) || !result.section)
+                       name, &result, (int)sizeof(result)) || !result.section)
     {
-	return MSPACK_ERR_DATAFORMAT;
+        return MSPACK_ERR_DATAFORMAT;
     }
 
     if (!(*f_ptr = (struct mschmd_file *) sys->alloc(sys, sizeof(result)))) {
-	return MSPACK_ERR_NOMEMORY;
+        return MSPACK_ERR_NOMEMORY;
     }
 
     /* copy result */
@@ -1308,7 +1308,7 @@ static int find_sys_file(struct mschm_decompressor_p *self,
  * memory.
  */
 static unsigned char *read_sys_file(struct mschm_decompressor_p *self,
-				    struct mschmd_file *file)
+                                    struct mschmd_file *file)
 {
   struct mspack_system *sys = self->system;
   unsigned char *data = NULL;
@@ -1326,7 +1326,7 @@ static unsigned char *read_sys_file(struct mschm_decompressor_p *self,
     return NULL;
   }
   if (sys->seek(self->d->infh, file->section->chm->sec0.offset
-		+ file->offset, MSPACK_SYS_SEEK_START))
+                + file->offset, MSPACK_SYS_SEEK_START))
   {
     self->error = MSPACK_ERR_SEEK;
     sys->free(data);
@@ -1359,15 +1359,15 @@ static int chmd_error(struct mschm_decompressor *base) {
  * are accepted, offsets beyond that cause an error message.
  */
 static int read_off64(off_t *var, unsigned char *mem,
-		      struct mspack_system *sys, struct mspack_file *fh)
+                      struct mspack_system *sys, struct mspack_file *fh)
 {
 #if LARGEFILE_SUPPORT
     *var = EndGetI64(mem);
 #else
     *var = EndGetI32(mem);
     if ((*var & 0x80000000) || EndGetI32(mem+4)) {
-	sys->message(fh, (char *)largefile_msg);
-	return 1;
+        sys->message(fh, (char *)largefile_msg);
+        return 1;
     }
 #endif
     return 0;

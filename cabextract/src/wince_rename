@@ -116,10 +116,10 @@ if (open FH, "<$hdrfile") {
     my @dirs;
     seek_to($hdr[19]);
     for (1 .. $hdr[13]) {
-	my ($id, $len) = unpack 'vv', read_data(4);
-	my @ids = unpack 'v*', read_data($len); pop @ids;
-	$dirs[$id] = join '\\', map {$strs[$_]} @ids;
-	$dirs[$id] =~ s/%CE(\d+)%/$ce[$1]/eg;
+        my ($id, $len) = unpack 'vv', read_data(4);
+        my @ids = unpack 'v*', read_data($len); pop @ids;
+        $dirs[$id] = join '\\', map {$strs[$_]} @ids;
+        $dirs[$id] =~ s/%CE(\d+)%/$ce[$1]/eg;
     }
 
     # FILES section
@@ -146,39 +146,39 @@ if (open FH, "<$hdrfile") {
       # seek to HIVES section and read all HIVES entries into @hives
       seek_to($hdr[21]);
       for (1 .. $hdr[15]) {
-	my ($id, $root, $unk, $len) = unpack 'vvvv', read_data(8);
-	my @ids = unpack 'v*', read_data($len); pop @ids;
-	$hives[$id] = join '\\',(('HKCR','HKCU','HKLM','HKEY_USERS')[$root-1],
-				 (map{$strs[$_]} @ids));
+        my ($id, $root, $unk, $len) = unpack 'vvvv', read_data(8);
+        my @ids = unpack 'v*', read_data($len); pop @ids;
+        $hives[$id] = join '\\',(('HKCR','HKCU','HKLM','HKEY_USERS')[$root-1],
+                                 (map{$strs[$_]} @ids));
       }
 
       # seek to KEYS section and loop for all KEYS entries
       seek_to($hdr[22]);
       for (1 .. $hdr[16]) {
-	# read KEYS entry, split off name and data components
-	my ($id,$hive,$unk,$flags,$len) = unpack 'vvvVv', read_data(12);
-	my $entry = read_data($len); $entry =~ /^(.*?)\000(.*)/s;
-	my ($name, $data) = ($1, $2);
+        # read KEYS entry, split off name and data components
+        my ($id,$hive,$unk,$flags,$len) = unpack 'vvvVv', read_data(12);
+        my $entry = read_data($len); $entry =~ /^(.*?)\000(.*)/s;
+        my ($name, $data) = ($1, $2);
 
-	# print REGEDIT4 entry header for key, print hive header if a
-	# different hive has been entered
-	print REGFH "\r\n[$hives[$hive]]\r\n" unless $lasthive == $hive;
-	print REGFH ''.(($name eq '') ? '@' : "\"$name\"").'=';
-	$lasthive = $hive;
+        # print REGEDIT4 entry header for key, print hive header if a
+        # different hive has been entered
+        print REGFH "\r\n[$hives[$hive]]\r\n" unless $lasthive == $hive;
+        print REGFH ''.(($name eq '') ? '@' : "\"$name\"").'=';
+        $lasthive = $hive;
 
-	# print appropriate REGEDIT4 format for data
-	if (($flags & 0x10001) == 0x10001) {
-	  print REGFH sprintf 'dword:%08x', unpack('V', $data);
-	}
-	elsif (($flags & 0x10001) == 0x00001) {
-	  print REGFH 'hex:'.join ',',map{sprintf'%02x',$_}unpack 'c*',$data;
-	}
-	else {
-	  chop $data; chop $data if (($flags & 0x10001) == 0x10000);
-	  $data =~ s/\\/\\\\/g; $data =~ s/\000/\\0/g; $data =~ s/\"/\\\"/g;
-	  print REGFH '"'.$data.'"';
-	}
-	print REGFH "\r\n";
+        # print appropriate REGEDIT4 format for data
+        if (($flags & 0x10001) == 0x10001) {
+          print REGFH sprintf 'dword:%08x', unpack('V', $data);
+        }
+        elsif (($flags & 0x10001) == 0x00001) {
+          print REGFH 'hex:'.join ',',map{sprintf'%02x',$_}unpack 'c*',$data;
+        }
+        else {
+          chop $data; chop $data if (($flags & 0x10001) == 0x10000);
+          $data =~ s/\\/\\\\/g; $data =~ s/\000/\\0/g; $data =~ s/\"/\\\"/g;
+          print REGFH '"'.$data.'"';
+        }
+        print REGFH "\r\n";
       }
       close REGFH;
     }

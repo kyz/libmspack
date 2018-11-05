@@ -29,10 +29,10 @@
 
 /* prototypes */
 static int oabd_decompress(struct msoab_decompressor *self, const char *input,
-			   const char *output);
+                           const char *output);
 static int oabd_decompress_incremental(struct msoab_decompressor *self,
-				       const char *input, const char *base,
-				       const char *output);
+                                       const char *input, const char *base,
+                                       const char *output);
 
 struct msoab_decompressor *
   mspack_create_oab_decompressor(struct mspack_system *sys)
@@ -94,7 +94,7 @@ static int oabd_sys_write (struct mspack_file *base_file, void *buf, int size)
 }
 
 static int oabd_decompress(struct msoab_decompressor *_self, const char *input,
-			   const char *output)
+                           const char *output)
 {
   struct msoab_decompressor_p *self = (struct msoab_decompressor_p *) _self;
   struct mspack_system *sys;
@@ -178,58 +178,58 @@ static int oabd_decompress(struct msoab_decompressor *_self, const char *input,
     if (!blk_flags) {
       /* Uncompressed block */
       if (blk_dsize != blk_csize) {
-	ret = MSPACK_ERR_DATAFORMAT;
-	goto out;
+        ret = MSPACK_ERR_DATAFORMAT;
+        goto out;
       }
       if (sys->read(infh, buf, blk_dsize) != (int)blk_dsize) {
-	ret = MSPACK_ERR_READ;
-	goto out;
+        ret = MSPACK_ERR_READ;
+        goto out;
       }
       if (sys->write(outfh, buf, blk_dsize) != (int)blk_dsize) {
-	ret = MSPACK_ERR_WRITE;
-	goto out;
+        ret = MSPACK_ERR_WRITE;
+        goto out;
       }
     } else {
       /* LZX compressed block */
       window_bits = 17;
 
       while (window_bits < 25 && (1U << window_bits) < blk_dsize)
-	window_bits++;
+        window_bits++;
 
       in_ofh.available = blk_csize;
       out_ofh.crc = 0xffffffff;
 
       lzx = lzxd_init(&oabd_sys, (void *)&in_ofh, (void *)&out_ofh, window_bits,
-		      0, 4096, blk_dsize, 1);
+                      0, 4096, blk_dsize, 1);
       if (!lzx) {
-	ret = MSPACK_ERR_NOMEMORY;
-	goto out;
+        ret = MSPACK_ERR_NOMEMORY;
+        goto out;
       }
 
       ret = lzxd_decompress(lzx, blk_dsize);
       if (ret != MSPACK_ERR_OK)
-	goto out;
+        goto out;
 
       lzxd_free(lzx);
       lzx = NULL;
 
       /* Consume any trailing padding bytes before the next block */
       while (in_ofh.available) {
-	int count = block_max;
-	if ((size_t)count > in_ofh.available)
-	  count = in_ofh.available;
+        int count = block_max;
+        if ((size_t)count > in_ofh.available)
+          count = in_ofh.available;
 
-	count = sys->read(infh, buf, count);
-	if (count < 0) {
-	  ret = MSPACK_ERR_READ;
-	  goto out;
-	}
-	in_ofh.available -= count;
+        count = sys->read(infh, buf, count);
+        if (count < 0) {
+          ret = MSPACK_ERR_READ;
+          goto out;
+        }
+        in_ofh.available -= count;
       }
 
       if (out_ofh.crc != blk_crc) {
-	ret = MSPACK_ERR_CHECKSUM;
-	goto out;
+        ret = MSPACK_ERR_CHECKSUM;
+        goto out;
       }
     }
     target_size -= blk_dsize;
@@ -245,8 +245,8 @@ static int oabd_decompress(struct msoab_decompressor *_self, const char *input,
 }
 
 static int oabd_decompress_incremental(struct msoab_decompressor *_self,
-				       const char *input, const char *base,
-				       const char *output)
+                                       const char *input, const char *base,
+                                       const char *output)
 {
   struct msoab_decompressor_p *self = (struct msoab_decompressor_p *) _self;
   struct mspack_system *sys;
@@ -330,7 +330,7 @@ static int oabd_decompress_incremental(struct msoab_decompressor *_self,
     blk_crc   = EndGetI32(&buf[patchblk_CRC]);
 
     if (blk_dsize > block_max || blk_dsize > target_size ||
-	blk_ssize > block_max) {
+        blk_ssize > block_max) {
       ret = MSPACK_ERR_DATAFORMAT;
       goto out;
     }
@@ -347,7 +347,7 @@ static int oabd_decompress_incremental(struct msoab_decompressor *_self,
     out_ofh.crc = 0xffffffff;
 
     lzx = lzxd_init(&oabd_sys, (void *)&in_ofh, (void *)&out_ofh, window_bits,
-		    0, 4096, blk_dsize, 1);
+                    0, 4096, blk_dsize, 1);
     if (!lzx) {
       ret = MSPACK_ERR_NOMEMORY;
       goto out;
@@ -367,12 +367,12 @@ static int oabd_decompress_incremental(struct msoab_decompressor *_self,
     while (in_ofh.available) {
       int count = block_max;
       if ((size_t)count > in_ofh.available)
-	count = in_ofh.available;
+        count = in_ofh.available;
 
       count = sys->read(infh, buf, count);
       if (count < 0) {
-	ret = MSPACK_ERR_READ;
-	goto out;
+        ret = MSPACK_ERR_READ;
+        goto out;
       }
       in_ofh.available -= count;
     }

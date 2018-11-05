@@ -77,9 +77,9 @@ typedef unsigned long int md5_uintptr;
 
 #undef __P
 #if defined (__STDC__) && __STDC__
-#define	__P(x) x
+#define __P(x) x
 #else
-#define	__P(x) ()
+#define __P(x) ()
 #endif
 
 /* Structure to save state of computation between the single steps.  */
@@ -109,14 +109,14 @@ extern void md5_init_ctx __P ((struct md5_ctx *ctx));
    starting at BUFFER.
    It is necessary that LEN is a multiple of 64!!! */
 extern void md5_process_block __P ((const void *buffer, size_t len,
-				    struct md5_ctx *ctx));
+                                    struct md5_ctx *ctx));
 
 /* Starting with the result of former calls of this function (or the
    initialization function update the context for the next LEN bytes
    starting at BUFFER.
    It is NOT required that LEN is a multiple of 64.  */
 extern void md5_process_bytes __P ((const void *buffer, size_t len,
-				    struct md5_ctx *ctx));
+                                    struct md5_ctx *ctx));
 
 /* Process the remaining bytes in the buffer and put result from CTX
    in first 16 bytes following RESBUF.  The result is always in little
@@ -155,8 +155,8 @@ static inline md5_uint32
 rol(md5_uint32 x, int n)
 {
   __asm__("roll %%cl,%0"
-	  :"=r" (x)
-	  :"0" (x),"c" (n));
+          :"=r" (x)
+          :"0" (x),"c" (n));
   return x;
 }
 #else

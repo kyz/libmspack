@@ -733,7 +733,7 @@ static int unix_path_seperators(struct mscabd_file *files) {
  * @see unix_path_seperators()
  */
 static char *create_output_name(const char *fname, const char *dir,
-				int lower, int isunix, int utf8)
+                                int lower, int isunix, int utf8)
 {
   char sep   = (isunix) ? '/'  : '\\'; /* the path-seperator */
   char slash = (isunix) ? '\\' : '/';  /* the other slash */

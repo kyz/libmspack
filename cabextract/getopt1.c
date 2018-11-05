@@ -87,4 +87,4 @@ getopt_long_only (argc, argv, options, long_options, opt_index)
 }
 
 
-#endif	/* Not ELIDE_CODE.  */
+#endif  /* Not ELIDE_CODE.  */

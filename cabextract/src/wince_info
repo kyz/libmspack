@@ -170,16 +170,16 @@ for my $hdrfile (@ARGV) {
 
         if (($flags & 0x10001) == 0x10001) {
             my $dword = unpack 'V', $data;
-	    printf "       [DWORD] %08x (%d)\n", $dword, $dword;;
+            printf "       [DWORD] %08x (%d)\n", $dword, $dword;;
         }
         elsif (($flags & 0x10001) == 0x10000) {
             for my $sz (split /\000/, $data) {
                 printf "       [MULTI_SZ] <<%s>>\n", $sz
-	    }
+            }
         }
         elsif (($flags & 0x10001) == 0x00001) {
             printf "       [BINARY] (%d bytes hexdump follows)\n", length($data);
-	    while ($data =~ /(.{1,12})/gs) {
+            while ($data =~ /(.{1,12})/gs) {
                 my ($text, $hex) = ($1, unpack('h*', $1));
                 $hex =~ s/(.{8})/$1 /g; # space every 8 hexdigits
                 $text =~ s/[^[:print:]]/./g; # replace unprintables

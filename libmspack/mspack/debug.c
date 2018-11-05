@@ -35,15 +35,15 @@ static void cabinfo(struct mscabd_cabinet_p *cab) {
     printf("  - merge_next=%p\n", fol->merge_next);
     for (dat = &fol->data; dat; dat=dat->next) {
       printf("  - datasplit@%p = CAB(%p) OFFSET(%ld) BLOCKS(%d)\n",
-	     dat, dat->cab, dat->offset, dat->num_blocks);
+             dat, dat->cab, dat->offset, dat->num_blocks);
     }
   }
   printf("- files:\n");
   for (fi = cab->base.files; fi; fi = fi->next) {
     printf("  @%p \"%s\" %d FOL(%p) OFFSET(%u)\n",
-	   fi, fi->filename, fi->length,
-	   ((struct mscabd_file_p *) fi)->folder,
-	   ((struct mscabd_file_p *) fi)->offset);
+           fi, fi->filename, fi->length,
+           ((struct mscabd_file_p *) fi)->folder,
+           ((struct mscabd_file_p *) fi)->offset);
   }
 }
 
