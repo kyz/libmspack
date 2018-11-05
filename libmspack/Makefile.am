@@ -89,4 +89,3 @@ test_chmd_test_LDADD =          libmschmd.la
 test_kwajd_test_SOURCES =       test/kwajd_test.c libmspack.la
 test_kwajd_test_CPPFLAGS =      $(AM_CPPFLAGS) -DTEST_FILES=$(abs_srcdir)/test/test_files/kwajd
 test_kwajd_test_LDADD =         libmspack.la
-t
