@@ -3,9 +3,6 @@ EXTRA_DIST =            $(srcdir)/test/test_files/*/*
 pkgconfigdir =          $(libdir)/pkgconfig
 TESTS =                 $(check_PROGRAMS)
 
-dist-hook:
-	-rm -f $(distdir)/*.la $(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm
-
 ACLOCAL_AMFLAGS =       -I m4
 AM_CFLAGS =
 # add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system
@@ -20,8 +17,9 @@ pkgconfig_DATA =        libmspack.pc
 
 noinst_LTLIBRARIES =    libmscabd.la libmschmd.la
 noinst_PROGRAMS =       examples/cabd_memory examples/cabrip examples/chmextract \
-                        examples/msexpand examples/multifh examples/oabextract test/cabd_md5 \
-                        test/chmd_find test/chmd_md5 test/chmd_order test/chminfo
+                        examples/msexpand examples/multifh examples/oabextract \
+                        test/cabd_md5 test/chmd_find test/chmd_md5 test/chmd_order \
+                        test/chminfo
 check_PROGRAMS =        test/cabd_test test/chmd_test test/kwajd_test
 
 libmspack_la_SOURCES =  mspack/mspack.h \
@@ -71,30 +69,24 @@ examples_multifh_LDADD =        libmscabd.la
 examples_oabextract_SOURCES =   examples/oabextract.c test/error.h libmspack.la
 examples_oabextract_LDADD =     libmspack.la
 
-test_cabd_md5_SOURCES =         test/cabd_md5.c test/md5.c test/md5.h \
-                                test/md5_fh.h test/error.h libmscabd.la
+test_cabd_md5_SOURCES =         test/cabd_md5.c test/md5.c test/md5.h test/md5_fh.h test/error.h libmscabd.la
 test_cabd_md5_LDADD =           libmscabd.la
-test_cabd_test_SOURCES =        test/cabd_test.c test/md5.c test/md5.h \
-                                test/md5_fh.h libmscabd.la
-test_cabd_test_CPPFLAGS =       $(AM_CPPFLAGS) -DTEST_FILES=$(abs_srcdir)/test/test_files/cabd
-test_cabd_test_LDADD =          libmscabd.la
 test_chmd_find_SOURCES =        test/chmd_find.c test/error.h libmschmd.la
 test_chmd_find_LDADD =          libmschmd.la
-test_chmd_md5_SOURCES =         test/chmd_md5.c test/md5.c test/md5.h \
-                                test/md5_fh.h test/error.h libmschmd.la
+test_chmd_md5_SOURCES =         test/chmd_md5.c test/md5.c test/md5.h test/md5_fh.h test/error.h libmschmd.la
 test_chmd_md5_LDADD =           libmschmd.la
-test_chmd_order_SOURCES =       test/chmd_order.c test/md5.c test/md5.h \
-                                test/md5_fh.h test/error.h libmschmd.la
+test_chmd_order_SOURCES =       test/chmd_order.c test/md5.c test/md5.h test/md5_fh.h test/error.h libmschmd.la
 test_chmd_order_LDADD =         libmschmd.la
-test_chmd_test_SOURCES =        test/chmd_test.c libmschmd.la
-test_chmd_test_CPPFLAGS =       $(AM_CPPFLAGS) -DTEST_FILES=$(abs_srcdir)/test/test_files/chmd
-test_chmd_test_LDADD =          libmschmd.la
-test_chmd_test_DEPENDENCIES =   libmschmd.la $(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm
 test_chminfo_SOURCES =          test/chminfo.c libmschmd.la
 test_chminfo_LDADD =            libmschmd.la
+
+test_cabd_test_SOURCES =        test/cabd_test.c test/md5.c test/md5.h test/md5_fh.h libmscabd.la
+test_cabd_test_CPPFLAGS =       $(AM_CPPFLAGS) -DTEST_FILES=$(abs_srcdir)/test/test_files/cabd
+test_cabd_test_LDADD =          libmscabd.la
+test_chmd_test_SOURCES =        test/chmd_test.c test/md5.c test/md5.h test/md5_fh.h libmschmd.la
+test_chmd_test_CPPFLAGS =       $(AM_CPPFLAGS) -DTEST_FILES=$(abs_srcdir)/test/test_files/chmd
+test_chmd_test_LDADD =          libmschmd.la
 test_kwajd_test_SOURCES =       test/kwajd_test.c libmspack.la
 test_kwajd_test_CPPFLAGS =      $(AM_CPPFLAGS) -DTEST_FILES=$(abs_srcdir)/test/test_files/kwajd
 test_kwajd_test_LDADD =         libmspack.la
-
-$(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm: $(srcdir)/test/test_files/chmd/cve-2015-4467-reset-interval-zero.chm.LZXC-is-lzxc
-	sed s/lzxc/LZXC/ $< >$@
+t

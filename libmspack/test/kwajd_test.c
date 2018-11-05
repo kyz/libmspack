@@ -25,23 +25,19 @@ void kwajd_open_test_01() {
     struct mskwaj_decompressor *kwajd;
     struct mskwajd_header *hdr;
 
-    kwajd = mspack_create_kwaj_decompressor(NULL);
-    TEST(kwajd != NULL);
+    TEST(kwajd = mspack_create_kwaj_decompressor(NULL));
 
-    hdr = kwajd->open(kwajd, TESTFILE("f00.kwj"));
-    TEST(hdr != NULL);
+    TEST(hdr = kwajd->open(kwajd, TESTFILE("f00.kwj")));
     TEST(hdr->filename == NULL);
     kwajd->close(kwajd, hdr);
 
-#define GOOD(testfile, fname)            \
-    hdr = kwajd->open(kwajd, testfile);  \
-    TEST(hdr != NULL);                   \
-    TEST(hdr->filename != NULL);         \
-    TEST(!strcmp(fname, hdr->filename)); \
+#define GOOD(testfile, fname)                             \
+    TEST(hdr = kwajd->open(kwajd, testfile));             \
+    TEST(hdr->filename && !strcmp(fname, hdr->filename)); \
     kwajd->close(kwajd, hdr)
+
 #define BAD(testfile)                    \
-    hdr = kwajd->open(kwajd, testfile);  \
-    TEST(hdr == NULL);                   \
+    TEST(!kwajd->open(kwajd, testfile)); \
     TEST(kwajd->last_error(kwajd) == MSPACK_ERR_DATAFORMAT)
 
     GOOD(TESTFILE("f01.kwj"), ".1");
