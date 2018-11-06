@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS =      subdir-objects
-EXTRA_DIST =            $(srcdir)/test/test_files/*/*
+EXTRA_DIST =            doc test/test_files
 pkgconfigdir =          $(libdir)/pkgconfig
 TESTS =                 $(check_PROGRAMS)
 
