@@ -1,11 +1,12 @@
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+# include <config.h>
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
 #include <mspack.h>
 #include <system.h>
 
@@ -225,13 +226,13 @@ int main(int argc, char *argv[]) {
              "9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable", &len)))
         {
           off_t contents = chm->sec0.offset;
-          printf("  lzxrt_Unknown1      %u\n",      EndGetI32(&data[0]));
-          printf("  lzxrt_NumEntries    %u\n",      EndGetI32(&data[4]));
-          printf("  lzxrt_EntrySize     %u\n",      EndGetI32(&data[8]));
-          printf("  lzxrt_TableOffset   %u\n",      EndGetI32(&data[12]));
-          printf("  lzxrt_UncompLen     %" LU "\n", EndGetI64(&data[16]));
-          printf("  lzxrt_CompLen       %" LU "\n", EndGetI64(&data[24]));
-          printf("  lzxrt_FrameLen      %u\n",      EndGetI32(&data[32]));
+          printf("  lzxrt_Unknown1      %u\n",   EndGetI32(&data[0]));
+          printf("  lzxrt_NumEntries    %u\n",   EndGetI32(&data[4]));
+          printf("  lzxrt_EntrySize     %u\n",   EndGetI32(&data[8]));
+          printf("  lzxrt_TableOffset   %u\n",   EndGetI32(&data[12]));
+          printf("  lzxrt_UncompLen     %llu\n", EndGetI64(&data[16]));
+          printf("  lzxrt_CompLen       %llu\n", EndGetI64(&data[24]));
+          printf("  lzxrt_FrameLen      %u\n",   EndGetI32(&data[32]));
 
           for (file = chm->sysfiles; file; file = file->next) {
             if (strcmp(file->filename,
@@ -251,7 +252,7 @@ int main(int argc, char *argv[]) {
           case 4:
             for (i = 0; i < numf && pos < len; i++, pos += 4) {
               unsigned int rtdata = EndGetI32(&data[pos]);
-              printf("    %-10u -> %-10u [ %" LU " %u ]\n",
+              printf("    %-10u -> %-10u [ %llu %u ]\n",
                      i * EndGetI32(&data[32]),
                      rtdata,
                      contents + rtdata,
@@ -264,7 +265,7 @@ int main(int argc, char *argv[]) {
           case 8:
             for (i = 0; i < numf && pos < len; i++, pos += 8) {
               unsigned long long int rtdata = EndGetI64(&data[pos]);
-              printf("    %-10" LU " -> %-10" LU " [ %" LU " %" LU " ]\n",
+              printf("    %-10llu -> %-10llu [ %llu %llu ]\n",
                      i * EndGetI64(&data[32]), rtdata, contents + rtdata,
                      (i == (numf-1))
                      ? (EndGetI64(&data[24]) - rtdata)
