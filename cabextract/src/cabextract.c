@@ -203,6 +203,13 @@ static struct mspack_system cabextract_system = {
 int main(int argc, char *argv[]) {
   int i, err;
 
+  /* names for the UTF-8 charset recognised by different iconv_open()s */
+  char *utf8_names[] = {
+      "UTF-8", /* glibc, libiconv, FreeBSD, Solaris, not newlib or HPUX */
+      "UTF8",  /* glibc, libiconv (< 1.13), newlib, HPUX */
+      "UTF_8", /* newlib, Solaris */
+  };
+
    /* attempt to set a UTF8-based locale, so that tolower()/towlower()
     * in create_output_name() lowercase more than just A-Z in ASCII.
     *
@@ -323,15 +330,18 @@ int main(int argc, char *argv[]) {
   cabd->set_param(cabd, MSCABD_PARAM_SALVAGE, args.fix);
 
 #if HAVE_ICONV
-  /* set up converter for given encoding */
-    if (args.encoding) {
-      if ((converter = iconv_open("UTF8", args.encoding)) == (iconv_t) -1) {
-        converter = NULL;
-        fprintf(stderr, "FATAL ERROR: encoding '%s' is not recognised\n",
-            args.encoding);
-        return EXIT_FAILURE;
-      }
+  /* set up converter from given encoding to UTF-8 */
+  if (args.encoding) {
+    for (i = 0; i < (sizeof(utf8_names)/sizeof(*utf8_names)); i++) {
+      converter = iconv_open(utf8_names[i], args.encoding);
+      if (converter != (iconv_t) -1) break;
     }
+    if (converter == (iconv_t) -1) {
+      fprintf(stderr, "FATAL ERROR: encoding '%s' is not recognised\n",
+          args.encoding);
+      return EXIT_FAILURE;
+    }
+  }
 #endif
 
   /* process cabinets */

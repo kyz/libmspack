@@ -1,3 +1,14 @@
+2018-11-08 Stuart Caie <kyzer@cabextract.org.uk>
+
+	* src/cabextract.c: make multiple attempts at iconv_open() with
+	different names for the UTF-8 encoding: "UTF-8", "UTF8" and "UTF_8".
+
+	"UTF8" works with glibc, libiconv, newlib, Solaris libc and FreeBSD
+	libc, while "UTF-8" doesn't work with newlib. But if you have
+	libiconv >= 1.13, it removes "UTF8" support unless you define
+	USE_HPUX_ALIASES, or patch it back in (as Cygwin does).
+	Thanks to Ryan Schmidt for letting me know about this.
+
 2018-11-03 Stuart Caie <kyzer@cabextract.org.uk>
 
 	* test: use the autotools test system instead of a custom makefile.
