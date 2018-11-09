@@ -1,5 +1,6 @@
 #!/bin/sh
-./filenames.pl case.txt            >case.cab
+./filenames.pl case-ascii.txt      >case-ascii.cab
+./filenames.pl case-utf8.txt       >case-utf8.cab
 ./filenames.pl dirwalk-vulns.txt   >dirwalk-vulns.cab
 FORCE_CODEPAGE=1 ./filenames.pl encoding-koi8.txt   >encoding-koi8.cab
 FORCE_CODEPAGE=1 ./filenames.pl encoding-latin1.txt >encoding-latin1.cab
