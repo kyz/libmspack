@@ -507,9 +507,10 @@ int mszipd_decompress_kwaj(struct mszipd_stream *zip) {
 
 void mszipd_free(struct mszipd_stream *zip) {
   struct mspack_system *sys;
-  if (zip) {
+  if (zip && zip->sys) {
     sys = zip->sys;
-    sys->free(zip->inbuf);
+    if (zip->inbuf)
+      sys->free(zip->inbuf);
     sys->free(zip);
   }
 }

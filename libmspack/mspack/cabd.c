@@ -1461,9 +1461,10 @@ static int noned_decompress(struct noned_state *s, off_t bytes) {
 
 static void noned_free(struct noned_state *state) {
   struct mspack_system *sys;
-  if (state) {
+  if (state && state->sys) {
     sys = state->sys;
-    sys->free(state->buf);
+    if (state->buf)
+      sys->free(state->buf);
     sys->free(state);
   }
 }

@@ -481,10 +481,12 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 
 void qtmd_free(struct qtmd_stream *qtm) {
   struct mspack_system *sys;
-  if (qtm) {
+  if (qtm && qtm->sys) {
     sys = qtm->sys;
-    sys->free(qtm->window);
-    sys->free(qtm->inbuf);
+    if (qtm->window)
+      sys->free(qtm->window);
+    if (qtm->inbuf)
+      sys->free(qtm->inbuf);
     sys->free(qtm);
   }
 }
