@@ -900,10 +900,12 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
 void lzxd_free(struct lzxd_stream *lzx) {
   struct mspack_system *sys;
-  if (lzx) {
+  if (lzx && lzx->sys) {
     sys = lzx->sys;
-    sys->free(lzx->inbuf);
-    sys->free(lzx->window);
+    if (lzx->inbuf)
+      sys->free(lzx->inbuf);
+    if (lzx->window)
+      sys->free(lzx->window);
     sys->free(lzx);
   }
 }
