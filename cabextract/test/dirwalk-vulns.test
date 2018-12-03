@@ -2,7 +2,7 @@
 # test cabextract prevents directory path manipulation
 . test/testcase
 
-$cabextract -l cabs/dirwalk-vulns.cab >$actual
+"$cabextract" -l cabs/dirwalk-vulns.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/dirwalk-vulns.cab
  File size | Date       Time     | Name

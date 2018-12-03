@@ -2,7 +2,7 @@
 # test cabextract can join up split cabinets, whichever you start with
 . test/testcase
 
-$cabextract -t cabs/split-1.cab >$actual
+"$cabextract" -t cabs/split-1.cab >$actual
 compare_with <<'EOF'
 cabs/split-1.cab: extends to Split-2.CAB (Split cabinet file 2/5)
 cabs/split-1.cab: extends to Split-3.CAB (Split cabinet file 3/5)
@@ -19,7 +19,7 @@ Testing cabinet: cabs/split-1.cab
 All done, no errors.
 EOF
 
-$cabextract -t cabs/split-2.cab >$actual
+"$cabextract" -t cabs/split-2.cab >$actual
 compare_with <<'EOF'
 cabs/split-2.cab: extends backwards to Split-1.CAB (Split cabinet file 1/5)
 cabs/split-2.cab: extends to Split-3.CAB (Split cabinet file 3/5)
@@ -36,7 +36,7 @@ Testing cabinet: cabs/split-2.cab
 All done, no errors.
 EOF
 
-$cabextract -t cabs/split-3.cab >$actual
+"$cabextract" -t cabs/split-3.cab >$actual
 compare_with <<'EOF'
 cabs/split-3.cab: extends backwards to Split-2.CAB (Split cabinet file 2/5)
 cabs/split-3.cab: extends backwards to Split-1.CAB (Split cabinet file 1/5)
@@ -53,7 +53,7 @@ Testing cabinet: cabs/split-3.cab
 All done, no errors.
 EOF
 
-$cabextract -t cabs/split-4.cab >$actual
+"$cabextract" -t cabs/split-4.cab >$actual
 compare_with <<'EOF'
 cabs/split-4.cab: extends backwards to Split-3.CAB (Split cabinet file 3/5)
 cabs/split-4.cab: extends backwards to Split-2.CAB (Split cabinet file 2/5)
@@ -70,7 +70,7 @@ Testing cabinet: cabs/split-4.cab
 All done, no errors.
 EOF
 
-$cabextract -t cabs/split-5.cab >$actual
+"$cabextract" -t cabs/split-5.cab >$actual
 compare_with <<'EOF'
 cabs/split-5.cab: extends backwards to Split-4.CAB (Split cabinet file 4/5)
 cabs/split-5.cab: extends backwards to Split-3.CAB (Split cabinet file 3/5)

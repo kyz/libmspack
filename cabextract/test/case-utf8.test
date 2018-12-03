@@ -4,13 +4,13 @@
 
 # skip test if environment has no UTF-8 locale, where
 # cabextract can't lowercase non-ASCII characters
-$cabextract -l    cabs/case-utf8.cab >$expected
-$cabextract -L -l cabs/case-utf8.cab >$actual
+"$cabextract" -l    cabs/case-utf8.cab >$expected
+"$cabextract" -L -l cabs/case-utf8.cab >$actual
 if diff $expected $actual >/dev/null; then
     exit 77
 fi
 
-$cabextract -l cabs/case-utf8.cab >$actual
+"$cabextract" -l cabs/case-utf8.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-utf8.cab
  File size | Date       Time     | Name
@@ -25,7 +25,7 @@ Viewing cabinet: cabs/case-utf8.cab
 All done, no errors.
 EOF
 
-$cabextract  -L -l cabs/case-utf8.cab >$actual
+"$cabextract"  -L -l cabs/case-utf8.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-utf8.cab
  File size | Date       Time     | Name
@@ -40,7 +40,7 @@ Viewing cabinet: cabs/case-utf8.cab
 All done, no errors.
 EOF
 
-$cabextract -d DIR/PATH -l cabs/case-utf8.cab >$actual
+"$cabextract" -d DIR/PATH -l cabs/case-utf8.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-utf8.cab
  File size | Date       Time     | Name
@@ -55,7 +55,7 @@ Viewing cabinet: cabs/case-utf8.cab
 All done, no errors.
 EOF
 
-$cabextract -d DIR/PATH -L -l cabs/case-utf8.cab >$actual
+"$cabextract" -d DIR/PATH -L -l cabs/case-utf8.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-utf8.cab
  File size | Date       Time     | Name

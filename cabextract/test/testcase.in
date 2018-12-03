@@ -1,4 +1,4 @@
-cabextract=@abs_top_builddir@/cabextract@EXEEXT@
+cabextract="@abs_top_builddir@/cabextract@EXEEXT@"
 cd "@abs_srcdir@"
 
 status=`mktemp`

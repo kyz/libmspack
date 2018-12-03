@@ -13,7 +13,7 @@ cleanup2() {
 }
 
 # extract large-files.cab
-$cabextract -q -d $tmpdir cabs/large-files-cab.cab
+"$cabextract" -q -d $tmpdir cabs/large-files-cab.cab
 
 # generate large-search.cab
 ( echo 'first spacer';  perl cabs/large-cab.pl 1 1; \
@@ -23,7 +23,7 @@ $cabextract -q -d $tmpdir cabs/large-files-cab.cab
 
 cd $tmpdir
 
-$cabextract -t large-files.cab >$actual
+"$cabextract" -t large-files.cab >$actual
 compare_with <<'EOF'
 Testing cabinet: large-files.cab
   mszip-2gb.txt  OK                            d64bf04a56027b97ac17d751aba2d291
@@ -33,7 +33,7 @@ Testing cabinet: large-files.cab
 All done, no errors.
 EOF
 
-$cabextract -l large-search.cab >$actual
+"$cabextract" -l large-search.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: large-search.cab
  File size | Date       Time     | Name

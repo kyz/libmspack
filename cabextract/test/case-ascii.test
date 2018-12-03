@@ -2,7 +2,7 @@
 # test cabextract --lowercase and --directory options
 . test/testcase
 
-$cabextract -l cabs/case-ascii.cab >$actual
+"$cabextract" -l cabs/case-ascii.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-ascii.cab
  File size | Date       Time     | Name
@@ -13,7 +13,7 @@ Viewing cabinet: cabs/case-ascii.cab
 All done, no errors.
 EOF
 
-$cabextract  -L -l cabs/case-ascii.cab >$actual
+"$cabextract"  -L -l cabs/case-ascii.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-ascii.cab
  File size | Date       Time     | Name
@@ -24,7 +24,7 @@ Viewing cabinet: cabs/case-ascii.cab
 All done, no errors.
 EOF
 
-$cabextract -d DIR/PATH -l cabs/case-ascii.cab >$actual
+"$cabextract" -d DIR/PATH -l cabs/case-ascii.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-ascii.cab
  File size | Date       Time     | Name
@@ -35,7 +35,7 @@ Viewing cabinet: cabs/case-ascii.cab
 All done, no errors.
 EOF
 
-$cabextract -d DIR/PATH -L -l cabs/case-ascii.cab >$actual
+"$cabextract" -d DIR/PATH -L -l cabs/case-ascii.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/case-ascii.cab
  File size | Date       Time     | Name

@@ -2,7 +2,7 @@
 # test cabextract can find cabinets within files
 . test/testcase
 
-$cabextract -l cabs/search.cab >$actual
+"$cabextract" -l cabs/search.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/search.cab
  File size | Date       Time     | Name
@@ -35,7 +35,7 @@ Viewing cabinet: cabs/search.cab
 All done, no errors.
 EOF
 
-$cabextract -t cabs/search.cab >$actual
+"$cabextract" -t cabs/search.cab >$actual
 compare_with <<'EOF'
 Testing cabinet: cabs/search.cab
   hello.cab  OK                                cabef68e0ded744846e41c05823a690c

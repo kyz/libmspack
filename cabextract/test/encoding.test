@@ -3,11 +3,11 @@
 . test/testcase
 
 # skip test if cabextract has no --encoding option
-if [ `$cabextract -h 2>&1 | grep -c encoding` -eq 0 ]; then
+if [ `"$cabextract" -h 2>&1 | grep -c encoding` -eq 0 ]; then
     exit 77
 fi
 
-$cabextract -e koi8-ru -l cabs/encoding-koi8.cab >$actual
+"$cabextract" -e koi8-ru -l cabs/encoding-koi8.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/encoding-koi8.cab
  File size | Date       Time     | Name
@@ -19,7 +19,7 @@ Viewing cabinet: cabs/encoding-koi8.cab
 All done, no errors.
 EOF
 
-$cabextract -e iso-8859-1 -l cabs/encoding-latin1.cab >$actual
+"$cabextract" -e iso-8859-1 -l cabs/encoding-latin1.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/encoding-latin1.cab
  File size | Date       Time     | Name
@@ -31,7 +31,7 @@ Viewing cabinet: cabs/encoding-latin1.cab
 All done, no errors.
 EOF
 
-$cabextract -e sjis -l cabs/encoding-sjis.cab >$actual
+"$cabextract" -e sjis -l cabs/encoding-sjis.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/encoding-sjis.cab
  File size | Date       Time     | Name

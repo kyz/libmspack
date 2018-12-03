@@ -2,7 +2,7 @@
 # test cabextract gets the basics right (correct dates, filenames, checksums...)
 . test/testcase
 
-$cabextract -l cabs/simple.cab >$actual
+"$cabextract" -l cabs/simple.cab >$actual
 compare_with <<'EOF'
 Viewing cabinet: cabs/simple.cab
  File size | Date       Time     | Name
@@ -13,7 +13,7 @@ Viewing cabinet: cabs/simple.cab
 All done, no errors.
 EOF
 
-$cabextract -t cabs/simple.cab >$actual
+"$cabextract" -t cabs/simple.cab >$actual
 compare_with <<'EOF'
 Testing cabinet: cabs/simple.cab
   hello.c  OK                                  c2535936b8908b1f8a28b7724a2c2045
