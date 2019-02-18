@@ -483,19 +483,17 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
 
       if (name[0] == ':' && name[1] == ':') {
         /* system file */
-        if (memcmp(&name[2], &content_name[2], 31L) == 0) {
-          if (memcmp(&name[33], &content_name[33], 8L) == 0) {
-            chm->sec1.content = fi;
-          }
-          else if (memcmp(&name[33], &control_name[33], 11L) == 0) {
-            chm->sec1.control = fi;
-          }
-          else if (memcmp(&name[33], &spaninfo_name[33], 8L) == 0) {
-            chm->sec1.spaninfo = fi;
-          }
-          else if (memcmp(&name[33], &rtable_name[33], 72L) == 0) {
-            chm->sec1.rtable = fi;
-          }
+        if (name_len == 40 && memcmp(name, content_name, 40) == 0) {
+          chm->sec1.content = fi;
+        }
+        else if (name_len == 44 && memcmp(name, control_name, 44) == 0) {
+          chm->sec1.control = fi;
+        }
+        else if (name_len == 41 && memcmp(name, spaninfo_name, 41) == 0) {
+          chm->sec1.spaninfo = fi;
+        }
+        else if (name_len == 105 && memcmp(name, rtable_name, 105) == 0) {
+          chm->sec1.rtable = fi;
         }
         fi->next = chm->sysfiles;
         chm->sysfiles = fi;

@@ -1,3 +1,11 @@
+2019-02-18  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* chmd_read_headers(): a CHM file name beginning "::" but shorter
+	than 33 bytes will lead to reading past the freshly-allocated name
+	buffer - checks for specific control filenames didn't take length
+	into account. Thanks to ADLab of Venustech for the report and
+	proof of concept.
+
 2018-11-03  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac, doc/Makefile.in, doc/Doxyfile.in: remove these
