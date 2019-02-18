@@ -6,6 +6,8 @@
 	into account. Thanks to ADLab of Venustech for the report and
 	proof of concept.
 
+2019-02-18  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* chmd_read_headers(): CHM files can declare their chunks are any
 	size up to 4GB, and libmspack will attempt to allocate that to
 	read the file.
@@ -26,6 +28,23 @@
 	"chunk size is not 4096", and now only allow chunk sizes between
 	22 and 8192 bytes. If you have CHM files with a larger chunk size,
 	please send them to me and I'll increase this upper limit.
+
+	Thanks to ADLab of Venustech for the report.
+
+2019-02-18  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* oabd.c: replaced one-shot copying of uncompressed blocks (which
+	requires allocating a buffer of the size declared in the header,
+	which can be 4GB) with a fixed-size buffer. The buffer size is
+	user-controllable with the new msoab_decompressor::set_param()
+	method (check you have version 2 of the OAB decompressor), and
+	also controls the input buffer used for OAB's LZX decompression.
+
+	Reminder: compression formats can dictate how much memory is
+	needed to decompress them. If memory usage is a security concern
+	to you, write a custom mspack_system.alloc() that returns NULL
+	if "too much" memory is requested. Do not rely on libmspack adding
+	special heuristics to know not to request "too much".
 
 	Thanks to ADLab of Venustech for the report.
 

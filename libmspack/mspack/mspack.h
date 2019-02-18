@@ -1,5 +1,5 @@
 /* libmspack -- a library for working with Microsoft compression formats.
- * (C) 2003-2016 Stuart Caie <kyzer@cabextract.org.uk>
+ * (C) 2003-2019 Stuart Caie <kyzer@cabextract.org.uk>
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -1554,7 +1554,7 @@ struct mschm_compressor {
    */
   int (*set_param)(struct mschm_compressor *self,
                    int param,
-                   unsigned int value);
+                   int value);
 
   /**
    * Returns the error code set by the most recently called method.
@@ -1853,7 +1853,7 @@ struct msszdd_compressor {
    */
   int (*set_param)(struct msszdd_compressor *self,
                    int param,
-                   unsigned int value);
+                   int value);
 
   /**
    * Returns the error code set by the most recently called method.
@@ -2091,7 +2091,7 @@ struct mskwaj_compressor {
    */
   int (*set_param)(struct mskwaj_compressor *self,
                    int param,
-                   unsigned int value);
+                   int value);
 
 
   /**
@@ -2353,7 +2353,30 @@ struct msoab_decompressor {
                                  const char *input,
                                  const char *base,
                                  const char *output);
+
+  /**
+   * Sets an OAB decompression engine parameter. Available only in OAB
+   * decompressor version 2 and above.
+   *
+   * - #MSOABD_PARAM_DECOMPBUF: How many bytes should be used as an input
+   *   buffer by decompressors? The minimum value is 16. The default value
+   *   is 4096.
+   *
+   * @param  self     a self-referential pointer to the msoab_decompressor
+   *                  instance being called
+   * @param  param    the parameter to set
+   * @param  value    the value to set the parameter to
+   * @return MSPACK_ERR_OK if all is OK, or MSPACK_ERR_ARGS if there
+   *         is a problem with either parameter or value.
+   */
+  int (*set_param)(struct msoab_decompressor *self,
+                   int param,
+                   int value);
+
 };
+
+/** msoab_decompressor::set_param() parameter: size of decompression buffer */
+#define MSOABD_PARAM_DECOMPBUF (0)
 
 #ifdef __cplusplus
 }
