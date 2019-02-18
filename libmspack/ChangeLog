@@ -6,6 +6,29 @@
 	into account. Thanks to ADLab of Venustech for the report and
 	proof of concept.
 
+	* chmd_read_headers(): CHM files can declare their chunks are any
+	size up to 4GB, and libmspack will attempt to allocate that to
+	read the file.
+
+	This is not a security issue; libmspack doesn't promise how much
+	memory it'll use to unpack files. You can set your own limits by
+	returning NULL in a custom mspack_system.alloc() implementation.
+
+	However, it would be good to validate chunk size further. With no
+	offical specification, only empirical data is available. All files
+	created by hhc.exe have a chunk size of 4096 bytes, and this is
+	matched by all the files I've found in the wild, except for one
+	which has a chunk size of 8192 bytes, which was created by someone
+	developing a CHM file creator 15 years ago, and they appear to
+	have abandoned it, so it seems 4096 is a de-facto standard.
+
+	I've changed the "chunk size is not a power of two" warning to
+	"chunk size is not 4096", and now only allow chunk sizes between
+	22 and 8192 bytes. If you have CHM files with a larger chunk size,
+	please send them to me and I'll increase this upper limit.
+
+	Thanks to ADLab of Venustech for the report.
+
 2018-11-03  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac, doc/Makefile.in, doc/Doxyfile.in: remove these

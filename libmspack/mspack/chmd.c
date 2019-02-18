@@ -380,15 +380,19 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   if (chm->num_chunks > 100000) {
     D(("more than 100,000 chunks"))
     return MSPACK_ERR_DATAFORMAT;
-  }   
+  }
+  if (chm->chunk_size > 8192) {
+    D(("chunk size over 8192 (get in touch if this is valid)"))
+    return MSPACK_ERR_DATAFORMAT;
+  }
   if ((off_t)chm->chunk_size * (off_t)chm->num_chunks > chm->length) {
     D(("chunks larger than entire file"))
     return MSPACK_ERR_DATAFORMAT;
   }
 
   /* common sense checks on header section 1 fields */
-  if ((chm->chunk_size & (chm->chunk_size - 1)) != 0) {
-    sys->message(fh, "WARNING; chunk size is not a power of two");
+  if (chm->chunk_size != 4096) {
+    sys->message(fh, "WARNING; chunk size is not 4096");
   }
   if (chm->first_pmgl != 0) {
     sys->message(fh, "WARNING; first PMGL chunk is not zero");
