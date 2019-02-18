@@ -20,11 +20,12 @@ for chm in "$@"; do
         fi
     fi
 
-    $BASEDIR/chmd_md5 $chm >.test.out 2>.test.err
+    $BASEDIR/chmd_md5 $chm >.test.out 2>.test.errwarn
     perl -pe 'if($.>1){$_=""if/^[0-9a-f]{32} \/[#\$]/;s{ /}{  }}' .test.out | LANG=C sort -k2 >.test.sorted
+    sed '/^WARNING; /d' .test.errwarn > .test.err
     if [ -s .test.err ]; then
         echo "FAIL $name: errors" >&2
-        cat .test.err >&2
+        cat .test.errwarn >&2
     fi
 
     if cmp $cached .test.sorted >/dev/null; then
@@ -38,4 +39,4 @@ for chm in "$@"; do
        fi
     fi
 done
-rm -f .orig.out .orig.err .test.out .test.err .test.sorted
+rm -f .orig.out .orig.err .test.out .test.err .test.errwarn .test.sorted
