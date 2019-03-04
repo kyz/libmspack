@@ -53,12 +53,12 @@ char *guid(unsigned char *data) {
   return result;
 }
 
-#define READ_ENCINT(var, label) do {                               \
-    (var) = 0;                                                \
+#define READ_ENCINT(var, label) do {                    \
+    (var) = 0;                                          \
     do {                                                \
-        if (p > &chunk[chm->chunk_size-2]) goto label;        \
-        (var) = ((var) << 7) | (*p & 0x7F);                \
-    } while (*p++ & 0x80);                                \
+        if (p > &chunk[chm->chunk_size-2]) goto label;  \
+        (var) = ((var) << 7) | (*p & 0x7F);             \
+    } while (*p++ & 0x80);                              \
 } while (0)
 
 void print_dir(struct mschmd_header *chm, char *filename) {
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
       if ((chm = chmd->open(chmd, *argv))) {
         printf("  chmhead_Version     %u\n",      chm->version);
         printf("  chmhead_Timestamp   %u\n",      chm->timestamp);
-        printf("  chmhead_LanguageID  %u\n",          chm->language);
+        printf("  chmhead_LanguageID  %u\n",      chm->language);
         printf("  chmhs0_FileLen      %" LD "\n", chm->length);
         printf("  chmhst_OffsetHS1    %" LD "\n", chm->dir_offset);
         printf("  chmhst3_OffsetCS0   %" LD "\n", chm->sec0.offset);
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
           case 4:
             for (i = 0; i < numf && pos < len; i++, pos += 4) {
               unsigned int rtdata = EndGetI32(&data[pos]);
-              printf("    %-10u -> %-10u [ %llu %u ]\n",
+              printf("    %-10u -> %-10u [ %" LU " %u ]\n",
                      i * EndGetI32(&data[32]),
                      rtdata,
                      contents + rtdata,
