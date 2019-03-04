@@ -44,7 +44,7 @@ static int chmd_init_decomp(
   struct mschm_decompressor_p *self, struct mschmd_file *file);
 static int read_reset_table(
   struct mschm_decompressor_p *self, struct mschmd_sec_mscompressed *sec,
-  int entry, off_t *length_ptr, off_t *offset_ptr);
+  unsigned int entry, off_t *length_ptr, off_t *offset_ptr);
 static int read_spaninfo(
   struct mschm_decompressor_p *self, struct mschmd_sec_mscompressed *sec,
   off_t *length_ptr);
@@ -439,7 +439,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
       sys->message(fh, "WARNING; PMGL quickref area is too small");
     }
     if (EndGetI32(&chunk[pmgl_QuickRefSize]) > 
-        ((int)chm->chunk_size - pmgl_Entries))
+        (chm->chunk_size - pmgl_Entries))
     {
       sys->message(fh, "WARNING; PMGL quickref area is too large");
     }
@@ -591,7 +591,7 @@ static int chmd_fast_find(struct mschm_decompressor *base,
             }
 
             /* stop simple infinite loops: can't visit the same chunk twice */
-            if ((int)n == EndGetI32(&chunk[pmgl_NextChunk])) {
+            if (n == EndGetI32(&chunk[pmgl_NextChunk])) {
                 break;
             }
         }
@@ -1156,7 +1156,8 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
  */
 static int read_reset_table(struct mschm_decompressor_p *self,
                             struct mschmd_sec_mscompressed *sec,
-                            int entry, off_t *length_ptr, off_t *offset_ptr)
+                            unsigned int entry,
+                            off_t *length_ptr, off_t *offset_ptr)
 {
     struct mspack_system *sys = self->system;
     unsigned char *data;
