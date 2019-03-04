@@ -113,7 +113,7 @@ struct mscab_decompressor_p {
   struct mscab_decompressor base;
   struct mscabd_decompress_state *d;
   struct mspack_system *system;
-  int param[4]; /* !!! MATCH THIS TO NUM OF PARAMS IN MSPACK.H !!! */
+  int buf_size, search_buf_size, fix_mszip, salvage; /* params */
   int error, read_error;
 };
 
