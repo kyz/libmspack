@@ -35,7 +35,7 @@ static int oabd_decompress_incremental(struct msoab_decompressor *self,
                                        const char *output);
 static int oabd_param(struct msoab_decompressor *base, int param, int value);
 static int copy_fh(struct mspack_system *sys, struct mspack_file *infh,
-                   struct mspack_file *outfh, unsigned int bytes_to_copy,
+                   struct mspack_file *outfh, size_t bytes_to_copy,
                    unsigned char *buf, int buf_size);
 
 
