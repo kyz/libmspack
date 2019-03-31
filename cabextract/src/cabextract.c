@@ -111,9 +111,15 @@ struct file_mem {
   char *from;
 };
 
+struct filter {
+  struct filter *next;
+  char *filter;
+};
+
 struct cabextract_args {
   int help, lower, pipe, view, quiet, single, fix, test;
-  char *dir, *filter, *encoding;
+  char *dir, *encoding;
+  struct filter *filters;
 };
 
 /* global variables */
@@ -175,6 +181,8 @@ static void convert_utf8_to_latin1(char *str);
 static void memorise_file(struct file_mem **fml, char *name, char *from);
 static int recall_file(struct file_mem *fml, char *name, char **from);
 static void forget_files(struct file_mem **fml);
+static void add_filter(char *arg);
+static void free_filters();
 static int ensure_filepath(char *path);
 static char *cab_error(struct mscab_decompressor *cd);
 
@@ -231,7 +239,7 @@ int main(int argc, char *argv[]) {
     case 'd': args.dir      = optarg; break;
     case 'e': args.encoding = optarg; break;
     case 'f': args.fix      = 1;      break;
-    case 'F': args.filter   = optarg; break;
+    case 'F': add_filter(optarg);     break;
     case 'h': args.help     = 1;      break;
     case 'l': args.view     = 1;      break;
     case 'L': args.lower    = 1;      break;
@@ -456,12 +464,19 @@ static int process_cabinet(char *basename) {
         continue;
       }
 
-      /* if filtering, do so now. skip if file doesn't match filter */
-      if (args.filter &&
-          fnmatch(args.filter, &name[fname_offset], FNM_CASEFOLD))
-      {
-        free(name);
-        continue;
+      /* if filtering, do so now. skip if file doesn't match any filter */
+      if (args.filters) {
+        int matched = 0;
+        for (struct filter *f = args.filters; f; f = f->next) {
+          if (!fnmatch(f->filter, &name[fname_offset], FNM_CASEFOLD)) {
+            matched = 1;
+            break;
+          }
+        }
+        if (!matched) {
+          free(name);
+          continue;
+        }
       }
 
       /* view, extract or test the file */
@@ -1066,6 +1081,33 @@ static void forget_files(struct file_mem **fml) {
     free(fm);
   }
   *fml = NULL;
+}
+
+/**
+ * Adds a filter to args.filters. On first call, sets up
+ * free_filters() to run at exit.
+ *
+ * @param arg filter to add
+ */
+static void add_filter(char *arg) {
+    struct filter *f = malloc(sizeof(struct filter));
+    if (f) {
+        if (!args.filters) {
+            atexit(free_filters);
+        }
+        f->next = args.filters;
+        f->filter = arg;
+        args.filters = f;
+    }
+}
+
+/** Frees all memory used by args.filters */
+static void free_filters() {
+    struct filter *f, *next;
+    for (f = args.filters; f; f = next) {
+        next = f->next;
+        free(f);
+    }
 }
 
 /**
