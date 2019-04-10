@@ -52,7 +52,8 @@ ignored.  Warnings will be printed if any of these conditions are met.
 .B \-F \fIpattern\fP
 Only files with names that match the shell pattern \fIpattern\fP shall be
 listed, tested or extracted. On non-GNU systems, this match may be
-case-sensitive.
+case-sensitive. Use the option repeatedly to supply more than one pattern.
+Files will be listed, tested or extracted if they match \fIany\fP pattern.
 .TP
 .B \-e \fIencoding\fP
 Specify the character encoding of filenames inside the cabinet files.

@@ -36,10 +36,11 @@ Extracting files to a directory of your choice (in this case, 'boogie'):
 $ cabextract -d boogie wibble.cab
 [cabextract will create the directory if it does not already exist]
 
+Extracting files that match a filename pattern:
+$ cabextract -F *.avi -F *.mpg movies.cab
+
 Listing files from a cabinet file:
 $ cabextract -l wibble.cab
 
 Testing the integrity of a cabinet file, without extracting it:
 $ cabextract -t wibble.cab
-
-Stuart Caie <kyzer@cabextract.org.uk>, April 2016

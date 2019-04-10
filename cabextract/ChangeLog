@@ -1,3 +1,9 @@
+2019-04-10  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* src/cabextract.c: support more than one filter (-F) option in
+	cabextract, e.g. cabextract -F *.mov -F *.avi file.cab. Thanks
+	to caesarshift for the idea.
+
 2018-12-03 Stuart Caie <kyzer@cabextract.org.uk>
 
 	* test: support builddir being on a path that includes spaces
