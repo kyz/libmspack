@@ -467,7 +467,8 @@ static int process_cabinet(char *basename) {
       /* if filtering, do so now. skip if file doesn't match any filter */
       if (args.filters) {
         int matched = 0;
-        for (struct filter *f = args.filters; f; f = f->next) {
+        struct filter *f;
+        for (f = args.filters; f; f = f->next) {
           if (!fnmatch(f->filter, &name[fname_offset], FNM_CASEFOLD)) {
             matched = 1;
             break;
