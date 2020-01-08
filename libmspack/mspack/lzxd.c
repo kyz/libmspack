@@ -827,7 +827,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
     /* does this intel block _really_ need decoding? */
     if (lzx->intel_started && lzx->intel_filesize &&
-        (lzx->frame <= 32768) && (frame_size > 10))
+        (lzx->frame < 32768) && (frame_size > 10))
     {
       unsigned char *data    = &lzx->e8_buf[0];
       unsigned char *dataend = &lzx->e8_buf[frame_size - 10];

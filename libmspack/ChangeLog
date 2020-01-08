@@ -1,3 +1,12 @@
+2020-01-08  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* lzxd_decompress(): do not apply the E8 transformation on the
+	32769th LZX frame! Thanks to Cezary Sliwa for discovering this
+	bug and providing an example cab file (which is
+	http://download.windowsupdate.com/d/msdownload/update/driver/
+	drvs/2019/11/016c7f3e-809d-4720-893b-
+	e0d74f10c39d_35e12507628e8dc8ae5fb3332835f4253d2dab23.cab)
+
 2019-02-18  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* chmd_read_headers(): a CHM file name beginning "::" but shorter
