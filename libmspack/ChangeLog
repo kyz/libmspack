@@ -7,6 +7,21 @@
 	drvs/2019/11/016c7f3e-809d-4720-893b-
 	e0d74f10c39d_35e12507628e8dc8ae5fb3332835f4253d2dab23.cab)
 
+        * cabd_compare: use EXPAND.EXE instead of EXTRACT.EXE when
+	testing files in a directory called 'expand'. The example
+	cab file above is extracted wrongly by EXTRACT.EXE, but
+	correctly by EXPAND.EXE because they take different approaches
+	to E8 transformations:
+
+	- EXTRACT.EXE writes "E8E8E8E8E8E8' to the last 6 bytes of
+	  frame, looks for E8 bytes up to the last 6 bytes, then restores
+	  the last 6 bytes, leaving partial transforms of 1-3 bytes if
+	  E8 byte is found near the end of the frame
+
+	- EXPAND.EXE looks for E8 bytes up to the last 10 bytes of a
+	  frame, therefore the last 6 bytes are never altered and all
+	  transforms are 4 bytes
+
 2019-02-18  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* chmd_read_headers(): a CHM file name beginning "::" but shorter
