@@ -339,7 +339,6 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
   lzx->frame           = 0;
   lzx->reset_interval  = reset_interval;
   lzx->intel_filesize  = 0;
-  lzx->intel_curpos    = 0;
   lzx->intel_started   = 0;
   lzx->error           = MSPACK_ERR_OK;
   lzx->num_offsets     = position_slots[window_bits - 15] << 3;
@@ -831,7 +830,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
     {
       unsigned char *data    = &lzx->e8_buf[0];
       unsigned char *dataend = &lzx->e8_buf[frame_size - 10];
-      signed int curpos      = lzx->intel_curpos;
+      signed int curpos      = (int) lzx->offset;
       signed int filesize    = lzx->intel_filesize;
       signed int abs_off, rel_off;
 
@@ -852,11 +851,9 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
         data += 4;
         curpos += 5;
       }
-      lzx->intel_curpos += frame_size;
     }
     else {
       lzx->o_ptr = &lzx->window[lzx->frame_posn];
-      if (lzx->intel_filesize) lzx->intel_curpos += frame_size;
     }
     lzx->o_end = &lzx->o_ptr[frame_size];
 
