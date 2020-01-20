@@ -1,14 +1,14 @@
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mspack.h>
+#include "mspack.h"
 
-#include <md5_fh.h>
-#include <error.h>
+#include "error.h"
+#include "md5_fh.h"
 
 static int sortfunc(const void *a, const void *b) {
   off_t diff = 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
           for (i = 0; i < numf; i++) {
             if (chmd->extract(chmd, f[i], NULL)) {
               fprintf(stderr, "%s: extract error on \"%s\": %s\n",
-                      *argv, f[i]->filename, ERROR(chmd));
+                      *argv, f[i]->filename, MSPACK_ERROR(chmd));
             }
             else {
               printf("%s %s\n", md5_string, f[i]->filename);
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
         chmd->close(chmd, chm);
       }
       else {
-        fprintf(stderr, "%s: can't open -- %s\n", *argv, ERROR(chmd));
+        fprintf(stderr, "%s: can't open -- %s\n", *argv, MSPACK_ERROR(chmd));
       }
     }
     mspack_destroy_chm_decompressor(chmd);

@@ -1,15 +1,33 @@
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <mspack.h>
-#include "mspack/macros.h"
+#include "mspack.h"
+//#include "mspack/macros.h"
 
 #if HAVE_FSEEKO
 # define fseek fseeko
+#endif
+
+/* define LD and LU as printf-format for signed and unsigned long offsets */
+#if HAVE_INTTYPES_H
+# include <inttypes.h>
+#else
+# define PRId64 "lld"
+# define PRIu64 "llu"
+# define PRId32 "ld"
+# define PRIu32 "lu"
+#endif
+
+#if SIZEOF_OFF_T >= 8
+# define LD PRId64
+# define LU PRIu64
+#else
+# define LD PRId32
+# define LU PRIu32
 #endif
 
 #define BUF_SIZE (1024*4096)

@@ -21,11 +21,11 @@
 
 /* CAB decompression implementation */
 
-#include <system.h>
-#include <cab.h>
-#include <mszip.h>
-#include <lzx.h>
-#include <qtm.h>
+#include "system.h"
+#include "cab.h"
+#include "mszip.h"
+#include "lzx.h"
+#include "qtm.h"
 
 /* Notes on compliance with cabinet specification:
  *

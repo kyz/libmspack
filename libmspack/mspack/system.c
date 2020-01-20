@@ -8,10 +8,10 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 
-#include <system.h>
+#include "system.h"
 
 int mspack_version(int entity) {
   switch (entity) {

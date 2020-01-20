@@ -1,15 +1,16 @@
 /* chmd_find: tests fast-find functionality
  */
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mspack.h>
+#include "mspack.h"
 #include "mspack/macros.h"
-#include <error.h>
+
+#include "error.h"
 
 void find(struct mschm_decompressor *chmd, struct mschmd_header *chm,
           char *archive, char *filename, struct mschmd_file *compare)
@@ -17,7 +18,7 @@ void find(struct mschm_decompressor *chmd, struct mschmd_header *chm,
     struct mschmd_file result;
     if (chmd->fast_find(chmd, chm, filename, &result, sizeof(result))) {
         fprintf(stderr, "%s: find error on \"%s\": %s\n",
-                archive, filename, ERROR(chmd));
+                archive, filename, MSPACK_ERROR(chmd));
     }
     else if (!result.section) {
         if (compare) {
@@ -80,13 +81,13 @@ int main(int argc, char *argv[]) {
                     }
                 }
                 else {
-                    printf("%s: can't open -- %s\n", argv[1], ERROR(chmd));
+                    printf("%s: can't open -- %s\n", argv[1], MSPACK_ERROR(chmd));
                 }
             }
             chmd->close(chmd, chm);
         }
         else {
-            printf("%s: can't open -- %s\n", argv[1], ERROR(chmd));
+            printf("%s: can't open -- %s\n", argv[1], MSPACK_ERROR(chmd));
         }
         mspack_destroy_chm_decompressor(chmd);
     }

@@ -23,7 +23,7 @@
 #define _GNU_SOURCE 1
 
 #if HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 
 #include <sys/types.h>
@@ -76,8 +76,12 @@
 
 #include "getopt.h"
 
-#include <mspack.h>
-#include <md5.h>
+#include "mspack.h"
+#include "md5.h"
+
+#if !defined(S_ISDIR)
+# define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#endif
 
 /* structures and global variables */
 struct option optlist[] = {
@@ -184,7 +188,6 @@ static void forget_files(struct file_mem **fml);
 static void add_filter(char *arg);
 static void free_filters();
 static int ensure_filepath(char *path);
-static char *cab_error(struct mscab_decompressor *cd);
 
 static struct mspack_file *cabx_open(struct mspack_system *this,
                                      const char *filename, int mode);

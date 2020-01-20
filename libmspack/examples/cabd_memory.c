@@ -1,13 +1,13 @@
 /* An implementation of the mspack_system interface using only memory */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mspack.h>
+#include "mspack.h"
 
 /* use a pointer to a mem_buf structure as "filenames" */
 struct mem_buf {
