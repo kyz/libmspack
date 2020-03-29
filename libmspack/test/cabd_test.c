@@ -20,6 +20,13 @@ unsigned int test_count = 0;
     if (!(x)) {printf("%s:%d FAILED %s\n",__func__,__LINE__,#x);exit(1);} \
 } while (0)
 
+
+#ifdef _MSC_VER
+# define DEV_NULL "NUL"
+#else
+# define DEV_NULL "/dev/null"
+#endif
+
 /* open where cab file doesn't exist */
 void cabd_open_test_01() {
     struct mscab_decompressor *cabd;
@@ -342,7 +349,7 @@ void cabd_extract_test_01() {
         TEST(cab = cabd->open(cabd, files[i]));
         TEST(cab->files != NULL);
         for (file = cab->files; file; file = file->next) {
-            int err = cabd->extract(cabd, file, "/dev/null");
+            int err = cabd->extract(cabd, file, DEV_NULL);
             TEST(err == MSPACK_ERR_DATAFORMAT || err == MSPACK_ERR_DECRUNCH);
         }
         cabd->close(cabd, cab);
@@ -363,11 +370,11 @@ void cabd_extract_test_02() {
      */
     TEST(cabd = mspack_create_cab_decompressor(NULL));
     TEST(cab = cabd->open(cabd, TESTFILE("cve-2014-9732-folders-segfault.cab")));
-    err = cabd->extract(cabd, cab->files, "/dev/null");
+    err = cabd->extract(cabd, cab->files, DEV_NULL);
     TEST(err == MSPACK_ERR_OK);
-    err = cabd->extract(cabd, cab->files->next, "/dev/null");
+    err = cabd->extract(cabd, cab->files->next, DEV_NULL);
     TEST(err == MSPACK_ERR_DATAFORMAT || err == MSPACK_ERR_DECRUNCH);
-    err = cabd->extract(cabd, cab->files, "/dev/null");
+    err = cabd->extract(cabd, cab->files, DEV_NULL);
     TEST(err == MSPACK_ERR_OK);
     cabd->close(cabd, cab);
     mspack_destroy_cab_decompressor(cabd);

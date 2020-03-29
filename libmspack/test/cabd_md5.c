@@ -7,7 +7,7 @@
 #include <string.h>
 #include "mspack.h"
 #include <sys/stat.h>
-#ifdef _WIN32
+#ifdef _MSC_VER
 #include "dirent.h"
 #else
 #include <dirent.h>
