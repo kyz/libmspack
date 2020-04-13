@@ -22,7 +22,25 @@ extern "C" {
 #include <macros.h>
 
 /* assume <string.h> exists */
-#include <string.h>
+#ifndef MSPACK_NO_DEFAULT_SYSTEM
+# include <string.h>
+#else
+ /* but if no default system wanted, avoid using <string.h> entirely,
+  * to avoid linking to even these standard C library functions */
+static inline int memcmp(const void *s1, const void *s2, size_t n) {
+    const unsigned char *a = s1, *b = s2;
+    while (n--) if (*a++ != *b++) return a[-1] - b[-1];
+    return 0;
+}
+static inline void *memset(void *s, int c, size_t n) {
+    unsigned char *s2 = s, c2 = (unsigned char) c;
+    while (n--) *s2++ = c2;
+    return s;
+}
+static inline size_t strlen(const char *s) {
+    size_t c = 0; while (*s++) c++; return c;
+}
+#endif
 
 /* fix for problem with GCC 4 and glibc (thanks to Ville Skytta)
  * http://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=150429

@@ -5,7 +5,10 @@ TESTS =                 $(check_PROGRAMS)
 
 ACLOCAL_AMFLAGS =       -I m4
 AM_CFLAGS =
-# add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system
+# add "-DMSPACK_NO_DEFAULT_SYSTEM" to remove default mspack_system.
+# however, note that many of the tests and examples provided DO rely on the
+# default mspack_system and will fail without it -- any program with a call
+# like "mspack_create_...(NULL)" expects a default mspack_system.
 if GCC
 AM_CFLAGS +=            -Wall -Wextra -Wno-unused-parameter -Wno-unused-result
 endif

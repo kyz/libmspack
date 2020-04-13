@@ -3,6 +3,11 @@
 	* macros.h: new header for the D(), LD/LU and EndGet???() macros.
 	Use this instead of system.h.
 
+        * system.h: if MSPACK_NO_DEFAULT_SYSTEM is defined, define
+        inline versions of the only standard C functions used in
+        mspack (strlen, memcmp, memset), so that no standard C library
+        functions are needed at all.
+
 2020-01-08  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* lzxd_decompress(): do not apply the E8 transformation on the
