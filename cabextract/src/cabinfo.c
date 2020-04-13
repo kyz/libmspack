@@ -24,10 +24,16 @@
 #include <string.h>
 #include <sys/types.h>
 
-/* include <system.h> from libmspack for LD and EndGetI?? macros */
-#include <mspack/system.h>
-/* include <cab.h> from libmspack for cab structure offsets */
-#include <mspack/cab.h>
+/* include some headers from the cut-down copy of libmspack
+ * - mspack.h for MSCAB_ATTRIB_?? defines
+ * - macros.h for LD and EndGetI?? macros
+ * - cab.h for cab structure offsets
+ * cabinfo does not use the system-wide <mspack.h> nor does it
+ * link with any libmspack functions. It's a standalone program.
+ */
+#include "mspack/mspack.h"
+#include "mspack/macros.h"
+#include "mspack/cab.h"
 
 #if HAVE_FSEEKO
 # define FSEEK fseeko

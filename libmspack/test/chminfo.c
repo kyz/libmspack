@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include <mspack.h>
-#include <system.h>
+#include "mspack/macros.h"
 
 #define FILENAME ".chminfo-temp"
 

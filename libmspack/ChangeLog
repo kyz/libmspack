@@ -1,3 +1,8 @@
+2020-04-13  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* macros.h: new header for the D(), LD/LU and EndGet???() macros.
+	Use this instead of system.h.
+
 2020-01-08  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* lzxd_decompress(): do not apply the E8 transformation on the
