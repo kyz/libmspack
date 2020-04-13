@@ -49,23 +49,6 @@ static inline size_t strlen(const char *s) {
 # undef read
 #endif
 
-/* CAB supports searching through files over 4GB in size, and the CHM file
- * format actively uses 64-bit offsets. These can only be fully supported
- * if the system the code runs on supports large files. If not, the library
- * will work as normal using only 32-bit arithmetic, but if an offset
- * greater than 2GB is detected, an error message indicating the library
- * can't support the file should be printed.
- */
-#include <limits.h>
-#if ((defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS >= 64) || \
-     (defined(FILESIZEBITS)      && FILESIZEBITS      >= 64) || \
-     defined(_LARGEFILE_SOURCE) || defined(_LARGEFILE64_SOURCE) || \
-     SIZEOF_OFF_T >= 8)
-# define LARGEFILE_SUPPORT 1
-#else
-extern const char *largefile_msg;
-#endif
-
 extern struct mspack_system *mspack_default_system;
 
 /* returns the length of a file opened for reading */

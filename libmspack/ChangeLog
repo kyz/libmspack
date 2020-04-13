@@ -1,5 +1,23 @@
 2020-04-13  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* system.h: clear up libmspack's large file support.
+
+	To support large files, do this:
+
+	1. add any defines that your compiler needs to enable large file
+	support. It may be supported by default.
+	2. Define HAVE_FSEEKO if fseeko() and ftello() are available.
+	3. Define SIZEOF_OFF_T to the value of sizeof(off_t); it must be a
+	literal value because sizeof() can't be used in preprocessor tests.
+
+	libmspack uses the off_t datatype for all file offsets. If off_t is
+	less than 64 bits, libmspack will return an error when processing
+	CHM files with offsets beyond 2GB, and won't search for CAB headers
+	beyond 2GB into a file.  In both cases, it prints a warning message
+	that the library doesn't support large files.
+
+2020-04-13  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* macros.h: new header for the D(), LD/LU and EndGet???() macros.
 	Use this instead of system.h.
 

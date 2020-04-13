@@ -1364,12 +1364,12 @@ static int chmd_error(struct mschm_decompressor *base) {
 static int read_off64(off_t *var, unsigned char *mem,
                       struct mspack_system *sys, struct mspack_file *fh)
 {
-#if LARGEFILE_SUPPORT
+#if SIZEOF_OFF_T >= 8
     *var = EndGetI64(mem);
 #else
     *var = EndGetI32(mem);
     if ((*var & 0x80000000) || EndGetI32(mem+4)) {
-        sys->message(fh, (char *)largefile_msg);
+        sys->message(fh, "library not compiled to support large files.");
         return 1;
     }
 #endif
