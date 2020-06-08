@@ -86,6 +86,9 @@ if(ENABLE_SHARED_LIB)
     set_target_properties(mspack PROPERTIES
         COMPILE_FLAGS "${WARNCFLAGS}"
         VERSION ${LT_VERSION} SOVERSION ${LT_SOVERSION})
+    if(WIN32)
+        set_target_properties(mspack PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    endif()
     install(TARGETS mspack DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(
         FILES
@@ -93,7 +96,7 @@ if(ENABLE_SHARED_LIB)
             ${CMAKE_CURRENT_BINARY_DIR}/mspack-version.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-    add_library( libmspack::mspack ALIAS mspack )
+    add_library( MSPack::mspack ALIAS mspack )
 endif()
 
 if(ENABLE_STATIC_LIB)
@@ -119,5 +122,5 @@ if(ENABLE_STATIC_LIB)
             ${CMAKE_CURRENT_BINARY_DIR}/mspack-version.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-    add_library( libmspack::mspack_static ALIAS mspack_static )
+    add_library( MSPack::mspack_static ALIAS mspack_static )
 endif()

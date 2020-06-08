@@ -40,8 +40,8 @@ make install
 This will install the main libmspack library and mspack.h header file.
 Some other libraries and executables are built, but not installed.
 
-If building from the Git repository, running rebuild.sh will create all the
-auto-generated files, then run ./configure && make. Running cleanup.sh will
+If building from the Git repository, running `rebuild.sh` will create all the
+auto-generated files, then run `./configure && make`. Running `cleanup.sh` will
 perform a thorough clean, deleting all auto-generated files.
 
 In addition to gcc, you also need the following for building from repository:
@@ -167,7 +167,7 @@ provided you meet ALL of the following conditions:
 
 libmspack is bundled with programs which demonstrate the library's features.
 
-| Program                | Description                                           
+| Program                | Description
 :------------------------|:------------------------------------------------------
 | examples/cabd_memory.c | an mspack_system that can read and write to memory
 | examples/multifh.c     | an mspack_system that can simultaneously work on
@@ -177,7 +177,7 @@ libmspack is bundled with programs which demonstrate the library's features.
 | examples/chmextract.c  | extracts all files in a CHM file to disk
 | examples/msexpand.c    | expands an SZDD or KWAJ file
 | examples/oabextract.c  | extracts an Exchange Offline Address Book (.LZX) file
-|                        | 
+|                        |
 | test/cabd_c10          | tests the CAB decompressor on the C10 collection
 | test/cabd_compare      | compares libmspack with Microsoft's EXTRACT/EXPAND.EXE
 | test/cabd_md5          | shows MD5 checksums of all files in a CAB file/set

@@ -1,40 +1,13 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(libmspack
-        VERSION 0.10.1
-        DESCRIPTION "libmspack is a library that provides creation & extraction of various Microsoft compression and archive formats."
+project(cabextract
+        VERSION 1.9.1
+        DESCRIPTION "A program to extract Microsoft Cabinet files."
         LANGUAGES C)
 
-# See versioning rule:
-#  http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-#
-# KEEP THESE IN SYNC WITH configure.ac
-set(LT_CURRENT  1)
-set(LT_REVISION 1)
-set(LT_AGE      0)
-
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
-include(Version)
 
-math(EXPR LT_SOVERSION "${LT_CURRENT} - ${LT_AGE}")
-set(LT_VERSION "${LT_SOVERSION}.${LT_AGE}.${LT_REVISION}")
-set(PACKAGE_VERSION ${PROJECT_VERSION})
-HexVersion(PACKAGE_VERSION_NUM ${PROJECT_VERSION_MAJOR} ${PROJECT_VERSION_MINOR} ${PROJECT_VERSION_PATCH})
-
-set(ENABLE_EXAMPLES_DEFAULT OFF)
-set(ENABLE_DOCS_DEFAULT OFF)
 include(CMakeOptions.txt)
-
-if(ENABLE_LIB_ONLY AND (ENABLE_APP OR ENABLE_EXAMPLES))
-    # Remember when disabled options are disabled for later diagnostics.
-    set(ENABLE_LIB_ONLY_DISABLED_OTHERS 1)
-else()
-    set(ENABLE_LIB_ONLY_DISABLED_OTHERS 0)
-endif()
-if(ENABLE_LIB_ONLY)
-    set(ENABLE_APP      OFF)
-    set(ENABLE_EXAMPLES OFF)
-endif()
 
 # Do not disable assertions based on CMAKE_BUILD_TYPE.
 foreach(_build_type Release MinSizeRel RelWithDebInfo)
@@ -209,7 +182,7 @@ file(RELATIVE_PATH top_srcdir   ${CMAKE_CURRENT_BINARY_DIR}/dir ${CMAKE_CURRENT_
 file(RELATIVE_PATH top_builddir ${CMAKE_CURRENT_BINARY_DIR}/dir ${CMAKE_CURRENT_BINARY_DIR})
 set(abs_top_srcdir   ${CMAKE_CURRENT_SOURCE_DIR})
 set(abs_top_builddir ${CMAKE_CURRENT_BINARY_DIR})
-# libmspack.pc (pkg-config file)
+
 set(prefix      ${CMAKE_INSTALL_PREFIX})
 set(exec_prefix ${CMAKE_INSTALL_PREFIX})
 set(bindir      ${CMAKE_INSTALL_FULL_BINDIR})
@@ -223,28 +196,44 @@ add_definitions(-DHAVE_CONFIG_H)
 configure_file(config.h.in.cmake config.h)
 include_directories(${PROJECT_BINARY_DIR})
 
-# Generate, install pkg-config file.
-configure_file(
-    libmspack.pc.in
-    ${CMAKE_CURRENT_BINARY_DIR}/libmspack.pc
-    @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libmspack.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
-
 #
 # The build targets.
 #
-add_subdirectory(mspack)
-
-if(ENABLE_EXAMPLES)
-    add_subdirectory(examples)
+if(NOT ENABLE_EXTERNAL_MSPACK)
+    include_directories(../libmspack/mspack)
+    add_subdirectory(../libmspack ${PROJECT_BINARY_DIR}/libmspack)
+else()
+    find_package(MSPack)
 endif()
 
-enable_testing()
-add_subdirectory(test)
+add_executable(cabextract)
+target_sources(cabextract
+    PRIVATE
+        src/cabextract.c
+        getopt.c  getopt.h
+        getopt1.c
+        md5.h md5.c)
+if(NOT WIN32)
+    target_include_directories(cabextract PRIVATE ${PROJECT_SOURCE_DIR})
+else()
+    target_include_directories(cabextract PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/win32)
+    target_sources(cabextract PRIVATE win32/dirent.h)
+    target_link_libraries(cabextract Shlwapi.lib)
+endif()
+target_include_directories(cabextract PRIVATE ${PROJECT_SOURCE_DIR})
+target_link_libraries(cabextract MSPack::mspack)
+install(TARGETS cabextract DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-if(ENABLE_DOCS)
-    add_subdirectory(doc)
+if(NOT WIN32)
+    add_executable(cabinfo)
+    target_sources(cabinfo
+        PRIVATE
+            src/cabinfo.c)
+    target_include_directories(cabinfo PRIVATE ${PROJECT_SOURCE_DIR})
+    target_link_libraries(cabinfo MSPack::mspack)
+
+    enable_testing()
+    add_subdirectory(test)
 endif()
 
 #
@@ -253,18 +242,14 @@ endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _build_type)
 message(STATUS "Summary of build options:
 
-    Package version:    ${VERSION}
-    Library version:    ${LT_CURRENT}:${LT_REVISION}:${LT_AGE}
-    Install prefix:     ${CMAKE_INSTALL_PREFIX}
-    Target system:      ${CMAKE_SYSTEM_NAME}
+    Package version:     ${VERSION}
+    Install prefix:      ${CMAKE_INSTALL_PREFIX}
+    Target system:       ${CMAKE_SYSTEM_NAME}
     Compiler:
-        Build type:     ${CMAKE_BUILD_TYPE}
-        C compiler:     ${CMAKE_C_COMPILER}
-        CFLAGS:         ${CMAKE_C_FLAGS_${_build_type}} ${CMAKE_C_FLAGS}
-        WARNCFLAGS:     ${WARNCFLAGS}
-    Docs:
-        Build docs:     ${ENABLE_DOCS}
+        Build type:      ${CMAKE_BUILD_TYPE}
+        C compiler:      ${CMAKE_C_COMPILER}
+        CFLAGS:          ${CMAKE_C_FLAGS_${_build_type}} ${CMAKE_C_FLAGS}
+        WARNCFLAGS:      ${WARNCFLAGS}
     Features:
-        Static library: ${ENABLE_STATIC_LIB}
-        Examples:       ${ENABLE_EXAMPLES}
+        External mspack: ${ENABLE_EXTERNAL_MSPACK}
 ")
