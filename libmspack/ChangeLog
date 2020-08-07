@@ -1,3 +1,21 @@
+2020-08-07  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* read_sys_file(): in a CHM file, the ControlData and ResetTable
+	files are loaded entirely into memory, regardless of file size.
+	This is not in the spirit of letting users control memory usage.
+
+	ControlData previously had to be at least 28 bytes (in case a new,
+	larger version of the file ever appeared), but is now rejected
+	if not exactly 28 bytes.
+
+	ResetTable can theoretically be huge; the longest LZX stream of
+	16 exabytes could have a 4 petabyte ResetTable. Practically, the
+	largest seen in the wild is 46 kilobytes (PHP manuals). I picked
+	an arbitrary upper limit of 1MB; please get in contact if you
+	know of any CHM files in the wild that are largest than this.
+
+	Thanks to seviezhou on Github for reporting this.
+
 2020-04-13  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* system.h: clear up libmspack's large file support.

@@ -1052,8 +1052,8 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
   if (err) return self->error = err;
 
   /* read ControlData */
-  if (sec->control->length < lzxcd_SIZEOF) {
-    D(("ControlData file is too short"))
+  if (sec->control->length != lzxcd_SIZEOF) {
+    D(("ControlData file is wrong size"))
     return self->error = MSPACK_ERR_DATAFORMAT;
   }
   if (!(data = read_sys_file(self, sec->control))) {
@@ -1172,6 +1172,11 @@ static int read_reset_table(struct mschm_decompressor_p *self,
         D(("ResetTable file is too short"))
         return 0;
     }
+    if (sec->rtable->length > 1000000) { /* arbitrary upper limit */
+        D(("ResetTable >1MB (%"LD"), report if genuine", sec->rtable->length))
+        return 0;
+    }
+
     if (!(data = read_sys_file(self, sec->rtable))) {
         D(("can't read reset table"))
         return 0;
