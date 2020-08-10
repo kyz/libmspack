@@ -545,6 +545,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
       /* decode at least this_run bytes */
       switch (lzx->block_type) {
+      case LZX_BLOCKTYPE_ALIGNED:
       case LZX_BLOCKTYPE_VERBATIM:
         while (this_run > 0) {
           READ_HUFFSYM(MAINTREE, main_element);
@@ -571,136 +572,41 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
             /* get match offset */
             switch ((match_offset = (main_element >> 3))) {
-            case 0: match_offset = R0;                                  break;
-            case 1: match_offset = R1; R1=R0;        R0 = match_offset; break;
-            case 2: match_offset = R2; R2=R0;        R0 = match_offset; break;
-            case 3: match_offset = 1;  R2=R1; R1=R0; R0 = match_offset; break;
+            case 0: match_offset = R0; break;
+            case 1: match_offset = R1; R1=R0; R0 = match_offset; break;
+            case 2: match_offset = R2; R2=R0; R0 = match_offset; break;
             default:
-              extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
-              READ_BITS(verbatim_bits, extra);
-              match_offset = position_base[match_offset] - 2 + verbatim_bits;
-              R2 = R1; R1 = R0; R0 = match_offset;
-            }
-
-            /* LZX DELTA uses max match length to signal even longer match */
-            if (match_length == LZX_MAX_MATCH && lzx->is_delta) {
-                int extra_len = 0;
-                ENSURE_BITS(3); /* 4 entry huffman tree */
-                if (PEEK_BITS(1) == 0) {
-                    REMOVE_BITS(1); /* '0' -> 8 extra length bits */
-                    READ_BITS(extra_len, 8);
-                }
-                else if (PEEK_BITS(2) == 2) {
-                    REMOVE_BITS(2); /* '10' -> 10 extra length bits + 0x100 */
-                    READ_BITS(extra_len, 10);
-                    extra_len += 0x100;
-                }
-                else if (PEEK_BITS(3) == 6) {
-                    REMOVE_BITS(3); /* '110' -> 12 extra length bits + 0x500 */
-                    READ_BITS(extra_len, 12);
-                    extra_len += 0x500;
+              if (lzx->block_type == LZX_BLOCKTYPE_VERBATIM) {
+                if (match_offset == 3) {
+                  match_offset = 1;
                 }
                 else {
-                    REMOVE_BITS(3); /* '111' -> 15 extra length bits */
-                    READ_BITS(extra_len, 15);
+                  extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
+                  READ_BITS(verbatim_bits, extra);
+                  match_offset = position_base[match_offset] - 2 + verbatim_bits;
                 }
-                match_length += extra_len;
-            }
-
-            if ((window_posn + match_length) > lzx->window_size) {
-              D(("match ran over window wrap"))
-              return lzx->error = MSPACK_ERR_DECRUNCH;
-            }
-            
-            /* copy match */
-            rundest = &window[window_posn];
-            i = match_length;
-            /* does match offset wrap the window? */
-            if (match_offset > window_posn) {
-              if (match_offset > lzx->offset &&
-                  (match_offset - window_posn) > lzx->ref_data_size)
-              {
-                D(("match offset beyond LZX stream"))
-                return lzx->error = MSPACK_ERR_DECRUNCH;
               }
-              /* j = length from match offset to end of window */
-              j = match_offset - window_posn;
-              if (j > (int) lzx->window_size) {
-                D(("match offset beyond window boundaries"))
-                return lzx->error = MSPACK_ERR_DECRUNCH;
-              }
-              runsrc = &window[lzx->window_size - j];
-              if (j < i) {
-                /* if match goes over the window edge, do two copy runs */
-                i -= j; while (j-- > 0) *rundest++ = *runsrc++;
-                runsrc = window;
-              }
-              while (i-- > 0) *rundest++ = *runsrc++;
-            }
-            else {
-              runsrc = rundest - match_offset;
-              while (i-- > 0) *rundest++ = *runsrc++;
-            }
-
-            this_run    -= match_length;
-            window_posn += match_length;
-          }
-        } /* while (this_run > 0) */
-        break;
-
-      case LZX_BLOCKTYPE_ALIGNED:
-        while (this_run > 0) {
-          READ_HUFFSYM(MAINTREE, main_element);
-          if (main_element < LZX_NUM_CHARS) {
-            /* literal: 0 to LZX_NUM_CHARS-1 */
-            window[window_posn++] = main_element;
-            this_run--;
-          }
-          else {
-            /* match: LZX_NUM_CHARS + ((slot<<3) | length_header (3 bits)) */
-            main_element -= LZX_NUM_CHARS;
-
-            /* get match length */
-            match_length = main_element & LZX_NUM_PRIMARY_LENGTHS;
-            if (match_length == LZX_NUM_PRIMARY_LENGTHS) {
-              if (lzx->LENGTH_empty) {
-                D(("LENGTH symbol needed but tree is empty"))
-                return lzx->error = MSPACK_ERR_DECRUNCH;
-              } 
-              READ_HUFFSYM(LENGTH, length_footer);
-              match_length += length_footer;
-            }
-            match_length += LZX_MIN_MATCH;
-
-            /* get match offset */
-            switch ((match_offset = (main_element >> 3))) {
-            case 0: match_offset = R0;                             break;
-            case 1: match_offset = R1; R1 = R0; R0 = match_offset; break;
-            case 2: match_offset = R2; R2 = R0; R0 = match_offset; break;
-            default:
-              extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
-              match_offset = position_base[match_offset] - 2;
-              if (extra > 3) {
-                /* verbatim and aligned bits */
-                extra -= 3;
-                READ_BITS(verbatim_bits, extra);
-                match_offset += (verbatim_bits << 3);
-                READ_HUFFSYM(ALIGNED, aligned_bits);
-                match_offset += aligned_bits;
-              }
-              else if (extra == 3) {
-                /* aligned bits only */
-                READ_HUFFSYM(ALIGNED, aligned_bits);
-                match_offset += aligned_bits;
-              }
-              else if (extra > 0) { /* extra==1, extra==2 */
-                /* verbatim bits only */
-                READ_BITS(verbatim_bits, extra);
-                match_offset += verbatim_bits;
-              }
-              else /* extra == 0 */ {
-                /* ??? not defined in LZX specification! */
-                match_offset = 1;
+              else { /* LZX_BLOCKTYPE_ALIGNED */
+                extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
+                match_offset = position_base[match_offset] - 2;
+                if (extra > 3) { /* >3: verbatim and aligned bits */
+                  extra -= 3;
+                  READ_BITS(verbatim_bits, extra);
+                  match_offset += (verbatim_bits << 3);
+                  READ_HUFFSYM(ALIGNED, aligned_bits);
+                  match_offset += aligned_bits;
+                }
+                else if (extra == 3) { /* 3: aligned bits only */
+                  READ_HUFFSYM(ALIGNED, aligned_bits);
+                  match_offset += aligned_bits;
+                }
+                else if (extra > 0) { /* 1-2: verbatim bits only */
+                  READ_BITS(verbatim_bits, extra);
+                  match_offset += verbatim_bits;
+                }
+                else { /* 0: not defined in LZX specification! */
+                  match_offset = 1;
+                }
               }
               /* update repeated offset LRU queue */
               R2 = R1; R1 = R0; R0 = match_offset;
