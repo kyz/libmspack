@@ -76,7 +76,8 @@ static int cabd_read_headers(
   struct mspack_system *sys, struct mspack_file *fh,
   struct mscabd_cabinet_p *cab, off_t offset, int salvage, int quiet);
 static char *cabd_read_string(
-  struct mspack_system *sys, struct mspack_file *fh, int *error);
+  struct mspack_system *sys, struct mspack_file *fh, int permit_empty,
+  int *error);
 
 static struct mscabd_cabinet *cabd_search(
   struct mscab_decompressor *base, const char *filename);
@@ -394,17 +395,17 @@ static int cabd_read_headers(struct mspack_system *sys,
 
   /* read name and info of preceeding cabinet in set, if present */
   if (cab->base.flags & cfheadPREV_CABINET) {
-    cab->base.prevname = cabd_read_string(sys, fh, &err);
+    cab->base.prevname = cabd_read_string(sys, fh, 0, &err);
     if (err) return err;
-    cab->base.previnfo = cabd_read_string(sys, fh, &err);
+    cab->base.previnfo = cabd_read_string(sys, fh, 1, &err);
     if (err) return err;
   }
 
   /* read name and info of next cabinet in set, if present */
   if (cab->base.flags & cfheadNEXT_CABINET) {
-    cab->base.nextname = cabd_read_string(sys, fh, &err);
+    cab->base.nextname = cabd_read_string(sys, fh, 0, &err);
     if (err) return err;
-    cab->base.nextinfo = cabd_read_string(sys, fh, &err);
+    cab->base.nextinfo = cabd_read_string(sys, fh, 1, &err);
     if (err) return err;
   }
 
@@ -508,7 +509,7 @@ static int cabd_read_headers(struct mspack_system *sys,
     file->date_y = (x >> 9) + 1980;
 
     /* get filename */
-    file->filename = cabd_read_string(sys, fh, &err);
+    file->filename = cabd_read_string(sys, fh, 0, &err);
 
     /* if folder index or filename are bad, either skip it or fail */
     if (err || !file->folder) {
@@ -535,7 +536,8 @@ static int cabd_read_headers(struct mspack_system *sys,
 }
 
 static char *cabd_read_string(struct mspack_system *sys,
-                              struct mspack_file *fh, int *error)
+                              struct mspack_file *fh, int permit_empty,
+                              int *error)
 {
   off_t base = sys->tell(fh);
   char buf[256], *str;
@@ -549,8 +551,8 @@ static char *cabd_read_string(struct mspack_system *sys,
 
   /* search for a null terminator in the buffer */
   for (i = 0, ok = 0; i < len; i++) if (!buf[i]) { ok = 1; break; }
-  /* reject empty strings */
-  if (i == 0) ok = 0;
+  /* optionally reject empty strings */
+  if (i == 0 && !permit_empty) ok = 0;
 
   if (!ok) {
     *error = MSPACK_ERR_DATAFORMAT;
