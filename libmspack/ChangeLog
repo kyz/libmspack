@@ -2,7 +2,7 @@
 
 	* cabd_read_string(): libmspack does not completely reject CAB files
 	if they have NEXTCAB/PREVCAB strings that are present but empty.
-	Thanks to sgtatham for the patch, and for noting that WiX v4
+	Thanks to Simon Tatham for the patch, and for noting that WiX v4
 	currently generates such files.
 
 
