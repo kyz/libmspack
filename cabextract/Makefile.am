@@ -11,7 +11,8 @@ bundled_mspack =        mspack/mspack.h \
 TESTS =                 test/bugs.test test/case-ascii.test test/case-utf8.test \
                         test/dirwalk-vulns.test test/encoding.test \
                         test/mixed.test test/search.test test/simple.test \
-                        test/split.test test/utf8-stresstest.test
+                        test/split.test test/utf8-stresstest.test \
+                        test/symlinks.test
 
 EXTRA_DIST =            cabextract.spec \
                         doc/cabextract.1 doc/ja/cabextract.1 \

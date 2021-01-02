@@ -1,0 +1,23 @@
+#!/bin/sh
+# test that symmlinks are not followed, thus over-writing some files
+. test/testcase
+
+set -e
+
+tempdir=$(mktemp -d)
+trap "rm -rf $tempdir" 0 1 2
+
+echo $tempdir
+
+linkedfile="$tempdir/empty"
+touch "$linkedfile"
+ln -s "$linkedfile" "$tempdir/hello.c"
+
+"$cabextract" cabs/simple.cab -d "$tempdir"
+test $? = 0
+
+linkedfile_size=`stat -c '%s' "$linkedfile"`
+if ! [ $linkedfile_size -eq 0 ]; then
+    echo "Symlink followed and file overwritten"
+    exit 1
+fi
