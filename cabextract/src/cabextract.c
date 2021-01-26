@@ -95,19 +95,22 @@ struct option optlist[] = {
   { "single",    0, NULL, 's' },
   { "test",      0, NULL, 't' },
   { "version",   0, NULL, 'v' },
+  { "interactive",  0, NULL, 'i' },
+  { "no-overwrite", 0, NULL, 'n' },
+  { "keep-symlinks",0, NULL, 'k' },
   { NULL,        0, NULL, 0   }
 };
 
 #if HAVE_ICONV
-const char *OPTSTRING = "d:e:fF:hlLpqstv";
+const char *OPTSTRING = "d:e:fF:hlLpqstvink";
 #else
-const char *OPTSTRING = "d:fF:hlLpqstv";
+const char *OPTSTRING = "d:fF:hlLpqstvink";
 #endif
 
 struct file_mem {
   struct file_mem *next;
   dev_t st_dev;
-  ino_t st_ino; 
+  ino_t st_ino;
   char *from;
 };
 
@@ -117,7 +120,8 @@ struct filter {
 };
 
 struct cabextract_args {
-  int help, lower, pipe, view, quiet, single, fix, test;
+  int help, lower, pipe, view, quiet, single, fix, test, interactive,
+      no_overwrite, keep_symlinks;
   char *dir, *encoding;
   struct filter *filters;
 };
@@ -132,7 +136,7 @@ struct file_mem *cab_seen = NULL;
 mode_t user_umask = 0;
 
 struct cabextract_args args = {
-  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   NULL, NULL, NULL
 };
 
@@ -185,6 +189,7 @@ static void add_filter(char *arg);
 static void free_filters();
 static int ensure_filepath(char *path);
 static char *cab_error(struct mscab_decompressor *cd);
+static void print_cli_args_error(const char *reason, const char *exec_name);
 
 static struct mspack_file *cabx_open(struct mspack_system *this,
                                      const char *filename, int mode);
@@ -248,6 +253,9 @@ int main(int argc, char *argv[]) {
     case 's': args.single   = 1;      break;
     case 't': args.test     = 1;      break;
     case 'v': args.view     = 1;      break;
+    case 'i': args.interactive      = 1;        break;
+    case 'n': args.no_overwrite     = 1;        break;
+    case 'k': args.keep_symlinks    = 1;        break;
     }
   }
 
@@ -265,7 +273,10 @@ int main(int argc, char *argv[]) {
       "  -t   --test        test cabinet integrity\n"
       "  -q   --quiet       only print errors and warnings\n"
       "  -L   --lowercase   make filenames lowercase\n"
-      "  -f   --fix         salvage as much as possible from corrupted cabinets\n");
+      "  -f   --fix         salvage as much as possible from corrupted cabinets\n"
+      "  -i   --interactive     prompt whether to overwrite existing files\n"
+      "  -n   --no-overwrite    don't overwrite (skip) existing files\n"
+      "  -k   --keep-symlinks   follow symlinked files when writing\n");
     fprintf(stderr,
       "  -p   --pipe        pipe extracted files to stdout\n"
       "  -s   --single      restrict search to cabs on the command line\n"
@@ -281,9 +292,23 @@ int main(int argc, char *argv[]) {
   }
 
   if (args.test && args.view) {
-    fprintf(stderr, "%s: You cannot use --test and --list at the same time.\n"
-            "Try '%s --help' for more information.\n", argv[0], argv[0]);
+    print_cli_args_error("You cannot use --test and --list at the same time.",
+                         argv[0]);
     return EXIT_FAILURE;
+  }
+
+  if (args.interactive) {
+    if (args.no_overwrite) {
+      print_cli_args_error("Option --interactive can't be used with"
+                           " --no-overwrite.", argv[0]);
+      return EXIT_FAILURE;
+    }
+
+    if (args.pipe) {
+      print_cli_args_error("Option --interactive cannot be used with --pipe.",
+                           argv[0]);
+      return EXIT_FAILURE;
+    }
   }
 
   if (optind == argc) {
@@ -293,8 +318,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
     else {
-      fprintf(stderr, "%s: No cabinet files specified.\nTry '%s --help' "
-              "for more information.\n", argv[0], argv[0]);
+        print_cli_args_error("No cabinet files specified.", argv[0]);
       return EXIT_FAILURE;
     }
   }
@@ -448,8 +472,8 @@ static int process_cabinet(char *basename) {
     }
 
     /* the full UNIX output filename includes the output
-     * directory. However, for filtering purposes, we don't want to 
-     * include that. So, we work out where the filename part of the 
+     * directory. However, for filtering purposes, we don't want to
+     * include that. So, we work out where the filename part of the
      * output name begins. This is the same for every extracted file.
      */
     fname_offset = args.dir ? (strlen(args.dir) + 1) : 0;
@@ -779,7 +803,7 @@ static char *create_output_name(const char *fname, const char *dir,
     return NULL;
   }
 
-  /* copy directory prefix if needed */ 
+  /* copy directory prefix if needed */
   if (dir) {
     strcpy(name, dir);
     name[dirlen - 1] = '/';
@@ -1134,6 +1158,14 @@ static int ensure_filepath(char *path) {
     if (!ok) return 0;
   }
   return 1;
+}
+
+/**
+ * Utility for printing wrong CLI args error messages.
+ */
+static void print_cli_args_error(const char *reason, const char *exec_name) {
+  fprintf(stderr, "%s: %s\nTry '%s --help' for more information.\n",
+          exec_name, reason, exec_name);
 }
 
 /**
