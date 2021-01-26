@@ -81,24 +81,24 @@
 
 /* structures and global variables */
 struct option optlist[] = {
-  { "directory", 1, NULL, 'd' },
+  { "directory",    1, NULL, 'd' },
 #if HAVE_ICONV
-  { "encoding",  1, NULL, 'e' },
+  { "encoding",     1, NULL, 'e' },
 #endif
-  { "fix",       0, NULL, 'f' },
-  { "filter",    1, NULL, 'F' },
-  { "help",      0, NULL, 'h' },
-  { "list",      0, NULL, 'l' },
-  { "lowercase", 0, NULL, 'L' },
-  { "pipe",      0, NULL, 'p' },
-  { "quiet",     0, NULL, 'q' },
-  { "single",    0, NULL, 's' },
-  { "test",      0, NULL, 't' },
-  { "version",   0, NULL, 'v' },
+  { "fix",          0, NULL, 'f' },
+  { "filter",       1, NULL, 'F' },
+  { "help",         0, NULL, 'h' },
+  { "list",         0, NULL, 'l' },
+  { "lowercase",    0, NULL, 'L' },
+  { "pipe",         0, NULL, 'p' },
+  { "quiet",        0, NULL, 'q' },
+  { "single",       0, NULL, 's' },
+  { "test",         0, NULL, 't' },
+  { "version",      0, NULL, 'v' },
   { "interactive",  0, NULL, 'i' },
   { "no-overwrite", 0, NULL, 'n' },
   { "keep-symlinks",0, NULL, 'k' },
-  { NULL,        0, NULL, 0   }
+  { NULL,           0, NULL,  0  }
 };
 
 #if HAVE_ICONV
@@ -241,21 +241,21 @@ int main(int argc, char *argv[]) {
   /* parse options */
   while ((i = getopt_long(argc, argv, OPTSTRING, optlist, NULL)) != -1) {
     switch (i) {
-    case 'd': args.dir      = optarg; break;
-    case 'e': args.encoding = optarg; break;
-    case 'f': args.fix      = 1;      break;
-    case 'F': add_filter(optarg);     break;
-    case 'h': args.help     = 1;      break;
-    case 'l': args.view     = 1;      break;
-    case 'L': args.lower    = 1;      break;
-    case 'p': args.pipe     = 1;      break;
-    case 'q': args.quiet    = 1;      break;
-    case 's': args.single   = 1;      break;
-    case 't': args.test     = 1;      break;
-    case 'v': args.view     = 1;      break;
-    case 'i': args.interactive      = 1;        break;
-    case 'n': args.no_overwrite     = 1;        break;
-    case 'k': args.keep_symlinks    = 1;        break;
+    case 'd': args.dir              = optarg; break;
+    case 'e': args.encoding         = optarg; break;
+    case 'f': args.fix              = 1;      break;
+    case 'F': add_filter(optarg);             break;
+    case 'h': args.help             = 1;      break;
+    case 'l': args.view             = 1;      break;
+    case 'L': args.lower            = 1;      break;
+    case 'p': args.pipe             = 1;      break;
+    case 'q': args.quiet            = 1;      break;
+    case 's': args.single           = 1;      break;
+    case 't': args.test             = 1;      break;
+    case 'v': args.view             = 1;      break;
+    case 'i': args.interactive      = 1;      break;
+    case 'n': args.no_overwrite     = 1;      break;
+    case 'k': args.keep_symlinks    = 1;      break;
     }
   }
 
@@ -267,24 +267,24 @@ int main(int argc, char *argv[]) {
       argv[0]);
     fprintf(stderr,
       "Options:\n"
-      "  -v   --version     print version / list cabinet\n"
-      "  -h   --help        show this help page\n"
-      "  -l   --list        list contents of cabinet\n"
-      "  -t   --test        test cabinet integrity\n"
-      "  -q   --quiet       only print errors and warnings\n"
-      "  -L   --lowercase   make filenames lowercase\n"
-      "  -f   --fix         salvage as much as possible from corrupted cabinets\n"
-      "  -i   --interactive     prompt whether to overwrite existing files\n"
-      "  -n   --no-overwrite    don't overwrite (skip) existing files\n"
-      "  -k   --keep-symlinks   follow symlinked files when writing\n");
+      "  -v   --version       print version / list cabinet\n"
+      "  -h   --help          show this help page\n"
+      "  -l   --list          list contents of cabinet\n"
+      "  -t   --test          test cabinet integrity\n"
+      "  -q   --quiet         only print errors and warnings\n"
+      "  -L   --lowercase     make filenames lowercase\n"
+      "  -f   --fix           salvage as much as possible from corrupted cabinets\n"
+      "  -i   --interactive   prompt whether to overwrite existing files\n"
+      "  -n   --no-overwrite  don't overwrite (skip) existing files\n"
+      "  -k   --keep-symlinks follow symlinked files when writing\n");
     fprintf(stderr,
-      "  -p   --pipe        pipe extracted files to stdout\n"
-      "  -s   --single      restrict search to cabs on the command line\n"
-      "  -F   --filter      extract only files that match the given pattern\n"
+      "  -p   --pipe          pipe extracted files to stdout\n"
+      "  -s   --single        restrict search to cabs on the command line\n"
+      "  -F   --filter        extract only files that match the given pattern\n"
 #if HAVE_ICONV
-      "  -e   --encoding    assume non-UTF8 filenames have the given encoding\n"
+      "  -e   --encoding      assume non-UTF8 filenames have the given encoding\n"
 #endif
-      "  -d   --directory   extract all files to the given directory\n\n"
+      "  -d   --directory     extract all files to the given directory\n\n"
       "cabextract %s (C) 2000-2019 Stuart Caie <kyzer@cabextract.org.uk>\n"
       "This is free software with ABSOLUTELY NO WARRANTY.\n",
       VERSION);
