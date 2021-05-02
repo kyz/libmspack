@@ -1,14 +1,15 @@
 /* acts like Microsoft's EXPAND.EXE */
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <mspack.h>
-#include <error.h>
+#include "mspack.h"
+
+#include "error.h"
 
 int main(int argc, char *argv[]) {
     struct msszdd_decompressor *szddd;
@@ -34,7 +35,7 @@ int main(int argc, char *argv[]) {
             err = kwajd->decompress(kwajd, argv[1], argv[2]);
         }
         if (err != MSPACK_ERR_OK) {
-            fprintf(stderr, "%s -> %s: %s\n", argv[1], argv[2], error_msg(err));
+            fprintf(stderr, "%s -> %s: %s\n", argv[1], argv[2], mspack_error_msg(err));
         }
     }
     else {

@@ -1,0 +1,7 @@
+# Features that can be enabled for cmake (see CMakeLists.txt)
+
+option(ENABLE_WERROR     "Turn on compile time warnings as errors")
+
+option(ENABLE_DEBUG      "Turn on debug output")
+
+option(ENABLE_EXTERNAL_MSPACK "Use a system-installed mspack instead of the bundled mspack")

@@ -1,0 +1,32 @@
+#ifndef MSPACK_VER_H
+#define MSPACK_VER_H
+
+/**
+ * @macro
+ * Version string of the mspack project release.
+ */
+#define MSPACK_VERSION "@PROJECT_VERSION@"
+
+/**
+ * @macro
+ * Numerical representation of the version string of the mspack project release.
+ * This is a 24 bit number with 8 bytes for major, 8 bites for minor, and 8 bits for patch.
+ * Ex: 1.2.3 becomes 0x010203
+ */
+#define LIBMSPACK_VERSION "@LIBMSPACK_VERSION_NUM@"
+
+/**
+ * @macro
+ * Version string of the mspack library release.
+ */
+#define LIBMSPACK_VERSION "@LIBMSPACK_VERSION@"
+
+/**
+ * @macro
+ * Numerical representation of the version string of the mspack project release.
+ * This is a 24 bit number with 8 bytes for major, 8 bites for minor, and 8 bits for patch.
+ * Ex: 1.2.3 becomes 0x010203
+ */
+#define LIBMSPACK_VERSION "@LIBMSPACK_VERSION_NUM@"
+
+#endif // MSPACK_VER_H

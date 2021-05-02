@@ -21,11 +21,11 @@
 
 /* CAB decompression implementation */
 
-#include <system.h>
-#include <cab.h>
-#include <mszip.h>
-#include <lzx.h>
-#include <qtm.h>
+#include "system.h"
+#include "cab.h"
+#include "mszip.h"
+#include "lzx.h"
+#include "qtm.h"
 
 /* Notes on compliance with cabinet specification:
  *
@@ -1014,7 +1014,7 @@ static int cabd_extract(struct mscab_decompressor *base,
   struct mscabd_folder_p *fol;
   struct mspack_system *sys;
   struct mspack_file *fh;
-  off_t filelen;
+  unsigned int filelen;
 
   if (!self) return MSPACK_ERR_ARGS;
   if (!file) return self->error = MSPACK_ERR_ARGS;
@@ -1051,7 +1051,7 @@ static int cabd_extract(struct mscab_decompressor *base,
    * In salvage mode, don't assume block sizes, just try decoding
    */
   if (!self->salvage) {
-    off_t maxlen = fol->base.num_blocks * CAB_BLOCKMAX;
+    unsigned int maxlen = fol->base.num_blocks * CAB_BLOCKMAX;
     if ((file->offset + filelen) > maxlen) {
       sys->message(NULL, "ERROR; file \"%s\" cannot be extracted, "
                    "cabinet set is incomplete", file->filename);

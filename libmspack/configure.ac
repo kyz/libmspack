@@ -3,7 +3,7 @@
 AC_PREREQ(2.59)
 AC_INIT([libmspack],[0.10.1alpha],[kyzer@cabextract.org.uk])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([1.11])
+AM_INIT_AUTOMAKE([1.11 foreign])
 AM_SILENT_RULES([yes])
 AC_CONFIG_SRCDIR([mspack/mspack.h])
 AC_CONFIG_HEADER([config.h])

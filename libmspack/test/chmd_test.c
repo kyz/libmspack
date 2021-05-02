@@ -1,15 +1,17 @@
 /* CHM regression test suite */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
-#include <mspack.h>
+#include "mspack.h"
 
 #define __tf3(x) #x
 #define __tf2(x) __tf3(x)

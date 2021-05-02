@@ -23,7 +23,7 @@
 #define _GNU_SOURCE 1
 
 #if HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 
 #include <sys/types.h>
@@ -31,7 +31,11 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
+#ifndef _WIN32
 #include <fnmatch.h>
+#else
+#include <shlwapi.h>
+#endif
 #include <limits.h>
 #include <locale.h>
 #include <stdarg.h>
@@ -76,8 +80,12 @@
 
 #include "getopt.h"
 
-#include <mspack.h>
-#include <md5.h>
+#include "mspack.h"
+#include "md5.h"
+
+#if !defined(S_ISDIR)
+# define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#endif
 
 /* structures and global variables */
 struct option optlist[] = {
@@ -107,7 +115,7 @@ const char *OPTSTRING = "d:fF:hlLpqstv";
 struct file_mem {
   struct file_mem *next;
   dev_t st_dev;
-  ino_t st_ino; 
+  ino_t st_ino;
   char *from;
 };
 
@@ -150,7 +158,7 @@ const char *STDOUT_FNAME = "stdout";
 /** A special filename. Extracting to this filename will send the output
  * through an MD5 checksum calculator, instead of a file on disk. The
  * magic happens in cabx_open() when the TEST_FNAME pointer is given as a
- * filename, so treat this like a constant rather than a string. 
+ * filename, so treat this like a constant rather than a string.
  */
 const char *TEST_FNAME = "test";
 
@@ -448,8 +456,8 @@ static int process_cabinet(char *basename) {
     }
 
     /* the full UNIX output filename includes the output
-     * directory. However, for filtering purposes, we don't want to 
-     * include that. So, we work out where the filename part of the 
+     * directory. However, for filtering purposes, we don't want to
+     * include that. So, we work out where the filename part of the
      * output name begins. This is the same for every extracted file.
      */
     fname_offset = args.dir ? (strlen(args.dir) + 1) : 0;
@@ -469,7 +477,11 @@ static int process_cabinet(char *basename) {
         int matched = 0;
         struct filter *f;
         for (f = args.filters; f; f = f->next) {
+#ifndef _WIN32
           if (!fnmatch(f->filter, &name[fname_offset], FNM_CASEFOLD)) {
+#else
+          if (TRUE == PathMatchSpecA(&name[fname_offset], f->filter)) {
+#endif
             matched = 1;
             break;
           }
@@ -779,7 +791,7 @@ static char *create_output_name(const char *fname, const char *dir,
     return NULL;
   }
 
-  /* copy directory prefix if needed */ 
+  /* copy directory prefix if needed */
   if (dir) {
     strcpy(name, dir);
     name[dirlen - 1] = '/';
@@ -906,7 +918,7 @@ static char *create_output_name(const char *fname, const char *dir,
 /**
  * Sets the last-modified time and file permissions on a file.
  *
- * @param file     the internal CAB file whose date, time and attributes will 
+ * @param file     the internal CAB file whose date, time and attributes will
  *                 be used.
  * @param filename the name of the UNIX file whose last-modified time and
  *                 file permissions will be set.

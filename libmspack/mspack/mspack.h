@@ -164,6 +164,9 @@ extern "C" {
 
 #include <sys/types.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <stdio.h>
 
 /**
  * System self-test function, to ensure both library and calling program

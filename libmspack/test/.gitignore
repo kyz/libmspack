@@ -1,9 +1,3 @@
-*.log
-*.o
-*.trs
-.deps
-.dirstamp
-.libs
 cabd_md5
 cabd_test
 chmd_find

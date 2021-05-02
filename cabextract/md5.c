@@ -21,14 +21,14 @@
 /* Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
 
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <md5.h>
+#include "md5.h"
 
 #ifdef _LIBC
 # include <endian.h>

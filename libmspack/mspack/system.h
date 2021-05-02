@@ -16,10 +16,11 @@ extern "C" {
 
 /* ensure config.h is read before mspack.h */
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+# include "config.h"
 #endif
-#include <mspack.h>
-#include <macros.h>
+
+#include "mspack.h"
+#include "macros.h"
 
 /* assume <string.h> exists */
 #ifndef MSPACK_NO_DEFAULT_SYSTEM
