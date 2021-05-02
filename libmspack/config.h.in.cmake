@@ -35,9 +35,6 @@
 /* Define to 1 if you have the <fnmatch.h> header file. */
 #cmakedefine HAVE_FNMATCH_H 1
 
-/* Define to 1 if you have the <iconv.h> header file. */
-#cmakedefine HAVE_ICONV_H 1
-
 /* Define to 1 if you have the <locale.h> header file. */
 #cmakedefine HAVE_LOCALE_H 1
 

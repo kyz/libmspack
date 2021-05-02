@@ -35,9 +35,6 @@
 /* Define to 1 if you have the <fnmatch.h> header file. */
 #cmakedefine HAVE_FNMATCH_H 1
 
-/* Define to 1 if you have the <iconv.h> header file. */
-#cmakedefine HAVE_ICONV_H 1
-
 /* Define to 1 if you have the <locale.h> header file. */
 #cmakedefine HAVE_LOCALE_H 1
 
@@ -79,7 +76,10 @@
 
 
 /* Define to empty if `const' does not conform to ANSI C. */
-#cmakedefine ICONV_CONST "@ICONV_CONST@"
+#define ICONV_CONST @ICONV_CONST@
+
+/* Define to 1 if you have the iconv library. */
+#cmakedefine HAVE_ICONV 1
 
 
 /* The size of `off_t', as computed by sizeof. */

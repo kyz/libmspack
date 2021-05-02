@@ -53,7 +53,6 @@ check_include_file(dirent.h     HAVE_DIRENT_H)
 check_include_file(sys/types.h  HAVE_SYS_TYPES_H)
 check_include_file(sys/stat.h   HAVE_SYS_STAT_H)
 check_include_file(fnmatch.h    HAVE_FNMATCH_H)
-check_include_file(iconv.h      HAVE_ICONV_H)
 check_include_file(locale.h     HAVE_LOCALE_H)
 check_include_file(stdarg.h     HAVE_STDARG_H)
 check_include_file(stdlib.h     HAVE_STDLIB_H)
@@ -191,6 +190,16 @@ set(libdir      ${CMAKE_INSTALL_FULL_LIBDIR})
 set(includedir  ${CMAKE_INSTALL_FULL_INCLUDEDIR})
 set(VERSION     ${PROJECT_VERSION})
 
+#
+# External library dependencies
+#
+if(NOT WIN32)
+    find_package(ICONV)
+    if(ICONV_FOUND)
+        set(HAVE_ICONV 1)
+    endif()
+endif()
+
 # Generate config.h
 add_definitions(-DHAVE_CONFIG_H)
 configure_file(config.h.in.cmake config.h)
@@ -219,6 +228,9 @@ else()
     target_include_directories(cabextract PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/win32)
     target_sources(cabextract PRIVATE win32/dirent.h)
     target_link_libraries(cabextract Shlwapi.lib)
+    if(HAVE_ICONV)
+        target_link_libraries( cabextract PRIVATE ICONV::Iconv )
+    endif()
 endif()
 target_include_directories(cabextract PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(cabextract MSPack::mspack)
@@ -252,4 +264,7 @@ message(STATUS "Summary of build options:
         WARNCFLAGS:      ${WARNCFLAGS}
     Features:
         External mspack: ${ENABLE_EXTERNAL_MSPACK}
+        Text conversion:
+            iconv        ${ICONV_INCLUDE_DIRS}
+                         ${ICONV_LIBRARIES}
 ")
