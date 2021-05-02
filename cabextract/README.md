@@ -1,5 +1,7 @@
 # cabextract 1.9.1
 
+<a href="https://github.com/kyz/libmspack/actions"><img src="https://github.com/kyz/libmspack/workflows/CMake%20Build%20Cabextract/badge.svg" height="18"></a>
+
 A program to extract Microsoft Cabinet files.
 
 (C) 2000-2019 Stuart Caie <kyzer@cabextract.org.uk>

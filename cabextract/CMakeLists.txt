@@ -193,11 +193,9 @@ set(VERSION     ${PROJECT_VERSION})
 #
 # External library dependencies
 #
-if(NOT WIN32)
-    find_package(ICONV)
-    if(ICONV_FOUND)
-        set(HAVE_ICONV 1)
-    endif()
+find_package(ICONV)
+if(ICONV_FOUND)
+    set(HAVE_ICONV 1)
 endif()
 
 # Generate config.h
@@ -228,10 +226,11 @@ else()
     target_include_directories(cabextract PRIVATE ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/win32)
     target_sources(cabextract PRIVATE win32/dirent.h)
     target_link_libraries(cabextract Shlwapi.lib)
-    if(HAVE_ICONV)
-        target_link_libraries( cabextract PRIVATE ICONV::Iconv )
-    endif()
 endif()
+if(HAVE_ICONV)
+    target_link_libraries( cabextract ICONV::Iconv )
+endif()
+
 target_include_directories(cabextract PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(cabextract MSPack::mspack)
 install(TARGETS cabextract DESTINATION ${CMAKE_INSTALL_BINDIR})

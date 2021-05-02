@@ -1,5 +1,7 @@
 # libmspack 0.10.1alpha
 
+<a href="https://github.com/kyz/libmspack/actions"><img src="https://github.com/kyz/libmspack/workflows/CMake%20Build%20Libmspack/badge.svg" height="18"></a>
+
 The purpose of libmspack is to provide compressors and decompressors,
 archivers and dearchivers for Microsoft compression formats: CAB, CHM, WIM,
 LIT, HLP, KWAJ and SZDD. It is also designed to be easily embeddable,

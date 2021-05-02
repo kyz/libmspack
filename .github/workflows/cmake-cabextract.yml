@@ -1,0 +1,141 @@
+name: CMake Build Cabextract
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  VCPKG_GIT_REF: 8a9a97315aefb3f8bc5d81bf66ca0025938b9c91
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: lukka/get-cmake@latest
+
+      # Restore from cache the previously built ports. If cache-miss, download, build vcpkg ports.
+      - name: Restore vcpkg ports from cache or install vcpkg
+        # Download and build vcpkg, without installing any port. If content is cached already, it is a no-op.
+        uses: lukka/run-vcpkg@v5
+        id: runvcpkg
+        with:
+          vcpkgArguments: "libiconv"
+          vcpkgGitCommitId: "${{ env.VCPKG_GIT_REF }}"
+          vcpkgTriplet: "x64-windows"
+
+      - name: Print the VCPKG_ROOT & VCPKG_TRIPLET (for debugging)
+        shell: bash
+        run: echo "'${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}' '${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_TRIPLET_OUT }}' "
+
+      - name: dir the VCPKG_ROOT
+        run: dir ${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}
+
+      - name: Create Build Directory
+        shell: bash
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: cmake -E make_directory ${{runner.workspace}}/cabextract-build
+
+      - name: Run CMake+Ninja with triplet (cmd)
+        uses: lukka/run-cmake@main
+        id: runcmake_cmd
+        with:
+          cmakeGenerator: "Ninja" # Visual Studio 15 2017
+          cmakeListsOrSettingsJson: "CMakeListsTxtBasic"
+          cmakeListsTxtPath: "${{runner.workspace}}/libmspack/cabextract/CMakeLists.txt"
+          useVcpkgToolchainFile: true
+          cmakeAppendedArgs: '-A x64 -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" -- -v'
+          cmakeBuildType: "${{ env.BUILD_TYPE }}"
+          vcpkgTriplet: ${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_TRIPLET_OUT }}
+          buildDirectory: "${{runner.workspace}}/cabextract-build"
+
+      - name: Test
+        working-directory: ${{runner.workspace}}/cabextract-build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest -C ${{ env.BUILD_TYPE }} -V
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Create Build Directory
+        shell: bash
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: cmake -E make_directory ${{runner.workspace}}/cabextract-build
+
+      - name: Configure CMake
+        # Use a bash shell so we can use the same syntax for environment variable
+        # access regardless of the host operating system
+        working-directory: ${{runner.workspace}}/cabextract-build
+        # Note the current convention is to use the -S and -B options here to specify source
+        # and build directories, but this is only available with CMake 3.13 and higher.
+        # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+        run:
+          cmake ${{runner.workspace}}/libmspack/libmspack -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        shell: bash
+        working-directory: ${{runner.workspace}}/cabextract-build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: cmake --build . --config ${{ env.BUILD_TYPE }}
+
+      - name: Test
+        shell: bash
+        working-directory: ${{runner.workspace}}/cabextract-build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest -C ${{ env.BUILD_TYPE }} -V
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Create Build Directory
+        shell: bash
+        # Some projects don't allow in-source building, so create a separate build directory
+        # We'll use this as our working directory for all subsequent commands
+        run: cmake -E make_directory ${{runner.workspace}}/cabextract-build
+
+      - name: Configure CMake
+        # Use a bash shell so we can use the same syntax for environment variable
+        # access regardless of the host operating system
+        working-directory: ${{runner.workspace}}/cabextract-build
+        # Note the current convention is to use the -S and -B options here to specify source
+        # and build directories, but this is only available with CMake 3.13 and higher.
+        # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+        run:
+          cmake ${{runner.workspace}}/libmspack/libmspack -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build
+        shell: bash
+        working-directory: ${{runner.workspace}}/cabextract-build
+        # Execute the build.  You can specify a specific target with "--target <NAME>"
+        run: cmake --build . --config ${{ env.BUILD_TYPE }}
+
+      - name: Test
+        shell: bash
+        working-directory: ${{runner.workspace}}/cabextract-build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest -C ${{ env.BUILD_TYPE }} -V
