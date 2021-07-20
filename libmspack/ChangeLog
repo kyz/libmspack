@@ -1,3 +1,8 @@
+2021-07-20  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* lzxd_decompress(): simplified the code that decodes match_offset.
+	Thanks to Jasper St. Pierre for prompting me to look at it.
+
 2020-12-30  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd_read_string(): libmspack no longer rejects CAB files with

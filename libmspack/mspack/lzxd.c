@@ -576,37 +576,19 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
             case 1: match_offset = R1; R1=R0; R0 = match_offset; break;
             case 2: match_offset = R2; R2=R0; R0 = match_offset; break;
             default:
-              if (lzx->block_type == LZX_BLOCKTYPE_VERBATIM) {
-                if (match_offset == 3) {
-                  match_offset = 1;
+              extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
+              match_offset = position_base[match_offset] - 2;
+              if (extra >= 3 && lzx->block_type == LZX_BLOCKTYPE_ALIGNED) {
+                if (extra > 3) {
+                  READ_BITS(verbatim_bits, extra - 3); /* 1-14 bits */
+                  match_offset += verbatim_bits << 3;
                 }
-                else {
-                  extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
-                  READ_BITS(verbatim_bits, extra);
-                  match_offset = position_base[match_offset] - 2 + verbatim_bits;
-                }
+                READ_HUFFSYM(ALIGNED, aligned_bits);
+                match_offset += aligned_bits;
               }
-              else { /* LZX_BLOCKTYPE_ALIGNED */
-                extra = (match_offset >= 36) ? 17 : extra_bits[match_offset];
-                match_offset = position_base[match_offset] - 2;
-                if (extra > 3) { /* >3: verbatim and aligned bits */
-                  extra -= 3;
-                  READ_BITS(verbatim_bits, extra);
-                  match_offset += (verbatim_bits << 3);
-                  READ_HUFFSYM(ALIGNED, aligned_bits);
-                  match_offset += aligned_bits;
-                }
-                else if (extra == 3) { /* 3: aligned bits only */
-                  READ_HUFFSYM(ALIGNED, aligned_bits);
-                  match_offset += aligned_bits;
-                }
-                else if (extra > 0) { /* 1-2: verbatim bits only */
-                  READ_BITS(verbatim_bits, extra);
-                  match_offset += verbatim_bits;
-                }
-                else { /* 0: not defined in LZX specification! */
-                  match_offset = 1;
-                }
+              else if (extra) {
+                READ_BITS(verbatim_bits, extra); /* 1-17 bits */
+                match_offset += verbatim_bits;
               }
               /* update repeated offset LRU queue */
               R2 = R1; R1 = R0; R0 = match_offset;
