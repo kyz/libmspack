@@ -1035,11 +1035,11 @@ static int chmd_sys_write(struct mspack_file *file, void *buffer, int bytes) {
 static int chmd_init_decomp(struct mschm_decompressor_p *self,
                             struct mschmd_file *file)
 {
-  int window_size, window_bits, reset_interval, entry, err;
+  int window_size = 0, window_bits = 0, reset_interval = 0, entry = 0, err = 0;
   struct mspack_system *sys = self->system;
-  struct mschmd_sec_mscompressed *sec;
-  unsigned char *data;
-  off_t length, offset;
+  struct mschmd_sec_mscompressed *sec = NULL;
+  unsigned char *data = NULL;
+  off_t length = 0, offset = 0;
 
   sec = (struct mschmd_sec_mscompressed *) file->section;
 
