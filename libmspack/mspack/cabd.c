@@ -1400,7 +1400,11 @@ static unsigned int cabd_checksum(unsigned char *data, unsigned int bytes,
   unsigned int len, ul = 0;
 
   for (len = bytes >> 2; len--; data += 4) {
-    cksum ^= ((data[0]) | (data[1]<<8) | (data[2]<<16) | (data[3]<<24));
+    unsigned int byte0 = data[0];
+    unsigned int byte1 = ((unsigned int)data[1]) << 8;
+    unsigned int byte2 = ((unsigned int)data[2]) << 16;
+    unsigned int byte3 = ((unsigned int)data[3]) << 24;
+    cksum ^= (byte0 | byte1 | byte2 | byte3);
   }
 
   switch (bytes & 3) {
