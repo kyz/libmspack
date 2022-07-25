@@ -1,0 +1,15 @@
+# Features that can be enabled for cmake (see CMakeLists.txt)
+
+option(ENABLE_WERROR     "Turn on compile time warnings as errors")
+
+option(ENABLE_DEBUG      "Turn on debug output")
+
+option(ENABLE_DOCS       "Generate documentation"
+    ${ENABLE_DOCS_DEFAULT})
+
+option(ENABLE_EXAMPLES   "Build examples"
+    ${ENABLE_EXAMPLES_DEFAULT})
+
+option(ENABLE_STATIC_LIB "Build libmspack in static mode also")
+
+option(ENABLE_SHARED_LIB "Build libmspack as a shared library" ON)

@@ -6,16 +6,16 @@
  * - extracting files from two chms at the same time with one decompressor
  */
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mspack.h>
+#include "mspack.h"
 
-#include <md5_fh.h>
-#include <error.h>
+#include "error.h"
+#include "md5_fh.h"
 
 struct my_file {
     struct mschmd_file *file;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
                             f[i].file = file;
                             if (chmd->extract(chmd, file, NULL)) {
                                 fprintf(stderr, "%s: O extract error on \"%s\": %s\n",
-                                        *argv, file->filename, ERROR(chmd));
+                                        *argv, file->filename, MSPACK_ERROR(chmd));
                                 continue;
                             }
                             memcpy(&f[i].ordered[0], md5_string, 32);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
                             printf("SX %s\n", f[i].file->filename);
                             if (chmd->extract(chmd, f[i].file, NULL)) {
                                 fprintf(stderr, "%s: S extract error on \"%s\": %s\n",
-                                        *argv, f[i].file->filename, ERROR(chmd));
+                                        *argv, f[i].file->filename, MSPACK_ERROR(chmd));
                                 continue;
                             }
                             memcpy(&f[i].sorted[0], md5_string, 32);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
                                 &f[i].result, sizeof(struct mschmd_file)))
                             {
                                 fprintf(stderr, "%s: find error on \"%s\": %s\n",
-                                        *argv, f[i].file->filename, ERROR(chmd));
+                                        *argv, f[i].file->filename, MSPACK_ERROR(chmd));
                                 continue;
                             }
                             if (!f[i].result.section) {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
                             }
                             if (chmd->extract(chmd, &f[i].result, NULL)) {
                                 fprintf(stderr, "%s: F extract error on \"%s\": %s\n",
-                                        *argv, f[i].file->filename, ERROR(chmd));
+                                        *argv, f[i].file->filename, MSPACK_ERROR(chmd));
                                 continue;
                             }
                             memcpy(&f[i].fast_find[0], md5_string, 32);
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
                             chmd->extract(chmd, f[i].file, NULL);
                             if (chmd->extract(chmd, &f[i].result, NULL)) {
                                 fprintf(stderr, "%s: M extract error on \"%s\": %s\n",
-                                        *argv, f[i].file->filename, ERROR(chmd));
+                                        *argv, f[i].file->filename, MSPACK_ERROR(chmd));
                                 continue;
                             }
                             memcpy(&f[i].mixed[0], md5_string, 32);
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
                 chmd->close(chmd, chm);
             }
             else {
-                printf("%s: can't open -- %s\n", *argv, ERROR(chmd));
+                printf("%s: can't open -- %s\n", *argv, MSPACK_ERROR(chmd));
             }
         }
         mspack_destroy_chm_decompressor(chmd);

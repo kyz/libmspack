@@ -1,14 +1,14 @@
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mspack.h>
+#include "mspack.h"
 #include <sys/stat.h>
 
-#include <error.h>
+#include "error.h"
 
 #if HAVE_MKDIR
 # if MKDIR_TAKES_ONE_ARG
@@ -20,6 +20,10 @@
 # else
 #  error "Don't know how to create a directory on this system."
 # endif
+#endif
+
+#if !defined(S_ISDIR)
+# define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
 
 mode_t user_umask;
@@ -103,7 +107,7 @@ int main(int argc, char *argv[]) {
             ensure_filepath(outname);
             if (chmd->extract(chmd, f[i], outname)) {
               printf("%s: extract error on \"%s\": %s\n",
-                     *argv, f[i]->filename, ERROR(chmd));
+                     *argv, f[i]->filename, MSPACK_ERROR(chmd));
             }
             free(outname);
           }
@@ -112,7 +116,7 @@ int main(int argc, char *argv[]) {
         chmd->close(chmd, chm);
       }
       else {
-        printf("%s: can't open -- %s\n", *argv, ERROR(chmd));
+        printf("%s: can't open -- %s\n", *argv, MSPACK_ERROR(chmd));
       }
     }
     mspack_destroy_chm_decompressor(chmd);

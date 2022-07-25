@@ -5,7 +5,7 @@
  * probably the most obvious. The code is not multithreadable.
  */
 
-#include <md5.h>
+#include "md5.h"
 #include <stdio.h>
 #include <stdarg.h>
 
