@@ -1,3 +1,9 @@
+2023-01-02  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* kwajd_extract(): KWAJ compression method #2 is the QBasic variant
+	of the SZDD compression algorithm. Thanks to Jason Summers for finding
+	this and providing examples.
+
 2021-07-20  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* lzxd_decompress(): simplified the code that decodes match_offset.

@@ -301,7 +301,7 @@ static int kwajd_extract(struct mskwaj_decompressor *base,
     }
     else if (hdr->comp_type == MSKWAJ_COMP_SZDD) {
         self->error = lzss_decompress(sys, fh, outfh, KWAJ_INPUT_SIZE,
-                                      LZSS_MODE_EXPAND);
+                                      LZSS_MODE_QBASIC);
     }
     else if (hdr->comp_type == MSKWAJ_COMP_LZH) {
         struct kwajd_stream *lzh = lzh_init(sys, fh, outfh);
