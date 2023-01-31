@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2018 Stuart Caie.
+ * (C) 2003-2023 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -58,6 +58,8 @@ static int chmd_error(
 static int read_off64(
   off_t *var, unsigned char *mem, struct mspack_system *sys,
   struct mspack_file *fh);
+static off_t read_encint(
+  const unsigned char **p, const unsigned char *end, int *err);
 
 /* filenames of the system files used for decompression.
  * Content and ControlData are essential.
@@ -249,24 +251,15 @@ static const unsigned char guids[32] = {
   0x9E, 0x0C, 0x00, 0xA0, 0xC9, 0x22, 0xE6, 0xEC
 };
 
-/* reads an encoded integer into a variable; 7 bits of data per byte,
- * the high bit is used to indicate that there is another byte */
-#define READ_ENCINT(var) do {                   \
-    (var) = 0;                                  \
-    do {                                        \
-        if (p >= end) goto chunk_end;           \
-        (var) = ((var) << 7) | (*p & 0x7F);     \
-    } while (*p++ & 0x80);                      \
-} while (0)
-
 static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
                              struct mschmd_header *chm, int entire)
 {
   unsigned int section, name_len, x, errors, num_chunks;
-  unsigned char buf[0x54], *chunk = NULL, *name, *p, *end;
+  unsigned char buf[0x54], *chunk = NULL;
+  const unsigned char *name, *p, *end;
   struct mschmd_file *fi, *link = NULL;
   off_t offset, length;
-  int num_entries;
+  int num_entries, err = 0;
 
   /* initialise pointers */
   chm->files         = NULL;
@@ -449,12 +442,13 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     num_entries = EndGetI16(end);
 
     while (num_entries--) {
-      READ_ENCINT(name_len);
-      if (name_len > (unsigned int) (end - p)) goto chunk_end;
+      name_len = read_encint(&p, end, &err);
+      if (err || (name_len > (unsigned int) (end - p))) goto encint_err;
       name = p; p += name_len;
-      READ_ENCINT(section);
-      READ_ENCINT(offset);
-      READ_ENCINT(length);
+      section = read_encint(&p, end, &err);
+      offset = read_encint(&p, end, &err);
+      length = read_encint(&p, end, &err);
+      if (err) goto encint_err;
 
       /* ignore blank or one-char (e.g. "/") filenames we'd return as blank */
       if (name_len < 2 || !name[0] || !name[1]) continue;
@@ -482,7 +476,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
                                      : (struct mschmd_section *) (&chm->sec1));
       fi->offset   = offset;
       fi->length   = length;
-      sys->copy(name, fi->filename, (size_t) name_len);
+      sys->copy((unsigned char *) name, fi->filename, (size_t) name_len);
       fi->filename[name_len] = '\0';
 
       if (name[0] == ':' && name[1] == ':') {
@@ -510,10 +504,10 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     }
 
     /* this is reached either when num_entries runs out, or if
-     * reading data from the chunk reached a premature end of chunk */
-  chunk_end:
+     * an ENCINT is badly encoded */
+  encint_err:
     if (num_entries >= 0) {
-      D(("chunk ended before all entries could be read"))
+      D(("bad encint before all entries could be read"))
       errors++;
     }
 
@@ -572,7 +566,10 @@ static int chmd_fast_find(struct mschm_decompressor *base,
             }
 
             /* found result. loop around for next chunk if this is PMGI */
-            if (chunk[3] == 0x4C) break; else READ_ENCINT(n);
+            if (chunk[3] == 0x4C) break;
+
+            n = read_encint(&p, end, &err);
+            if (err) goto encint_err;
         }
     }
     else {
@@ -599,11 +596,12 @@ static int chmd_fast_find(struct mschm_decompressor *base,
 
     /* if we found a file, read it */
     if (result > 0) {
-        READ_ENCINT(sec);
+        sec = read_encint(&p, end, &err);
         f_ptr->section  = (sec == 0) ? (struct mschmd_section *) &chm->sec0
                                      : (struct mschmd_section *) &chm->sec1;
-        READ_ENCINT(f_ptr->offset);
-        READ_ENCINT(f_ptr->length);
+        f_ptr->offset = read_encint(&p, end, &err);
+        f_ptr->length = read_encint(&p, end, &err);
+        if (err) goto encint_err;
     }
     else if (result < 0) {
         err = MSPACK_ERR_DATAFORMAT;
@@ -612,8 +610,8 @@ static int chmd_fast_find(struct mschm_decompressor *base,
     sys->close(fh);
     return self->error = err;
 
- chunk_end:
-    D(("read beyond end of chunk entries"))
+ encint_err:
+    D(("bad encint in PGMI/PGML chunk"))
     sys->close(fh);
     return self->error = MSPACK_ERR_DATAFORMAT;
 }
@@ -697,7 +695,7 @@ static int search_chunk(struct mschmd_header *chm,
     const unsigned char *start, *end, *p;
     unsigned int qr_size, num_entries, qr_entries, qr_density, name_len;
     unsigned int L, R, M, fname_len, entries_off, is_pmgl;
-    int cmp;
+    int cmp, err = 0;
 
     fname_len = strlen(filename);
 
@@ -755,8 +753,8 @@ static int search_chunk(struct mschmd_header *chm,
 
             /* compare filename with entry QR points to */
             p = &chunk[entries_off + (M ? EndGetI16(start - (M << 1)) : 0)];
-            READ_ENCINT(name_len);
-            if (name_len > (unsigned int) (end - p)) goto chunk_end;
+            name_len = read_encint(&p, end, &err);
+            if (err || (name_len > (unsigned int) (end - p))) goto encint_err;
             cmp = compare(filename, (char *)p, fname_len, name_len);
 
             if (cmp == 0) break;
@@ -792,8 +790,8 @@ static int search_chunk(struct mschmd_header *chm,
      */
     *result = NULL;
     while (num_entries-- > 0) {
-        READ_ENCINT(name_len);
-        if (name_len > (unsigned int) (end - p)) goto chunk_end;
+        name_len = read_encint(&p, end, &err);
+        if (err || (name_len > (unsigned int) (end - p))) goto encint_err;
         cmp = compare(filename, (char *)p, fname_len, name_len);
         p += name_len;
 
@@ -810,21 +808,21 @@ static int search_chunk(struct mschmd_header *chm,
 
         /* read and ignore the rest of this entry */
         if (is_pmgl) {
-            READ_ENCINT(R); /* skip section */
-            READ_ENCINT(R); /* skip offset */
-            READ_ENCINT(R); /* skip length */
+            while (p < end && (*p++ & 0x80)); /* skip section ENCINT */
+            while (p < end && (*p++ & 0x80)); /* skip offset ENCINT */
+            while (p < end && (*p++ & 0x80)); /* skip length ENCINT */
         }
         else {
             *result = p; /* store potential final result */
-            READ_ENCINT(R); /* skip chunk number */
+            while (p < end && (*p++ & 0x80)); /* skip chunk number ENCINT */
         }
     }
 
      /* PMGL? not found. PMGI? maybe found */
      return (is_pmgl) ? 0 : (*result ? 1 : 0);
 
- chunk_end:
-    D(("reached end of chunk data while searching"))
+ encint_err:
+    D(("bad encint while searching"))
     return -1;
 }
 
@@ -1378,11 +1376,48 @@ static int read_off64(off_t *var, unsigned char *mem,
 #if SIZEOF_OFF_T >= 8
     *var = EndGetI64(mem);
 #else
-    *var = EndGetI32(mem);
-    if ((*var & 0x80000000) || EndGetI32(mem+4)) {
+    if ((mem[3] & 0x80) | mem[4] | mem[5] | mem[6] | mem[7]) {
         sys->message(fh, "library not compiled to support large files.");
         return 1;
     }
+    *var = EndGetI32(mem);
 #endif
     return 0;
+}
+
+#if SIZEOF_OFF_T >= 8
+  /* 63 bits allowed: 9 * 7 bits/byte, last byte must be 0x00-0x7F */
+# define ENCINT_MAX_BYTES 9
+# define ENCINT_BAD_LAST_BYTE 0x80
+#else
+  /* 31 bits allowed: 5 * 7 bits/byte, last byte must be 0x00-0x07 */
+# define ENCINT_MAX_BYTES 5
+# define ENCINT_BAD_LAST_BYTE 0xF1
+#endif
+
+/***************************************
+ * READ_ENCINT
+ ***************************************
+ * Reads an ENCINT from memory. If running on a system with a 32-bit off_t,
+ * ENCINTs up to 0x7FFFFFFF are accepted, values beyond that are an error.
+ */
+static off_t read_encint(const unsigned char **p, const unsigned char *end,
+                         int *err)
+{
+    off_t result = 0;
+    unsigned char c = 0x80;
+    int i = 0;
+    while ((c & 0x80) && (i++ < ENCINT_MAX_BYTES)) {
+        if (*p >= end) {
+            *err = 1;
+            return 0;
+        }
+        c = *(*p)++;
+        result = (result << 7) | (c & 0x7F);
+    }
+    if (i == ENCINT_MAX_BYTES && (c & ENCINT_BAD_LAST_BYTE)) {
+        *err = 1;
+        return 0;
+    }
+    return result;
 }

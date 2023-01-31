@@ -53,12 +53,12 @@ char *guid(unsigned char *data) {
   return result;
 }
 
-#define READ_ENCINT(var, label) do {                    \
-    (var) = 0;                                          \
-    do {                                                \
-        if (p > &chunk[chm->chunk_size-2]) goto label;  \
-        (var) = ((var) << 7) | (*p & 0x7F);             \
-    } while (*p++ & 0x80);                              \
+#define READ_ENCINT(var, label) do {        \
+    (var) = 0;                              \
+    do {                                    \
+        if (p > pend) goto label;           \
+        (var) = ((var) << 7) | (*p & 0x7F); \
+    } while (*p++ & 0x80);                  \
 } while (0)
 
 void print_dir(struct mschmd_header *chm, char *filename) {
@@ -96,7 +96,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
 
     for (i = 0; i < chm->num_chunks; i++) {
       unsigned int num_entries, quickref_size, j, k;
-      unsigned char *p, *name;
+      unsigned char *p, *pend, *name;
       printf("  CHUNK %u:\n", i);
       fread(chunk, chm->chunk_size, 1, fh);
 
@@ -126,14 +126,18 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         }
 
         p = &chunk[20];
+        pend = &chunk[chm->chunk_size-2];
         for (j = 0; j < num_entries; j++) {
-          unsigned int name_len = 0, section = 0, offset = 0, length = 0;
+          off_t name_len = 0, section = 0, offset = 0, length = 0;
           printf("    %4d: ", (int) (p - &chunk[0]));
-          READ_ENCINT(name_len, PMGL_end); name = p; p += name_len;
+          READ_ENCINT(name_len, PMGL_end);
+          if (name_len < 0 || name_len > (pend - p)) goto PMGL_end;
+          name = p; p += name_len;
           READ_ENCINT(section, PMGL_end);
           READ_ENCINT(offset, PMGL_end);
           READ_ENCINT(length, PMGL_end);
-          printf("sec=%u off=%-10u len=%-10u name=\"",section,offset,length);
+          printf("sec=%" LD " off=%-9" LD " len=%-9" LD " name=\"",
+                 section, offset, length);
           if (name_len) fwrite(name, 1, name_len, stdout);
           printf("\"\n");
         }
@@ -159,12 +163,15 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         }
 
         p = &chunk[8];
+        pend = &chunk[chm->chunk_size-2];
         for (j = 0; j < num_entries; j++) {
-          unsigned int name_len, section;
+          off_t name_len, section;
           printf("    %4d: ", (int) (p - &chunk[0]));
-          READ_ENCINT(name_len, PMGI_end); name = p; p += name_len;
+          READ_ENCINT(name_len, PMGI_end);
+          if (name_len < 0 || name_len > (pend - p)) goto PMGI_end;
+          name = p; p += name_len;
           READ_ENCINT(section, PMGI_end);
-          printf("chunk=%-4u name=\"",section);
+          printf("chunk=%-4" LD " name=\"",section);
           if (name_len) fwrite(name, 1, name_len, stdout);
           printf("\"\n");
         }

@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 use Encode qw(encode);
+use bigint;
 
 my $clen  = 4096; # standard chunk length
 my $max_entries = $clen - 22; # max free space for entries in one chunk
@@ -16,6 +17,7 @@ sub guid($) {
 }
 
 sub encint($) {
+my $orig = $_[0];
   my ($in, $out) = ($_[0] >> 7, u1($_[0] & 0x7F));
   while ($in) {
      $out = u1(0x80 | ($in & 0x7F)) . $out;
@@ -118,8 +120,8 @@ sub chm {
     substr($hdr, 0x50, 8, u8(length($hs1))); # hs1 length
     substr($hs0, 0x08, 8, u8(length($hdr) + length($hs0) + length($hs1) + ($clen * @chunks))); # chm length
     for (my $i = 1; $i <= $#chunks; $i++) {
-	substr($chunks[$i],     0x0C, 4, u4($i - 1)); # previous chunk
-	substr($chunks[$i - 1], 0x10, 4, u4($i));     # next chunk
+        substr($chunks[$i],     0x0C, 4, u4($i - 1)); # previous chunk
+        substr($chunks[$i - 1], 0x10, 4, u4($i));     # next chunk
     }
     return join '', $hdr, $hs0, $hs1, @chunks;
 }
@@ -145,13 +147,60 @@ sub chm_sysname_overread {
 # Create a CHM with entries containing unicode character U+100
 sub chm_unicode_u100 {
     if (open my $fh, '>', 'cve-2018-14682-unicode-u100.chm') {
-	my $u100 = encode('UTF-8', chr(256));
-	my $entry1 = entry("1", 0, 1, 1);
-	my $entry2 = entry($u100, 0, 2, 2);
+        my $u100 = encode('UTF-8', chr(256));
+        my $entry1 = entry("${u100}1", 0, 1, 1);
+        my $entry2 = entry("${u100}2", 0, 2, 2);
         print $fh chm(chunk($entry1, $entry2));
+        close $fh;
+    }
+}
+
+# Create a CHM with ENCINTs that go beyond what 32-bit architectures can handle
+sub chm_encints_32bit {
+    chm_encints('encints-32bit-offsets.chm', 2147483647, 1, 0);
+    chm_encints('encints-32bit-lengths.chm', 2147483647, 0, 1);
+    chm_encints('encints-32bit-both.chm',    2147483647, 1, 1);
+}
+
+# Create a CHM with ENCINTs that go beyond what 64-bit architectures can handle
+sub chm_encints_64bit {
+    chm_encints('encints-64bit-offsets.chm', 9223372036854775807, 1, 0);
+    chm_encints('encints-64bit-lengths.chm', 9223372036854775807, 0, 1);
+    chm_encints('encints-64bit-both.chm',    9223372036854775807, 1, 1);
+}
+
+sub chm_encints {
+    my ($fname, $max_good, $off_val, $len_val) = @_;
+    my @vals = (
+        127, 128, # 1->2 byte encoding
+        16383, 16384, # 2->3 byte encoding
+        2097151, 2097152, # 3->4 byte encoding
+        268435455, 268435456, # 4->5 byte encoding
+        2147483647, 2147483648, # 2^31-1, 2^31 (doesn't fit in 32-bit off_t)
+        34359738367, 34359738368, # 5->6 byte encoding
+        4398046511103, 4398046511104, # 6->7 byte encoding
+        562949953421311, 562949953421312, # 7->8 byte encoding
+        72057594037927935, 72057594037927936, # 8->9 byte encoding
+        9223372036854775807, 9223372036854775808, # 2^63-1, 2^63 (doesn't fit in 64-bit off_t)
+        147573952589676412927, 147573952589676412928, # 9->10 byte encoding
+        1180591620717411303423, 1180591620717411303424, # 10->11 byte encoding
+        151115727451828646838271, 151115727451828646838272, # 11->12 byte encoding
+        19342813113834066795298815, 19342813113834066795298816); # 12->13 byte encoding
+    my @entries;
+    my $i = 0;
+    for my $val (@vals) {
+        my $name = sprintf '%s%02i', $val <= $max_good ? 'good' : 'bad', $i++;
+        my $offset = $off_val ? $val : 1;
+        my $length = $len_val ? $val : 1;
+        push @entries, entry($name, 0, $offset, $length);
+    }
+    if (open my $fh, '>', $fname) {
+        print $fh chm(chunk(@entries));
         close $fh;
     }
 }
 
 chm_sysname_overread();
 chm_unicode_u100();
+chm_encints_32bit();
+chm_encints_64bit();

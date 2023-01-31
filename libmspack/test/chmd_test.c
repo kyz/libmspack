@@ -62,6 +62,36 @@ void chmd_open_test_02() {
     mspack_destroy_chm_decompressor(chmd);
 }
 
+/* check that files with a mix of normal and over-long ENCINTs for offsets
+ * and lengths can be opened and all offsets/lengths are non-negative */
+void chmd_open_test_03() {
+    struct mschm_decompressor *chmd;
+    struct mschmd_header *chm;
+    struct mschmd_file *f;
+    unsigned int i;
+    const char *files[] = {
+#if SIZEOF_OFF_T >= 8
+        TESTFILE("encints-64bit-offsets.chm"),
+        TESTFILE("encints-64bit-lengths.chm"),
+        TESTFILE("encints-64bit-both.chm"),
+#else
+        TESTFILE("encints-32bit-offsets.chm"),
+        TESTFILE("encints-32bit-lengths.chm"),
+        TESTFILE("encints-32bit-both.chm"),
+#endif
+    };
+
+    TEST(chmd = mspack_create_chm_decompressor(NULL));
+    for (i = 0; i < (sizeof(files)/sizeof(char *)); i++) {
+        TEST(chm = chmd->open(chmd, files[i]));
+        for (f = chm->files; f; f = f->next) {
+            TEST(f->offset >= 0);
+            TEST(f->length >= 0);
+        }
+        chmd->close(chmd, chm);
+    }
+    mspack_destroy_chm_decompressor(chmd);
+}
 
 /* check searching bad files doesn't crash */
 void chmd_search_test_01() {
@@ -134,6 +164,7 @@ int main() {
 
   chmd_open_test_01();
   chmd_open_test_02();
+  chmd_open_test_03();
   chmd_search_test_01();
   chmd_extract_test_01();
 

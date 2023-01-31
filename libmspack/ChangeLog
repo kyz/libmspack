@@ -1,3 +1,20 @@
+2023-01-31  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* chmd.c: replace READ_ENCINT() macro with stricter read_encint()
+	function that reads no more than 63 or 31 bits so ENCINTs can never
+	be negative.
+
+	I'd prefer to use unsigned types, but off_t is used for file offsets
+	and lengths to match the environment's file I/O, so changing it is
+	tricky and would change the current public API.
+
+	Additionally, UBSan complains about shifting a 1 into a signed
+	type's MSB. https://www.cs.utah.edu/~regehr/papers/tosem15.pdf
+	notes that this is legal in ANSI C and "fairly benign (and well-
+	defined until C99)", but C99 made it undefined for no good reason.
+	I don't agree with this, but I don't want someone else using a C99
+	compiler to end up miscompiling the code.
+
 2023-01-02  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* kwajd_extract(): KWAJ compression method #2 is the QBasic variant
