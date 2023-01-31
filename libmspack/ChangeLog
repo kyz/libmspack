@@ -15,6 +15,22 @@
 	I don't agree with this, but I don't want someone else using a C99
 	compiler to end up miscompiling the code.
 
+	* chmd_read_headers(): the CHM's internally declared file length is
+	compared against its actual file length and a warning is printed if
+	they don't match.
+
+	* chmd_extract(): files in the uncompressed section will print a
+	warning if their declared length goes beyond the declared end of the
+	CHM file. This may not match the actual CHM file length. You will
+	still get seek or read errors if a file's offset or length go beyond
+	the actual CHM file length.
+
+	Files in the compressed section will now cause a decrunch error if
+	their declared offset goes beyond the uncompressed length of the
+	section. If their offset is OK but their declared length goes beyond
+	the end, they will print a warning and then decompress as much as
+	possible before causing an error.
+
 2023-01-02  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* kwajd_extract(): KWAJ compression method #2 is the QBasic variant

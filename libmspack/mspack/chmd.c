@@ -254,11 +254,11 @@ static const unsigned char guids[32] = {
 static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
                              struct mschmd_header *chm, int entire)
 {
-  unsigned int section, name_len, x, errors, num_chunks;
+  unsigned int errors, num_chunks;
   unsigned char buf[0x54], *chunk = NULL;
   const unsigned char *name, *p, *end;
   struct mschmd_file *fi, *link = NULL;
-  off_t offset, length;
+  off_t offset_hs0, filelen;
   int num_entries, err = 0;
 
   /* initialise pointers */
@@ -305,7 +305,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   /* chmhst3_OffsetCS0 does not exist in version 1 or 2 CHM files.
    * The offset will be corrected later, once HS1 is read.
    */
-  if (read_off64(&offset,           &buf[chmhst_OffsetHS0],  sys, fh) ||
+  if (read_off64(&offset_hs0,       &buf[chmhst_OffsetHS0],  sys, fh) ||
       read_off64(&chm->dir_offset,  &buf[chmhst_OffsetHS1],  sys, fh) ||
       read_off64(&chm->sec0.offset, &buf[chmhst3_OffsetCS0], sys, fh))
   {
@@ -313,7 +313,7 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   }
 
   /* seek to header section 0 */
-  if (sys->seek(fh, offset, MSPACK_SYS_SEEK_START)) {
+  if (sys->seek(fh, offset_hs0, MSPACK_SYS_SEEK_START)) {
     return MSPACK_ERR_SEEK;
   }
 
@@ -323,6 +323,18 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   }
   if (read_off64(&chm->length, &buf[chmhs0_FileLen], sys, fh)) {
     return MSPACK_ERR_DATAFORMAT;
+  }
+
+  /* compare declared CHM file size against actual size */
+  if (!mspack_sys_filelen(sys, fh, &filelen)) {
+    if (chm->length > filelen) {
+      sys->message(fh, "WARNING; file possibly truncated by %" LD " bytes",
+                   chm->length - filelen);
+    }
+    else if (chm->length < filelen) {
+      sys->message(fh, "WARNING; possible %" LD " extra bytes at end of file",
+                   filelen - chm->length);
+    }
   }
 
   /* seek to header section 1 */
@@ -405,12 +417,13 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
   }
 
   /* seek to the first PMGL chunk, and reduce the number of chunks to read */
-  if ((x = chm->first_pmgl) != 0) {
-    if (sys->seek(fh,(off_t) (x * chm->chunk_size), MSPACK_SYS_SEEK_CUR)) {
+  if (chm->first_pmgl != 0) {
+    off_t pmgl_offset = (off_t) chm->first_pmgl * (off_t) chm->chunk_size;
+    if (sys->seek(fh, pmgl_offset, MSPACK_SYS_SEEK_CUR)) {
       return MSPACK_ERR_SEEK;
     }
   }
-  num_chunks = chm->last_pmgl - x + 1;
+  num_chunks = chm->last_pmgl - chm->first_pmgl + 1;
 
   if (!(chunk = (unsigned char *) sys->alloc(sys, (size_t)chm->chunk_size))) {
     return MSPACK_ERR_NOMEMORY;
@@ -442,6 +455,8 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
     num_entries = EndGetI16(end);
 
     while (num_entries--) {
+      unsigned int name_len, section;
+      off_t offset, length;
       name_len = read_encint(&p, end, &err);
       if (err || (name_len > (unsigned int) (end - p))) goto encint_err;
       name = p; p += name_len;
@@ -936,14 +951,19 @@ static int chmd_extract(struct mschm_decompressor *base,
   switch (file->section->id) {
   case 0: /* Uncompressed section file */
     /* simple seek + copy */
-    if (sys->seek(self->d->infh, file->section->chm->sec0.offset
-                  + file->offset, MSPACK_SYS_SEEK_START))
+    if (sys->seek(self->d->infh, chm->sec0.offset + file->offset,
+                  MSPACK_SYS_SEEK_START))
     {
       self->error = MSPACK_ERR_SEEK;
     }
     else {
       unsigned char buf[512];
       off_t length = file->length;
+      off_t maxlen = chm->length - sys->tell(self->d->infh);
+      if (length > maxlen) {
+        sys->message(fh, "WARNING; file is %" LD " bytes longer than CHM file",
+                     length - maxlen);
+      }
       while (length > 0) {
         int run = sizeof(buf);
         if ((off_t)run > length) run = (int)length;
@@ -961,7 +981,7 @@ static int chmd_extract(struct mschm_decompressor *base,
     break;
 
   case 1: /* MSCompressed section file */
-    /* (re)initialise compression state if we it is not yet initialised,
+    /* (re)initialise compression state if not yet initialised,
      * or we have advanced too far and have to backtrack
      */
     if (!self->d->state || (file->offset < self->d->offset)) {
@@ -970,6 +990,12 @@ static int chmd_extract(struct mschm_decompressor *base,
         self->d->state = NULL;
       }
       if (chmd_init_decomp(self, file)) break;
+    }
+
+    /* check file offset is not impossible */
+    if (file->offset > self->d->length) {
+        self->error = MSPACK_ERR_DECRUNCH;
+        break;
     }
 
     /* seek to input data */
@@ -986,8 +1012,15 @@ static int chmd_extract(struct mschm_decompressor *base,
 
     /* if getting to the correct offset was error free, unpack file */
     if (!self->error) {
+      off_t length = file->length;
+      off_t maxlen = self->d->length - file->offset;
+      if (length > maxlen) {
+        sys->message(fh, "WARNING; file is %" LD " bytes longer than "
+                     "compressed section", length - maxlen);
+        length = maxlen + 1; /* should decompress but still error out */
+      }
       self->d->outfh = fh;
-      self->error = lzxd_decompress(self->d->state, file->length);
+      self->error = lzxd_decompress(self->d->state, length);
     }
 
     /* save offset in input source stream, in case there is a section 0
@@ -1134,6 +1167,7 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
 
   /* set start offset and overall remaining stream length */
   self->d->offset = entry * LZX_FRAME_SIZE;
+  self->d->length = length;
   length -= self->d->offset;
 
   /* initialise LZX stream */
