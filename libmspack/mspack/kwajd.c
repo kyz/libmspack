@@ -97,27 +97,30 @@ static struct mskwajd_header *kwajd_open(struct mskwaj_decompressor *base,
     struct mskwajd_header *hdr;
     struct mspack_system *sys;
     struct mspack_file *fh;
+    int err;
 
     if (!self) return NULL;
     sys = self->system;
 
-    fh  = sys->open(sys, filename, MSPACK_SYS_OPEN_READ);
-    hdr = (struct mskwajd_header *) sys->alloc(sys, sizeof(struct mskwajd_header_p));
-    if (fh && hdr) {
-        ((struct mskwajd_header_p *) hdr)->fh = fh;
-        self->error = kwajd_read_headers(sys, fh, hdr);
-    }
-    else {
-        if (!fh)  self->error = MSPACK_ERR_OPEN;
-        if (!hdr) self->error = MSPACK_ERR_NOMEMORY;
-    }
-    
-    if (self->error) {
-        if (fh) sys->close(fh);
-        sys->free(hdr);
-        hdr = NULL;
+    fh = sys->open(sys, filename, MSPACK_SYS_OPEN_READ);
+    if (!fh) {
+        self->error = MSPACK_ERR_OPEN;
+        return NULL;
     }
 
+    hdr = (struct mskwajd_header *) sys->alloc(sys, sizeof(struct mskwajd_header_p));
+    if (!hdr) {
+        sys->close(fh);
+        self->error = MSPACK_ERR_NOMEMORY;
+        return NULL;
+    }
+
+    ((struct mskwajd_header_p *) hdr)->fh = fh;
+    if ((err = kwajd_read_headers(sys, fh, hdr))) {
+        kwajd_close(base, hdr);
+        self->error = err;
+        return NULL;
+    }
     return hdr;
 }
 
@@ -138,6 +141,8 @@ static void kwajd_close(struct mskwaj_decompressor *base,
     self->system->close(hdr_p->fh);
 
     /* free the memory associated */
+    self->system->free(hdr->filename);
+    self->system->free(hdr->extra);
     self->system->free(hdr);
 
     self->error = MSPACK_ERR_OK;
