@@ -99,6 +99,8 @@ void kwajd_open_test_01() {
     BAD(TESTFILE("f93.kwj"));
     BAD(TESTFILE("f94.kwj"));
 
+    BAD(TESTFILE("cve-2018-14681.kwj"));
+
 #undef GOOD
 #undef BAD
 

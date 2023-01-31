@@ -178,6 +178,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
 
     fclose(fh);
   }
+  free(chunk);
 }
 
 
@@ -252,7 +253,7 @@ int main(int argc, char *argv[]) {
           case 4:
             for (i = 0; i < numf && pos < len; i++, pos += 4) {
               unsigned int rtdata = EndGetI32(&data[pos]);
-              printf("    %-10u -> %-10u [ %" LU " %u ]\n",
+              printf("    %-10u -> %-10u [ %" LD " %u ]\n",
                      i * EndGetI32(&data[32]),
                      rtdata,
                      contents + rtdata,
