@@ -1125,8 +1125,8 @@ static int chmd_init_decomp(struct mschm_decompressor_p *self,
     entry = 0;
     offset = 0;
     err = read_spaninfo(self, sec, &length);
+    if (err) return self->error = err;
   }
-  if (err) return self->error = err;
 
   /* get offset of compressed data stream:
    * = offset of uncompressed section from start of file
@@ -1250,6 +1250,12 @@ static int read_spaninfo(struct mschm_decompressor_p *self,
         D(("SpanInfo file is wrong size"))
         return MSPACK_ERR_DATAFORMAT;
     }
+
+    /* unconditionally set length here, because gcc -Wuninitialized isn't
+     * clever enough to recognise that read_sys_file() will always set
+     * self->error to a non-zero value if it returns NULL, and gcc warnings
+     * spook humans (even false positives) */
+    *length_ptr = 0;
 
     /* read the SpanInfo file */
     if (!(data = read_sys_file(self, sec->spaninfo))) {
