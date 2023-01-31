@@ -6,7 +6,7 @@ bundled_mspack =        mspack/mspack.h \
                         mspack/lzx.h mspack/lzxd.c \
                         mspack/mszip.h mspack/mszipd.c \
                         mspack/qtm.h mspack/qtmd.c \
-                        mspack/readbits.h mspack/readhuff.h
+                        mspack/macros.h mspack/readbits.h mspack/readhuff.h
 
 TESTS =                 test/bugs.test test/case-ascii.test test/case-utf8.test \
                         test/dirwalk-vulns.test test/encoding.test \
