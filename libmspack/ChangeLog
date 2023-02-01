@@ -1,3 +1,9 @@
+2023-02-01  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* readbits.h, readhuff.h, cabd.c, kwajd.c, lzxd.c, mszipd.c, qtmd.c:
+	ensure bit operations (including intermediary ones) are considered
+	as unsigned int, so UBSan is happy.
+
 2023-01-31  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* chmd.c: replace READ_ENCINT() macro with stricter read_encint()

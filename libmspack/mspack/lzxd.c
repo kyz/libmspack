@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2013 Stuart Caie.
+ * (C) 2003-2023 Stuart Caie.
  *
  * The LZX method was created by Jonathan Forbes and Tomi Poutanen, adapted
  * by Microsoft Corporation.
@@ -138,12 +138,7 @@
 static int lzxd_read_lens(struct lzxd_stream *lzx, unsigned char *lens,
                           unsigned int first, unsigned int last)
 {
-  /* bit buffer and huffman symbol decode variables */
-  register unsigned int bit_buffer;
-  register int bits_left, i;
-  register unsigned short sym;
-  unsigned char *i_ptr, *i_end;
-
+  DECLARE_HUFF_VARS;
   unsigned int x, y;
   int z;
 
@@ -315,8 +310,8 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
   }
 
   /* allocate decompression window and input buffer */
-  lzx->window = (unsigned char *) system->alloc(system, (size_t) window_size);
-  lzx->inbuf  = (unsigned char *) system->alloc(system, (size_t) input_buffer_size);
+  lzx->window = (unsigned char *) system->alloc(system, window_size);
+  lzx->inbuf  = (unsigned char *) system->alloc(system, input_buffer_size);
   if (!lzx->window || !lzx->inbuf) {
     system->free(lzx->window);
     system->free(lzx->inbuf);
@@ -391,17 +386,10 @@ void lzxd_set_output_length(struct lzxd_stream *lzx, off_t out_bytes) {
 }
 
 int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
-  /* bitstream and huffman reading variables */
-  register unsigned int bit_buffer;
-  register int bits_left, i=0;
-  unsigned char *i_ptr, *i_end;
-  register unsigned short sym;
-
-  int match_length, length_footer, extra, verbatim_bits, bytes_todo;
-  int this_run, main_element, aligned_bits, j, warned = 0;
-  unsigned char *window, *runsrc, *rundest, buf[12];
-  unsigned int frame_size=0, end_frame, match_offset, window_posn;
-  unsigned int R0, R1, R2;
+  DECLARE_HUFF_VARS;
+  unsigned char *window, *runsrc, *rundest, buf[12], warned = 0;
+  unsigned int frame_size, end_frame, window_posn, R0, R1, R2;
+  int bytes_todo, this_run, i, j;
 
   /* easy answers */
   if (!lzx || (out_bytes < 0)) return MSPACK_ERR_ARGS;
@@ -523,9 +511,9 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
             READ_IF_NEEDED;
             *rundest++ = *i_ptr++;
           }
-          R0 = buf[0] | (buf[1] << 8) | (buf[2]  << 16) | (buf[3]  << 24);
-          R1 = buf[4] | (buf[5] << 8) | (buf[6]  << 16) | (buf[7]  << 24);
-          R2 = buf[8] | (buf[9] << 8) | (buf[10] << 16) | (buf[11] << 24);
+          R0 = EndGetI32(&buf[0]);
+          R1 = EndGetI32(&buf[4]);
+          R2 = EndGetI32(&buf[8]);
           break;
 
         default:
@@ -548,6 +536,9 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
       case LZX_BLOCKTYPE_ALIGNED:
       case LZX_BLOCKTYPE_VERBATIM:
         while (this_run > 0) {
+	  int main_element, length_footer, verbatim_bits, aligned_bits, extra;
+	  int match_length;
+	  unsigned int match_offset;
           READ_HUFFSYM(MAINTREE, main_element);
           if (main_element < LZX_NUM_CHARS) {
             /* literal: 0 to LZX_NUM_CHARS-1 */
@@ -629,7 +620,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
             i = match_length;
             /* does match offset wrap the window? */
             if (match_offset > window_posn) {
-              if (match_offset > lzx->offset &&
+	      if ((off_t)match_offset > lzx->offset &&
                   (match_offset - window_posn) > lzx->ref_data_size)
               {
                 D(("match offset beyond LZX stream"))
@@ -671,7 +662,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
           }
           else {
             if (i > this_run) i = this_run;
-            lzx->sys->copy(i_ptr, rundest, (size_t) i);
+            lzx->sys->copy(i_ptr, rundest, i);
             rundest  += i;
             i_ptr    += i;
             this_run -= i;
@@ -728,7 +719,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
       while (data < dataend) {
         if (*data++ != 0xE8) { curpos++; continue; }
-        abs_off = data[0] | (data[1]<<8) | (data[2]<<16) | (data[3]<<24);
+        abs_off = EndGetI32(data);
         if ((abs_off >= -curpos) && (abs_off < filesize)) {
           rel_off = (abs_off >= 0) ? abs_off - curpos : abs_off + filesize;
           data[0] = (unsigned char) rel_off;

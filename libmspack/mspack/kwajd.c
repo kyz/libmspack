@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2011 Stuart Caie.
+ * (C) 2003-2023 Stuart Caie.
  *
  * KWAJ is a format very similar to SZDD. KWAJ method 3 (LZH) was
  * written by Jeff Johnson.
@@ -205,7 +205,7 @@ static int kwajd_read_headers(struct mspack_system *sys,
     if (hdr->headers & (MSKWAJ_HDR_HASFILENAME | MSKWAJ_HDR_HASFILEEXT)) {
         int len;
         /* allocate memory for maximum length filename */
-        char *fn = (char *) sys->alloc(sys, (size_t) 13);
+        char *fn = (char *) sys->alloc(sys, 13);
         if (!(hdr->filename = fn)) return MSPACK_ERR_NOMEMORY;
 
         /* copy filename if present */
@@ -241,7 +241,7 @@ static int kwajd_read_headers(struct mspack_system *sys,
     if (hdr->headers & MSKWAJ_HDR_HASEXTRATEXT) {
         if (sys->read(fh, &buf[0], 2) != 2) return MSPACK_ERR_READ;
         i = EndGetI16(&buf[0]);
-        hdr->extra = (char *) sys->alloc(sys, (size_t)i+1);
+        hdr->extra = (char *) sys->alloc(sys, i+1);
         if (! hdr->extra) return MSPACK_ERR_NOMEMORY;
         if (sys->read(fh, hdr->extra, i) != i) return MSPACK_ERR_READ;
         hdr->extra[i] = '\0';
@@ -285,7 +285,7 @@ static int kwajd_extract(struct mskwaj_decompressor *base,
         hdr->comp_type == MSKWAJ_COMP_XOR)
     {
         /* NONE is a straight copy. XOR is a copy xored with 0xFF */
-        unsigned char *buf = (unsigned char *) sys->alloc(sys, (size_t) KWAJ_INPUT_SIZE);
+        unsigned char *buf = (unsigned char *) sys->alloc(sys, KWAJ_INPUT_SIZE);
         if (buf) {
             int read, i;
             while ((read = sys->read(fh, buf, KWAJ_INPUT_SIZE)) > 0) {
@@ -440,17 +440,14 @@ static struct kwajd_stream *lzh_init(struct mspack_system *sys,
 
 static int lzh_decompress(struct kwajd_stream *lzh)
 {
-    register unsigned int bit_buffer;
-    register int bits_left, i;
-    register unsigned short sym;
-    unsigned char *i_ptr, *i_end, lit_run = 0;
-    int j, pos = 0, len, offset, err;
-    unsigned int types[6];
+    DECLARE_HUFF_VARS;
+    unsigned int types[6], i, j, pos = 0, len, offset, lit_run = 0;
+    int err;
 
     /* reset global state */
     INIT_BITS;
     RESTORE_BITS;
-    memset(&lzh->window[0], LZSS_WINDOW_FILL, (size_t) LZSS_WINDOW_SIZE);
+    memset(&lzh->window[0], LZSS_WINDOW_FILL, LZSS_WINDOW_SIZE);
 
     /* read 6 encoding types (for byte alignment) but only 5 are needed */
     for (i = 0; i < 6; i++) READ_BITS_SAFE(types[i], 4);
@@ -506,9 +503,7 @@ static int lzh_read_lens(struct kwajd_stream *lzh,
                          unsigned int type, unsigned int numsyms,
                          unsigned char *lens)
 {
-    register unsigned int bit_buffer;
-    register int bits_left;
-    unsigned char *i_ptr, *i_end;
+    DECLARE_BIT_VARS;
     unsigned int i, c, sel;
     int err;
 

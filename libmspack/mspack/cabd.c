@@ -1,5 +1,5 @@
 /* This file is part of libmspack.
- * (C) 2003-2018 Stuart Caie.
+ * (C) 2003-2023 Stuart Caie.
  *
  * libmspack is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License (LGPL) version 2.1
@@ -1052,7 +1052,7 @@ static int cabd_extract(struct mscab_decompressor *base,
    */
   if (!self->salvage) {
     off_t maxlen = fol->base.num_blocks * CAB_BLOCKMAX;
-    if ((file->offset + filelen) > maxlen) {
+    if (((off_t)file->offset + filelen) > maxlen) {
       sys->message(NULL, "ERROR; file \"%s\" cannot be extracted, "
                    "cabinet set is incomplete", file->filename);
       return self->error = MSPACK_ERR_DECRUNCH;
@@ -1400,7 +1400,7 @@ static unsigned int cabd_checksum(unsigned char *data, unsigned int bytes,
   unsigned int len, ul = 0;
 
   for (len = bytes >> 2; len--; data += 4) {
-    cksum ^= ((data[0]) | (data[1]<<8) | (data[2]<<16) | (data[3]<<24));
+    cksum ^= EndGetI32(data);
   }
 
   switch (bytes & 3) {
