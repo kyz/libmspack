@@ -1,3 +1,8 @@
+2023-02-03  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* configure.ac: do AC_CHECK_SIZEOF([off_t]) test only after
+	AC_SYS_LARGEFILE, because the latter can alter the size of off_t.
+
 2019-04-10  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* src/cabextract.c: support more than one filter (-F) option in

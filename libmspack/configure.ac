@@ -34,7 +34,6 @@ AC_C_BIGENDIAN
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
-AC_CHECK_SIZEOF([off_t])
 
 # Checks for library functions
 AX_FUNC_MKDIR
@@ -43,6 +42,7 @@ AC_CHECK_FUNCS([towlower])
 # largefile support
 AC_SYS_LARGEFILE
 AC_FUNC_FSEEKO
+AC_CHECK_SIZEOF([off_t])
 
 AC_CONFIG_FILES([Makefile libmspack.pc])
 AC_OUTPUT
