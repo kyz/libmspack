@@ -1014,7 +1014,7 @@ static int cabd_extract(struct mscab_decompressor *base,
   struct mscabd_folder_p *fol;
   struct mspack_system *sys;
   struct mspack_file *fh;
-  off_t filelen;
+  unsigned int filelen;
 
   if (!self) return MSPACK_ERR_ARGS;
   if (!file) return self->error = MSPACK_ERR_ARGS;
@@ -1031,7 +1031,7 @@ static int cabd_extract(struct mscab_decompressor *base,
    * or in salvage mode reduce file length so it fits 2GB limit
    */
   filelen = file->length;
-  if (filelen > CAB_LENGTHMAX || (file->offset + filelen) > CAB_LENGTHMAX) {
+  if (filelen > (CAB_LENGTHMAX - file->offset)) {
     if (self->salvage) {
       filelen = CAB_LENGTHMAX - file->offset;
     }
@@ -1051,8 +1051,8 @@ static int cabd_extract(struct mscab_decompressor *base,
    * In salvage mode, don't assume block sizes, just try decoding
    */
   if (!self->salvage) {
-    off_t maxlen = fol->base.num_blocks * CAB_BLOCKMAX;
-    if (((off_t)file->offset + filelen) > maxlen) {
+    unsigned int maxlen = fol->base.num_blocks * CAB_BLOCKMAX;
+    if (file->offset > maxlen || filelen > (maxlen - file->offset)) {
       sys->message(NULL, "ERROR; file \"%s\" cannot be extracted, "
                    "cabinet set is incomplete", file->filename);
       return self->error = MSPACK_ERR_DECRUNCH;

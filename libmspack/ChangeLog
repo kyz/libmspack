@@ -3,6 +3,14 @@
 	* configure.ac: do AC_CHECK_SIZEOF([off_t]) test only after
 	AC_SYS_LARGEFILE, because the latter can alter the size of off_t.
 
+        * cabd_extract(): file->offset and file->length are unsigned ints,
+	both of them and their sum are checked to be <= CAB_LENGTHMAX. But
+	recent code stuffs file->length into an off_t and checks that instead.
+	On 32-bit architectures, if file->length > 2GiB then the off_t is
+	negative, evading the check. Ultimately this causes the decompression
+	functions to return MSPACK_ERR_ARGS as they already guard against
+	being asked to decompress a negative number of bytes.
+
 2023-02-01  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* readbits.h, readhuff.h, cabd.c, kwajd.c, lzxd.c, mszipd.c, qtmd.c:
