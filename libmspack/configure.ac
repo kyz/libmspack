@@ -6,7 +6,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.11])
 AM_SILENT_RULES([yes])
 AC_CONFIG_SRCDIR([mspack/mspack.h])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # --enable-debug option
 AC_ARG_ENABLE(debug,

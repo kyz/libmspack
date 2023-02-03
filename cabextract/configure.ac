@@ -4,7 +4,7 @@ AC_PREREQ([2.69])
 AC_INIT([cabextract],[1.9.1],[kyzer@cabextract.org.uk])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/cabextract.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
