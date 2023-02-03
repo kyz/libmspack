@@ -43,6 +43,7 @@
 #endif
 #include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 
 #if HAVE_ICONV
 # include <iconv.h>
@@ -135,6 +136,9 @@ struct file_mem *cab_seen = NULL;
 
 mode_t user_umask = 0;
 
+/* answer from user to "overwrite file?" prompt */
+char answer[8] = "";
+
 struct cabextract_args args = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   NULL, NULL, NULL
@@ -166,13 +170,13 @@ unsigned char md5_result[16];
 
 /* prototypes */
 static int process_cabinet(char *cabname);
-
 static void load_spanning_cabinets(struct mscabd_cabinet *basecab,
                                    char *basename);
 static char *find_cabinet_file(char *origcab, char *cabname);
 static int unix_path_seperators(struct mscabd_file *files);
 static char *create_output_name(const char *fname, const char *dir,
                                 int lower, int isunix, int unicode);
+static int can_write(char *fname);
 static void set_date_and_perm(struct mscabd_file *file, char *filename);
 
 #if HAVE_ICONV
@@ -544,7 +548,7 @@ static int process_cabinet(char *basename) {
             errors++;
           }
         }
-        else {
+        else if (can_write(name)) {
           /* extracting to a regular file */
           if (!args.quiet) printf("  extracting %s\n", name);
 
@@ -561,6 +565,10 @@ static int process_cabinet(char *basename) {
               set_date_and_perm(file, name);
             }
           }
+        }
+        else {
+          /* can_write() said no */
+          if (!args.quiet) printf("  skipping %s\n", name);
         }
       }
       free(name);
@@ -925,6 +933,60 @@ static char *create_output_name(const char *fname, const char *dir,
   }
 
   return name;
+}
+
+/**
+ * Determines if the chosen file can be (over)written. If it doesn't exist,
+ * the answer is always yes. But if the file already exists, look at the
+ * command-line options to decide what to do:
+ *
+ * - if args.no_overwrite is set, never overwrite
+ * - if args.interactive is set, prompt the user on the terminal
+ * - otherwise, always overwrite
+ *
+ * If choosing to overwrite, normal behaviour is to unlink() the existing
+ * file, because if it were a symlink, writing to the file would write to
+ * the destination of the symlink. This is suppressed if args.keep_symlinks
+ * is set.
+ *
+ * @param name the name of the UNIX file to (over)write
+ * @return 1 if (over)writing should proceed, 0 if file should be skipped
+ */
+static int can_write(char *name) {
+    struct stat st_buf;
+
+    /* if file does not exist, always write */
+    if (stat(name, &st_buf) != 0) return 1;
+
+    /* if "-n" is set (no overwrite), always skip */
+    if (args.no_overwrite) return 0;
+
+    /* if interactive mode requested, ask the user */
+    if (args.interactive) {
+        if (answer[0] == 'N') {
+            return 0; /* always no */
+        }
+        else if (answer[0] != 'A') {
+            for (;;) {
+                printf("replace %s? [y]es, [n]o, [A]ll, [N]one: ", name);
+                fflush(stdout);
+                /* if fgets() fails (e.g. EOF), assume "no" */
+                if (!fgets(answer, sizeof(answer), stdin)) return 0;
+                if (answer[0] == 'n' || answer[0] == 'N') return 0;
+                if (answer[0] == 'y' || answer[0] == 'A') break;
+                printf("invalid response \"%s\", type y, n, A or N\n", answer);
+            }
+        }
+    }
+
+    /* yes, overwrite the file. if "-k" is not set, unlink() it first */
+    if (!args.keep_symlinks) {
+        if (unlink(name)) {
+            fprintf(stderr, "can't remove old %s: %s\n", name, strerror(errno));
+            return 0;
+        }
+    }
+    return 1;
 }
 
 /**
