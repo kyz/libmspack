@@ -191,7 +191,7 @@ static int recall_file(struct file_mem *fml, char *name, char **from);
 static void forget_files(struct file_mem **fml);
 static void add_filter(char *arg);
 static void free_filters();
-static int ensure_filepath(char *path);
+static int ensure_filepath(char *path, int n);
 static char *cab_error(struct mscab_decompressor *cd);
 static void print_cli_args_error(const char *reason, const char *exec_name);
 
@@ -552,7 +552,7 @@ static int process_cabinet(char *basename) {
           /* extracting to a regular file */
           if (!args.quiet) printf("  extracting %s\n", name);
 
-          if (!ensure_filepath(name)) {
+          if (!ensure_filepath(name, fname_offset)) {
             fprintf(stderr, "%s: can't create file path\n", name);
             errors++;
           }
@@ -1202,19 +1202,34 @@ static void free_filters() {
  * Ensures that all directory components in a filepath exist. New directory
  * components are created, if necessary.
  *
+ * If args.keep_symlinks is not set, any symlink found the path (that comes
+ * after n chars) will be deleted to make way for a directory.
+ *
  * @param path the filepath to check
+ * @param n the number of chars of path NOT to test for symlinks
  * @return non-zero if all directory components in a filepath exist, zero
  *         if components do not exist and cannot be created
  */
-static int ensure_filepath(char *path) {
+static int ensure_filepath(char *path, int n) {
   struct stat st_buf;
-  char *p;
+  char *p, *parchive = &path[n];
   int ok;
 
   for (p = &path[1]; *p; p++) {
     if (*p != '/') continue;
     *p = '\0';
-    ok = (stat(path, &st_buf) == 0) && S_ISDIR(st_buf.st_mode);
+    if (p < parchive || args.keep_symlinks) {
+      /* not in the archive-determined part of the path, or keeping symlinks:
+       * merely check if this path element is a directory */
+      ok = (stat(path, &st_buf) == 0) && S_ISDIR(st_buf.st_mode);
+    }
+    else {
+      /* in the archive-determined part of the path and not keeping symlinks:
+       * use lstat() and delete symlinks if found */
+      ok = (lstat(path, &st_buf) == 0);
+      if (ok && (st_buf.st_mode & S_IFMT) == S_IFLNK) unlink(path);
+      ok = S_ISDIR(st_buf.st_mode);
+    }
     if (!ok) ok = (mkdir(path, 0777 & ~user_umask) == 0);
     *p = '/';
     if (!ok) return 0;
