@@ -24,7 +24,7 @@
 # define LD PRId64
 # define LU PRIu64
 #else
-# define LD "ld"
+# define LD PRId32
 # define LU PRIu32
 #endif
 
