@@ -17,7 +17,6 @@ sub guid($) {
 }
 
 sub encint($) {
-my $orig = $_[0];
   my ($in, $out) = ($_[0] >> 7, u1($_[0] & 0x7F));
   while ($in) {
      $out = u1(0x80 | ($in & 0x7F)) . $out;
@@ -148,8 +147,8 @@ sub chm_sysname_overread {
 sub chm_unicode_u100 {
     if (open my $fh, '>', 'cve-2018-14682-unicode-u100.chm') {
         my $u100 = encode('UTF-8', chr(256));
-        my $entry1 = entry("${u100}1", 0, 1, 1);
-        my $entry2 = entry("${u100}2", 0, 2, 2);
+        my $entry1 = entry("1", 0, 1, 1);
+        my $entry2 = entry($u100, 0, 2, 2);
         print $fh chm(chunk($entry1, $entry2));
         close $fh;
     }
