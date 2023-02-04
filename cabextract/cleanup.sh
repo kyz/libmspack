@@ -1,3 +1,3 @@
 #!/bin/sh
 # deletes all auto-generated / compiled files
-git clean -fX
+git clean -dfX
