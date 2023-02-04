@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
       "  -f   --fix           salvage as much as possible from corrupted cabinets\n"
       "  -i   --interactive   prompt whether to overwrite existing files\n"
       "  -n   --no-overwrite  don't overwrite (skip) existing files\n"
-      "  -k   --keep-symlinks follow symlinked files when writing\n");
+      "  -k   --keep-symlinks follow symlinked files/dirs when extracting\n");
     fprintf(stderr,
       "  -p   --pipe          pipe extracted files to stdout\n"
       "  -s   --single        restrict search to cabs on the command line\n"
