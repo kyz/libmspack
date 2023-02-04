@@ -1,3 +1,17 @@
+2023-02-04  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* src/cabextract.c: By default, cabextract will now overwrite
+	symlinks if they're in the path of files it wants to extract,
+	rather than follow them. This is also what unzip and tar do
+	by default. If you want to keep symlinks, use the new -k option.
+
+	This also adds new options regarding overwriting files. You can
+	now add the -n option to never overwrite, or the -i option
+	for an interactive prompt asking you if you want to overwrite.
+
+	Thanks to wereii for raising this issue and working on the
+	solution.
+
 2023-02-03  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* configure.ac: do AC_CHECK_SIZEOF([off_t]) test only after

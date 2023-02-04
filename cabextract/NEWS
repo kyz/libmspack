@@ -1,3 +1,12 @@
+New in NEXTVER
+* Multiple -F filters can be given. cabextract will extract files matching
+  ANY of the filters
+* cabextract now overwrites symlinks by default. This is to be consistent
+  with other archive tools. Use the new -k option for the old behaviour of
+  keeping symlinks. This does not affect symlinks in the -d dirpath option
+* New "-n" option to never overwrite files.
+* New "-i" option to interactively prompt if you want to overwrite files
+
 New in 1.9
 * Fixed invisible bad extraction when using cabextract -F (broken in 1.8)
 * Fixed configure --with-external-libmspack which was broken in 1.8
