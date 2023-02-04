@@ -4,12 +4,15 @@ cabextract \- program to extract files from Microsoft cabinet (.cab) archives
 .SH SYNOPSIS
 .B cabextract
 .RB [ -d \fIdir\fP ]
+.RB [ -e \fIencoding\fP ]
 .RB [ -f ]
 .RB [ -F \fIpattern\fP ]
-.RB [ -e \fIencoding\fP ]
 .RB [ -h ]
+.RB [ -i ]
+.RB [ -k ]
 .RB [ -l ]
 .RB [ -L ]
+.RB [ -n ]
 .RB [ -p ]
 .RB [ -q ]
 .RB [ -s ]
@@ -41,6 +44,12 @@ A summary of options is included below.
 .B \-d \fIdir\fP
 Extracts all files into the directory \fIdir\fP.
 .TP
+.B \-e \fIencoding\fP
+Specify the character encoding of filenames inside the cabinet files.
+This is only needed if you find cabinet files with garbled filenames;
+most software creates CAB files with either ASCII or UTF8 filenames.
+The list of supported encodings is given by the command "iconv \-l".
+.TP
 .B \-f
 Corrupted cabinet files will be 'fixed' to salvage whatever is possible from
 them. File entries with bad folders or names will be skipped rather than
@@ -55,20 +64,23 @@ listed, tested or extracted. On non-GNU systems, this match may be
 case-sensitive. Use the option repeatedly to supply more than one pattern.
 Files will be listed, tested or extracted if they match \fIany\fP pattern.
 .TP
-.B \-e \fIencoding\fP
-Specify the character encoding of filenames inside the cabinet files.
-This is only needed if you find cabinet files with garbled filenames;
-most software creates CAB files with either ASCII or UTF8 filenames.
-The list of supported encodings is given by the command "iconv \-l".
-.TP
 .B \-h
 Prints a page of help and exits.
+.TP
+.B \-i
+Prompts before overwriting files.
+.TP
+.B \-k
+Don't overwrite symlinks when extracting files.
 .TP
 .B \-l
 Lists the contents of the given cabinet files, rather than extracting them.
 .TP
 .B \-L
 When extracting cabinet files, makes each extracted file's name lowercase.
+.TP
+.B \-n
+Never overwrite existing files.
 .TP
 .B \-p
 Files shall be extracted to standard output.
