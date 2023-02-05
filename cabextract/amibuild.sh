@@ -7,7 +7,7 @@ cat >config.h <<EOF
 #define HAVE_UTIMES 1
 #define HAVE_UTIME_H 1
 #define ICONV_CONST const
-#define VERSION "1.9.1"
+#define VERSION "1.10"
 #define WORDS_BIGENDIAN 1
 EOF
 cp fnmatch_.h fnmatch.h

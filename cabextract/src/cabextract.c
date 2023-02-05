@@ -1,5 +1,5 @@
 /* cabextract - a program to extract Microsoft Cabinet files
- * (C) 2000-2019 Stuart Caie <kyzer@cabextract.org.uk>
+ * (C) 2000-2023 Stuart Caie <kyzer@cabextract.org.uk>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
       "  -e   --encoding      assume non-UTF8 filenames have the given encoding\n"
 #endif
       "  -d   --directory     extract all files to the given directory\n\n"
-      "cabextract %s (C) 2000-2019 Stuart Caie <kyzer@cabextract.org.uk>\n"
+      "cabextract %s (C) 2000-2023 Stuart Caie <kyzer@cabextract.org.uk>\n"
       "This is free software with ABSOLUTELY NO WARRANTY.\n",
       VERSION);
     return EXIT_FAILURE;
