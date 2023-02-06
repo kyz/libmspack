@@ -1,5 +1,6 @@
 #!/bin/sh
-# see https://github.com/cahirwpz/amigaos-cross-toolchain
+# M68K: https://github.com/bebbo/amiga-gcc
+# PPC: https://github.com/adtools/amigaos-cross-toolchain
 
 cat >config.h <<EOF
 #define HAVE_MKDIR 1
@@ -22,7 +23,7 @@ ppc-amigaos-gcc $CFLAGS -DHAVE_FSEEKO -DHAVE_ICONV -DHAVE_UMASK $SRCS -o cabextr
 ppc-amigaos-gcc $CFLAGS -DHAVE_FSEEKO src/cabinfo.c -o cabinfo &&
 lha a cabextract_OS4.lha cabextract cabinfo
 
-m68k-amigaos-gcc $CFLAGS -noixemul -DLATIN1_FILENAMES $SRCS getopt.c getopt1.c -o cabextract &&
+m68k-amigaos-gcc $CFLAGS -noixemul -DLATIN1_FILENAMES $SRCS -o cabextract &&
 m68k-amigaos-gcc $CFLAGS -noixemul src/cabinfo.c -o cabinfo &&
 lha a cabextract.lha cabextract cabinfo
 
