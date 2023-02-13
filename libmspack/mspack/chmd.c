@@ -841,12 +841,18 @@ static int search_chunk(struct mschmd_header *chm,
     return -1;
 }
 
-#if HAVE_TOWLOWER
-# include <wctype.h>
-# define TOLOWER(x) towlower(x)
+#ifdef MSPACK_NO_DEFAULT_SYSTEM
+  /* if no default system wanted, avoid even C stdlib function tolower() */
+# define TOLOWER(x) ((x) >= 'A' && (x) <= 'Z' ? (x) + ('a'-'A') : (x))
 #else
-# include <ctype.h>
-# define TOLOWER(x) tolower(x)
+  /* use towlower() if available, assume tolower() is available otherwise */
+# if HAVE_TOWLOWER
+#  include <wctype.h>
+#  define TOLOWER(x) towlower(x)
+# else
+#  include <ctype.h>
+#  define TOLOWER(x) tolower(x)
+# endif
 #endif
 
 /* decodes a UTF-8 character from s[] into c. Will not read past e. 
