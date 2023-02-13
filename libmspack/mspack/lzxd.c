@@ -536,9 +536,9 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
       case LZX_BLOCKTYPE_ALIGNED:
       case LZX_BLOCKTYPE_VERBATIM:
         while (this_run > 0) {
-	  int main_element, length_footer, verbatim_bits, aligned_bits, extra;
-	  int match_length;
-	  unsigned int match_offset;
+          int main_element, length_footer, verbatim_bits, aligned_bits, extra;
+          int match_length;
+          unsigned int match_offset;
           READ_HUFFSYM(MAINTREE, main_element);
           if (main_element < LZX_NUM_CHARS) {
             /* literal: 0 to LZX_NUM_CHARS-1 */
@@ -620,7 +620,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
             i = match_length;
             /* does match offset wrap the window? */
             if (match_offset > window_posn) {
-	      if ((off_t)match_offset > lzx->offset &&
+              if ((off_t)match_offset > lzx->offset &&
                   (match_offset - window_posn) > lzx->ref_data_size)
               {
                 D(("match offset beyond LZX stream"))

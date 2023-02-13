@@ -144,7 +144,7 @@ typedef unsigned int bitbuf_type;
     unsigned char needed = (bits), bitrun;                      \
     (val) = 0;                                                  \
     while (needed > 0) {                                        \
-        if (bits_left <= (int)(BITBUF_WIDTH - 16)) READ_BYTES;	\
+        if (bits_left <= (int)(BITBUF_WIDTH - 16)) READ_BYTES;  \
         bitrun = (bits_left < needed) ? bits_left : needed;     \
         (val) = ((val) << bitrun) | PEEK_BITS(bitrun);          \
         REMOVE_BITS(bitrun);                                    \
