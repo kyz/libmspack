@@ -9,7 +9,7 @@ echo success >$status || exit 1
 
 trap cleanup 0 1 2
 cleanup() {
-    rm -f $expected $actual $failed
+    rm -rf $tmpdir
 }
 
 compare_with() {
