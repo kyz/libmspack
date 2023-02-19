@@ -3,15 +3,6 @@
 # because it takes a long time and needs 12GB of temporary space
 . test/testcase
 
-tmpdir=`mktemp -d`
-
-trap cleanup2 0 1 2
-cleanup2() {
-    cd /
-    rm -rf $tmpdir
-    cleanup
-}
-
 # extract large-files.cab
 "$cabextract" -q -d $tmpdir cabs/large-files-cab.cab
 

@@ -8,13 +8,6 @@
 
 set -e # every command is a test!
 
-tmpdir=`mktemp -d`
-trap cleanup2 0 1 2
-cleanup2() {
-    rm -rf $tmpdir
-    cleanup
-}
-
 # set up a symlinked file and symlinked directory
 # extract $tmpdir/plain.c and $tmpdir/1/2/3/4.c
 # check they did NOT get written to $tmpdir/other.c and $tmpdir/other/4.c
