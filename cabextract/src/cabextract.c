@@ -1227,8 +1227,10 @@ static int ensure_filepath(char *path, int n) {
       /* in the archive-determined part of the path and not keeping symlinks:
        * use lstat() and delete symlinks if found */
       ok = (lstat(path, &st_buf) == 0);
-      if (ok && (st_buf.st_mode & S_IFMT) == S_IFLNK) unlink(path);
-      ok = S_ISDIR(st_buf.st_mode);
+      if (ok) {
+        if ((st_buf.st_mode & S_IFMT) == S_IFLNK) unlink(path);
+        ok = S_ISDIR(st_buf.st_mode);
+      }
     }
     if (!ok) ok = (mkdir(path, 0777 & ~user_umask) == 0);
     *p = '/';
