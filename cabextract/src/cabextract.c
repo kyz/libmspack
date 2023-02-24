@@ -146,6 +146,12 @@ struct cabextract_args args = {
 
 #if HAVE_ICONV
 iconv_t converter = NULL;
+/* names for the UTF-8 charset recognised by different iconv_open()s */
+char *utf8_names[] = {
+    "UTF-8", /* glibc, libiconv, FreeBSD, Solaris, not newlib or HPUX */
+    "UTF8",  /* glibc, libiconv (< 1.13), newlib, HPUX */
+    "UTF_8", /* newlib, Solaris */
+};
 #endif
 
 /** A special filename. Extracting to this filename will send the output
@@ -220,27 +226,20 @@ static struct mspack_system cabextract_system = {
 int main(int argc, char *argv[]) {
   int i, err;
 
-  /* names for the UTF-8 charset recognised by different iconv_open()s */
-  char *utf8_names[] = {
-      "UTF-8", /* glibc, libiconv, FreeBSD, Solaris, not newlib or HPUX */
-      "UTF8",  /* glibc, libiconv (< 1.13), newlib, HPUX */
-      "UTF_8", /* newlib, Solaris */
+  /* attempt to set a UTF8-based locale, so that tolower()/towlower()
+   * in create_output_name() lowercase more than just A-Z in ASCII.
+   *
+   * We don't attempt to pick up the system default locale, "",
+   * because it might not be compatible with ASCII/ISO-8859-1/Unicode
+   * character codes and would mess up lowercased filenames
+   */
+  char *locales[] = {
+      "C.UTF-8", /* https://sourceware.org/glibc/wiki/Proposals/C.UTF-8 */
+      "en_US.UTF-8", "en_GB.UTF8", "de_DE.UTF-8", "UTF-8", "UTF8"
   };
-
-   /* attempt to set a UTF8-based locale, so that tolower()/towlower()
-    * in create_output_name() lowercase more than just A-Z in ASCII.
-    *
-    * We don't attempt to pick up the system default locale, "",
-    * because it might not be compatible with ASCII/ISO-8859-1/Unicode
-    * character codes and would mess up lowercased filenames
-    */
-   char *locales[] = {
-       "C.UTF-8", /* https://sourceware.org/glibc/wiki/Proposals/C.UTF-8 */
-       "en_US.UTF-8", "en_GB.UTF8", "de_DE.UTF-8", "UTF-8", "UTF8"
-   };
-   for (i = 0; i < (sizeof(locales)/sizeof(*locales)); i++) {
+  for (i = 0; i < (sizeof(locales)/sizeof(*locales)); i++) {
       if (setlocale(LC_CTYPE, locales[i])) break;
-   }
+  }
 
   /* parse options */
   while ((i = getopt_long(argc, argv, OPTSTRING, optlist, NULL)) != -1) {
