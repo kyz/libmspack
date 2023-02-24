@@ -1035,8 +1035,7 @@ static char *convert_filename(char *name) {
     /* worst case: all characters expand from 1 to 4 bytes */
     size_t ilen = strlen(name) + 1, olen = ilen * 4;
     ICONV_CONST char *i = name;
-    char *newname = malloc(olen);
-    unsigned char *o = (unsigned char *) newname;
+    char *newname = malloc(olen), *o = newname;
 
     if (!newname) {
         fprintf(stderr, "WARNING: out of memory converting filename\n");
@@ -1045,11 +1044,11 @@ static char *convert_filename(char *name) {
 
     /* convert filename to UTF8 */
     iconv(converter, NULL, NULL, NULL, NULL);
-    while (iconv(converter, &i, &ilen, (char **) &o, &olen) == (size_t) -1) {
+    while (iconv(converter, &i, &ilen, &o, &olen) == (size_t) -1) {
         if (errno == EILSEQ || errno == EINVAL) {
             /* invalid or incomplete multibyte sequence: skip it */
             i++; ilen--;
-            *o++ = 0xEF; *o++ = 0xBF; *o++ = 0xBD; olen += 3;
+            memcpy(o, "\xEF\xBF\xBD", 3); o += 3; olen += 3;
         }
         else /* E2BIG: should be impossible to get here */ {
             free(newname);
