@@ -1,3 +1,7 @@
+New in 1.11
+* Fixed bug in creating directories given in archives, e.g. extracting file
+  "a/b.c" from a cab file wouldn't create directory "a" (broken in 1.10)
+
 New in 1.10
 * Multiple -F filters can be given. cabextract will extract files matching
   ANY of the filters
