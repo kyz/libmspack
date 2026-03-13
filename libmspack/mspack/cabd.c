@@ -346,6 +346,8 @@ static int cabd_read_headers(struct mspack_system *sys,
   cab->base.set_id    = EndGetI16(&buf[cfhead_SetID]);
   cab->base.set_index = EndGetI16(&buf[cfhead_CabinetIndex]);
 
+  unsigned long long cfile_offset = (unsigned long long) EndGetI32(&buf[cfhead_FileOffset]);
+
   /* get the number of folders */
   num_folders = EndGetI16(&buf[cfhead_NumFolders]);
   if (num_folders == 0) {
@@ -437,6 +439,13 @@ static int cabd_read_headers(struct mspack_system *sys,
     if (!linkfol) cab->base.folders = (struct mscabd_folder *) fol;
     else linkfol->base.next = (struct mscabd_folder *) fol;
     linkfol = fol;
+  }
+
+  if ((unsigned long long)(sys->tell(fh) - cab->base.base_offset) < cfile_offset
+      && cfile_offset < (unsigned long long)cab->base.length) {
+    if (sys->seek(fh, cfile_offset, MSPACK_SYS_SEEK_START)) {
+        return MSPACK_ERR_SEEK;
+    }
   }
 
   /* read files */
