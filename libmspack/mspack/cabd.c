@@ -78,6 +78,10 @@ static int cabd_read_headers(
 static char *cabd_read_string(
   struct mspack_system *sys, struct mspack_file *fh, int permit_empty,
   int *error);
+static int cabd_read_cffiles(
+  struct mspack_system *sys, struct mspack_file *fh,
+  struct mscabd_cabinet_p *cab, struct mscabd_folder_p *fol,
+  int num_folders, int num_files, int salvage);
 
 static struct mscabd_cabinet *cabd_search(
   struct mscab_decompressor *base, const char *filename);
@@ -311,10 +315,10 @@ static int cabd_read_headers(struct mspack_system *sys,
                              struct mscabd_cabinet_p *cab,
                              off_t offset, int salvage, int quiet)
 {
-  int num_folders, num_files, folder_resv, i, x, err, fidx;
+  int num_folders, num_files, folder_resv, i, err;
   struct mscabd_folder_p *fol, *linkfol = NULL;
-  struct mscabd_file *file, *linkfile = NULL;
   unsigned char buf[64];
+  off_t cffile_offset, cfhead_file_offset;
 
   /* initialise pointers */
   cab->base.next     = NULL;
@@ -345,6 +349,9 @@ static int cabd_read_headers(struct mspack_system *sys,
   cab->base.length    = EndGetI32(&buf[cfhead_CabinetSize]);
   cab->base.set_id    = EndGetI16(&buf[cfhead_SetID]);
   cab->base.set_index = EndGetI16(&buf[cfhead_CabinetIndex]);
+
+  /* get the offset of the first CFFILE entry */
+  cfhead_file_offset = (off_t) EndGetI32(&buf[cfhead_FileOffset]);
 
   /* get the number of folders */
   num_folders = EndGetI16(&buf[cfhead_NumFolders]);
@@ -439,7 +446,85 @@ static int cabd_read_headers(struct mspack_system *sys,
     linkfol = fol;
   }
 
+  /* get the relative offset to the first CFFILE entry which typically follows the last CFFOLDER entry */
+  cffile_offset = sys->tell(fh) - cab->base.base_offset;
+
   /* read files */
+  err = cabd_read_cffiles(sys, fh, cab, fol, num_folders, num_files, salvage);
+  if (cffile_offset != cfhead_file_offset) {
+    if (!quiet) sys->message(fh, "atypical offset to the first CFFILE entry");
+
+    /* read files from the header file offset in the salvage mode */
+    if (salvage && (unsigned int) cfhead_file_offset < cab->base.length) {
+      if (!sys->seek(fh, cfhead_file_offset + cab->base.base_offset, MSPACK_SYS_SEEK_START)) {
+        err |= cabd_read_cffiles(sys, fh, cab, fol, num_folders, num_files, salvage);
+      }
+    }
+  }
+  if (err) return err;
+
+  if (cab->base.files == NULL) {
+    /* We never actually added any files to the file list.  Something went wrong.
+     * The file header may have been invalid */
+    D(("No files found, even though header claimed to have %d files", num_files))
+    return MSPACK_ERR_DATAFORMAT;
+  }
+
+  return MSPACK_ERR_OK;
+}
+
+static char *cabd_read_string(struct mspack_system *sys,
+                              struct mspack_file *fh, int permit_empty,
+                              int *error)
+{
+  off_t base = sys->tell(fh);
+  char buf[256], *str;
+  int len, i, ok;
+
+  /* read up to 256 bytes */
+  if ((len = sys->read(fh, &buf[0], 256)) <= 0) {
+    *error = MSPACK_ERR_READ;
+    return NULL;
+  }
+
+  /* search for a null terminator in the buffer */
+  for (i = 0, ok = 0; i < len; i++) if (!buf[i]) { ok = 1; break; }
+  /* optionally reject empty strings */
+  if (i == 0 && !permit_empty) ok = 0;
+
+  if (!ok) {
+    *error = MSPACK_ERR_DATAFORMAT;
+    return NULL;
+  }
+
+  len = i + 1;
+
+  /* set the data stream to just after the string and return */
+  if (sys->seek(fh, base + (off_t)len, MSPACK_SYS_SEEK_START)) {
+    *error = MSPACK_ERR_SEEK;
+    return NULL;
+  }
+
+  if (!(str = (char *) sys->alloc(sys, len))) {
+    *error = MSPACK_ERR_NOMEMORY;
+    return NULL;
+  }
+
+  sys->copy(&buf[0], str, len);
+  *error = MSPACK_ERR_OK;
+  return str;
+}
+
+static int cabd_read_cffiles(struct mspack_system *sys,
+                             struct mspack_file *fh,
+                             struct mscabd_cabinet_p *cab,
+                             struct mscabd_folder_p *fol,
+                             int num_folders, int num_files, int salvage)
+{
+  int i, x, err, fidx;
+  struct mscabd_file *file, *linkfile = NULL;
+  unsigned char buf[64];
+
   for (i = 0; i < num_files; i++) {
     if (sys->read(fh, &buf[0], cffile_SIZEOF) != cffile_SIZEOF) {
       return MSPACK_ERR_READ;
@@ -524,59 +609,9 @@ static int cabd_read_headers(struct mspack_system *sys,
     else linkfile->next = file;
     linkfile = file;
   }
-
-  if (cab->base.files == NULL) {
-    /* We never actually added any files to the file list.  Something went wrong.
-     * The file header may have been invalid */
-    D(("No files found, even though header claimed to have %d files", num_files))
-    return MSPACK_ERR_DATAFORMAT;
-  }
-
   return MSPACK_ERR_OK;
 }
 
-static char *cabd_read_string(struct mspack_system *sys,
-                              struct mspack_file *fh, int permit_empty,
-                              int *error)
-{
-  off_t base = sys->tell(fh);
-  char buf[256], *str;
-  int len, i, ok;
-
-  /* read up to 256 bytes */
-  if ((len = sys->read(fh, &buf[0], 256)) <= 0) {
-    *error = MSPACK_ERR_READ;
-    return NULL;
-  }
-
-  /* search for a null terminator in the buffer */
-  for (i = 0, ok = 0; i < len; i++) if (!buf[i]) { ok = 1; break; }
-  /* optionally reject empty strings */
-  if (i == 0 && !permit_empty) ok = 0;
-
-  if (!ok) {
-    *error = MSPACK_ERR_DATAFORMAT;
-    return NULL;
-  }
-
-  len = i + 1;
-
-  /* set the data stream to just after the string and return */
-  if (sys->seek(fh, base + (off_t)len, MSPACK_SYS_SEEK_START)) {
-    *error = MSPACK_ERR_SEEK;
-    return NULL;
-  }
-
-  if (!(str = (char *) sys->alloc(sys, len))) {
-    *error = MSPACK_ERR_NOMEMORY;
-    return NULL;
-  }
-
-  sys->copy(&buf[0], str, len);
-  *error = MSPACK_ERR_OK;
-  return str;
-}
-    
 /***************************************
  * CABD_SEARCH, CABD_FIND
  ***************************************
