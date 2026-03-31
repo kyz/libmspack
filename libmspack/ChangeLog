@@ -1,3 +1,10 @@
+2026-03-31  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd_read_headers(): if the header's file offset differs from the
+	typical value, and we are in salvage mode, try reading files from
+	that file offset as well. Thanks to Yulia Siniakovich for raising
+	the issue and supplying a patch.
+
 2023-02-12  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* chmd.c: add a default tolower() if MSPACK_NO_DEFAULT_SYSTEM is set.

@@ -229,6 +229,42 @@ void cabd_open_test_07() {
     mspack_destroy_cab_decompressor(cabd);
 }
 
+/* open cab with "hidden" files (located not after folders,
+ * but at offset pointed to by header) */
+void cabd_open_test_08() {
+    struct mscab_decompressor *cabd;
+    struct mscabd_cabinet *cab;
+    struct mscabd_file *f1, *f2, *f3, *f4;
+
+    TEST(cabd = mspack_create_cab_decompressor(NULL));
+
+    /* opening in normal mode finds only two files */
+    TEST(cab = cabd->open(cabd, TESTFILE("hidden-files.cab")));
+    TEST((f1 = cab->files) != NULL);
+    TEST((f2 = f1->next) != NULL);
+    TEST(f2->next == NULL);
+    TEST(strcmp("normal1.txt", f1->filename) == 0);
+    TEST(strcmp("normal2.txt", f2->filename) == 0);
+    cabd->close(cabd, cab);
+
+    /* opening in salvage mode finds four files */
+    cabd->set_param(cabd, MSCABD_PARAM_SALVAGE, 1);
+    TEST(cab = cabd->open(cabd, TESTFILE("hidden-files.cab")));
+    TEST((f1 = cab->files) != NULL);
+    TEST((f2 = f1->next) != NULL);
+    TEST((f3 = f2->next) == NULL);
+    TEST((f4 = f3->next) != NULL);
+    TEST(f4->next == NULL);
+    TEST(strcmp("normal1.txt", f1->filename) == 0);
+    TEST(strcmp("normal2.txt", f2->filename) == 0);
+    TEST(strcmp("hidden1.txt", f3->filename) == 0);
+    TEST(strcmp("hidden2.txt", f4->filename) == 0);
+    cabd->close(cabd, cab);
+
+    mspack_destroy_cab_decompressor(cabd);
+}
+
+
 /* open where search file doesn't exist */
 void cabd_search_test_01() {
     struct mscab_decompressor *cabd;

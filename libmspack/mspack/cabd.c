@@ -78,7 +78,7 @@ static int cabd_read_headers(
 static char *cabd_read_string(
   struct mspack_system *sys, struct mspack_file *fh, int permit_empty,
   int *error);
-static int cabd_read_cffiles(
+static int cabd_read_files(
   struct mspack_system *sys, struct mspack_file *fh,
   struct mscabd_cabinet_p *cab, struct mscabd_folder_p *fol,
   int num_folders, int num_files, int salvage);
@@ -446,18 +446,32 @@ static int cabd_read_headers(struct mspack_system *sys,
     linkfol = fol;
   }
 
-  /* get the relative offset to the first CFFILE entry which typically follows the last CFFOLDER entry */
+  /* save the typical offset of the first CFFILE entry, which is
+   * immediately after the last CFFOLDER */
   cffile_offset = sys->tell(fh) - cab->base.base_offset;
 
   /* read files */
-  err = cabd_read_cffiles(sys, fh, cab, fol, num_folders, num_files, salvage);
+  err = cabd_read_files(sys, fh, cab, fol, num_folders, num_files, salvage);
+
+  /* if the header claimed file offset is not the typical value */
   if (cffile_offset != cfhead_file_offset) {
-    if (!quiet) sys->message(fh, "atypical offset to the first CFFILE entry");
+    if (!quiet) sys->message(fh, "WARNING; atypical files offset in header");
 
     /* read files from the header file offset in the salvage mode */
-    if (salvage && (unsigned int) cfhead_file_offset < cab->base.length) {
+    if (salvage && cfhead_file_offset < (off_t) cab->base.length) {
       if (!sys->seek(fh, cfhead_file_offset + cab->base.base_offset, MSPACK_SYS_SEEK_START)) {
-        err |= cabd_read_cffiles(sys, fh, cab, fol, num_folders, num_files, salvage);
+        /* save the existing list of files (if any), they are overwritten */
+        struct mscabd_file *forig = cab->base.files;
+        int err2 = cabd_read_files(sys, fh, cab, fol, num_folders, num_files, salvage);
+        /* combine both lists of files */
+        if (forig) {
+           struct mscabd_file *fend = forig;
+           while (fend->next) fend = fend->next;
+           fend->next = cab->base.files;
+           cab->base.files = forig;
+        }
+        /* combine both cabd_read_files() errors */
+        err = err || err2;
       }
     }
   }
@@ -515,11 +529,11 @@ static char *cabd_read_string(struct mspack_system *sys,
   return str;
 }
 
-static int cabd_read_cffiles(struct mspack_system *sys,
-                             struct mspack_file *fh,
-                             struct mscabd_cabinet_p *cab,
-                             struct mscabd_folder_p *fol,
-                             int num_folders, int num_files, int salvage)
+static int cabd_read_files(struct mspack_system *sys,
+                           struct mspack_file *fh,
+                           struct mscabd_cabinet_p *cab,
+                           struct mscabd_folder_p *fol,
+                           int num_folders, int num_files, int salvage)
 {
   int i, x, err, fidx;
   struct mscabd_file *file, *linkfile = NULL;
