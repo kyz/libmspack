@@ -252,7 +252,7 @@ void cabd_open_test_08() {
     TEST(cab = cabd->open(cabd, TESTFILE("hidden-files.cab")));
     TEST((f1 = cab->files) != NULL);
     TEST((f2 = f1->next) != NULL);
-    TEST((f3 = f2->next) == NULL);
+    TEST((f3 = f2->next) != NULL);
     TEST((f4 = f3->next) != NULL);
     TEST(f4->next == NULL);
     TEST(strcmp("normal1.txt", f1->filename) == 0);
@@ -517,6 +517,7 @@ int main() {
     cabd_open_test_05();
     cabd_open_test_06();
     cabd_open_test_07();
+    cabd_open_test_08();
 
     cabd_search_test_01();
     cabd_search_test_02();
