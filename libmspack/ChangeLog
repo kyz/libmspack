@@ -1,3 +1,13 @@
+2026-04-02  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd_find(): let cabd_read_headers() print warnings if caboff == 0.
+	libmspack is meant to print warnings when parsing cab headers, and
+	if you do cabd->open() then you get that. But if you do cab->search()
+	it's speculatively parsing any vaguely matching data so it suppresses
+	warnings... and doesn't parse again to print the warnings! As a
+	compromise, it will now print warnings if it finds a cabinet at
+	offset 0.
+
 2026-03-31  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd_read_headers(): if the header's file offset differs from the

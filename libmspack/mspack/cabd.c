@@ -787,7 +787,7 @@ static int cabd_find(struct mscab_decompressor_p *self, unsigned char *buf,
             return MSPACK_ERR_NOMEMORY;
           }
           cab->base.filename = filename;
-          if (cabd_read_headers(sys, fh, cab, caboff, self->salvage, 1)) {
+          if (cabd_read_headers(sys, fh, cab, caboff, self->salvage, caboff > 0)) {
             /* destroy the failed cabinet */
             cabd_close((struct mscab_decompressor *) self,
                        (struct mscabd_cabinet *) cab);
