@@ -19,7 +19,8 @@
 unsigned int test_count = 0;
 #define TEST(x) do {\
     test_count++; \
-    if (!(x)) {printf("%s:%d FAILED %s\n",__func__,__LINE__,#x);exit(1);} \
+    if ((x)) {printf("%s:%d SUCCESS %s\n",__func__,__LINE__,#x);} \
+    else {printf("%s:%d FAILED %s\n",__func__,__LINE__,#x);exit(1);} \
 } while (0)
 
 /* check opening bad files is rejected */
