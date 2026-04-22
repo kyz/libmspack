@@ -1,3 +1,10 @@
+2026-04-22  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd_read_headers(): fixed the new salvage mode logic. It would
+	create an infinite loop of files if the typical location had files
+	and the atypical location had none. It also merged errors wrongly.
+	Thanks to Alexandru Hossu for a detailed bug report and example files.
+
 2026-04-02  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd_find(): let cabd_read_headers() print warnings if caboff == 0.

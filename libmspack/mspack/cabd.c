@@ -461,17 +461,18 @@ static int cabd_read_headers(struct mspack_system *sys,
     if (salvage && cfhead_file_offset < (off_t) cab->base.length) {
       if (!sys->seek(fh, cfhead_file_offset + cab->base.base_offset, MSPACK_SYS_SEEK_START)) {
         /* save the existing list of files (if any), they are overwritten */
-        struct mscabd_file *forig = cab->base.files;
+        struct mscabd_file *f1 = cab->base.files;
         int err2 = cabd_read_files(sys, fh, cab, fol, num_folders, num_files, salvage);
+        struct mscabd_file *f2 = cab->base.files;
         /* combine both lists of files */
-        if (forig) {
-           struct mscabd_file *fend = forig;
-           while (fend->next) fend = fend->next;
-           fend->next = cab->base.files;
-           cab->base.files = forig;
+        if (f1 && f1 != f2) {
+           struct mscabd_file *f1end = f1;
+           while (f1end->next) f1end = f1end->next;
+           f1end->next = f2;
+           cab->base.files = f1;
         }
         /* combine both cabd_read_files() errors */
-        err = err || err2;
+        err = err ? err : err2;
       }
     }
   }

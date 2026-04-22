@@ -262,6 +262,20 @@ void cabd_open_test_08() {
     TEST(strcmp("hidden2.txt", f4->filename) == 0);
     cabd->close(cabd, cab);
 
+    /* hidden file offset beyond EOF -> only find 1 normal file */
+    cabd->set_param(cabd, MSCABD_PARAM_SALVAGE, 1);
+    TEST(cab = cabd->open(cabd, TESTFILE("hidden-file-beyond-eof.cab")));
+    TEST((f1 = cab->files) != NULL);
+    TEST(f1->next == NULL);
+    cabd->close(cabd, cab);
+
+    /* hidden file found but invalid folderid -> only find 1 normal file */
+    cabd->set_param(cabd, MSCABD_PARAM_SALVAGE, 1);
+    TEST(cab = cabd->open(cabd, TESTFILE("hidden-file-bad-folderid.cab")));
+    TEST((f1 = cab->files) != NULL);
+    TEST(f1->next == NULL);
+    cabd->close(cabd, cab);
+
     mspack_destroy_cab_decompressor(cabd);
 }
 
