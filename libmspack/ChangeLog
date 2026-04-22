@@ -7,6 +7,11 @@
 
 2026-04-22  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* cabd_read_headers(): if salvage mode finds any file entries,
+        suppress any errors, so the salvaged file entries can be returned.
+
+2026-04-22  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* cabd.c: add intermediary wrapper functions to placate UBSan, which
 	complains of calling a function like int foo(struct foo*, off_t)
 	through a pointer like (int (*)(void *, off_t))

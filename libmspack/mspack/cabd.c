@@ -482,7 +482,16 @@ static int cabd_read_headers(struct mspack_system *sys,
       }
     }
   }
-  if (err) return err;
+
+  /* ignore errors if salvage mode finds files */
+  if (err) {
+    if (salvage && cab->base.files) {
+      if (!quiet) sys->message(fh, "WARNING; ignoring error %d while salvaging", err);
+    }
+    else {
+      return err;
+    }
+  }
 
   if (cab->base.files == NULL) {
     /* We never actually added any files to the file list.  Something went wrong.
