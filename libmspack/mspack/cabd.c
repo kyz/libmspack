@@ -123,8 +123,14 @@ static struct noned_state *noned_init(
   struct mspack_system *sys, struct mspack_file *in, struct mspack_file *out,
   int bufsize);
 
+static int mszipd_decompress_wrapper(
+  void *state, off_t bytes);
+static int lzxd_decompress_wrapper(
+  void *state, off_t bytes);
+static int qtmd_decompress_wrapper(
+  void *state, off_t bytes);
 static int noned_decompress(
-  struct noned_state *s, off_t bytes);
+  void *state, off_t bytes);
 static void noned_free(
   struct noned_state *state);
 
@@ -1216,21 +1222,21 @@ static int cabd_init_decomp(struct mscab_decompressor_p *self, unsigned int ct)
 
   switch (ct & cffoldCOMPTYPE_MASK) {
   case cffoldCOMPTYPE_NONE:
-    self->d->decompress = (int (*)(void *, off_t)) &noned_decompress;
+    self->d->decompress = &noned_decompress;
     self->d->state = noned_init(&self->d->sys, fh, fh, self->buf_size);
     break;
   case cffoldCOMPTYPE_MSZIP:
-    self->d->decompress = (int (*)(void *, off_t)) &mszipd_decompress;
+    self->d->decompress = &mszipd_decompress_wrapper;
     self->d->state = mszipd_init(&self->d->sys, fh, fh, self->buf_size,
                                  self->fix_mszip);
     break;
   case cffoldCOMPTYPE_QUANTUM:
-    self->d->decompress = (int (*)(void *, off_t)) &qtmd_decompress;
+    self->d->decompress = &qtmd_decompress_wrapper;
     self->d->state = qtmd_init(&self->d->sys, fh, fh, (int) (ct >> 8) & 0x1f,
                                self->buf_size);
     break;
   case cffoldCOMPTYPE_LZX:
-    self->d->decompress = (int (*)(void *, off_t)) &lzxd_decompress;
+    self->d->decompress = &lzxd_decompress_wrapper;
     self->d->state = lzxd_init(&self->d->sys, fh, fh, (int) (ct >> 8) & 0x1f, 0,
                                self->buf_size, (off_t)0,0);
     break;
@@ -1464,6 +1470,22 @@ static unsigned int cabd_checksum(unsigned char *data, unsigned int bytes,
 }
 
 /***************************************
+ * {MSZIP,LZX,QTM}D_DECOMPRESS_WRAPPER
+ ***************************************
+ * UBSan complains about calling a function like int foo(struct foo*, off_t)
+ * through a pointer like (int (*)(void *, off_t)) so do it indirectly
+ */
+static int mszipd_decompress_wrapper(void *state, off_t bytes) {
+  return mszipd_decompress((struct mszipd_stream *)state, bytes);
+}
+static int lzxd_decompress_wrapper(void *state, off_t bytes) {
+  return lzxd_decompress((struct lzxd_stream *)state, bytes);
+}
+static int qtmd_decompress_wrapper(void *state, off_t bytes) {
+  return qtmd_decompress((struct qtmd_stream *)state, bytes);
+}
+
+/***************************************
  * NONED_INIT, NONED_DECOMPRESS, NONED_FREE
  ***************************************
  * the "not compressed" method decompressor
@@ -1498,7 +1520,8 @@ static struct noned_state *noned_init(struct mspack_system *sys,
   return state;
 }
 
-static int noned_decompress(struct noned_state *s, off_t bytes) {
+static int noned_decompress(void *state, off_t bytes) {
+  struct noned_state *s = (struct noned_state *) state;
   int run;
   while (bytes > 0) {
     run = (bytes > s->bufsize) ? s->bufsize : (int) bytes;

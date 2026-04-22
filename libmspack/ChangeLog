@@ -5,6 +5,25 @@
 	and the atypical location had none. It also merged errors wrongly.
 	Thanks to Alexandru Hossu for a detailed bug report and example files.
 
+2026-04-22  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd.c: add intermediary wrapper functions to placate UBSan, which
+	complains of calling a function like int foo(struct foo*, off_t)
+	through a pointer like (int (*)(void *, off_t))
+
+	The rationale is apparently C11 6.3.2.3 "If a converted pointer is used
+	to call a function whose type is not compatible with the referenced
+	type, the behavior is undefined." coupled with 6.2.5 part 28:
+	"A pointer to void shall have the same representation and alignment
+	requirements as a pointer to a character type. [...] All pointers to
+	structure types shall have the same representation and alignment
+	requirements as each other. [...] Pointers to other types need not
+	have the same representation or alignment requirements."
+
+	So because void* "need not" have the same representation as struct*,
+	it's undefined, but explicitly casting struct* to void* and vice-versa
+	is fine, provided you do it to the arguments instead of the function?
+
 2026-04-02  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd_find(): let cabd_read_headers() print warnings if caboff == 0.
