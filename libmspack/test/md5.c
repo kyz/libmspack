@@ -278,7 +278,7 @@ md5_process_bytes ( const void *buffer, size_t len, struct md5_ctx *ctx)
         {
           md5_process_block (ctx->buffer, 64, ctx);
           left_over -= 64;
-          memcpy (ctx->buffer, &ctx->buffer[64], left_over);
+          memmove (ctx->buffer, &ctx->buffer[64], left_over);
         }
       ctx->buflen = left_over;
     }
