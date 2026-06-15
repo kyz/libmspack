@@ -1,3 +1,10 @@
+2026-06-15  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* kwajd_read_headers(): initialise pointers before returning any error,
+	otherwise kwajd_close() calls mspack_system.free() with uninitialised
+	pointers, which is undefined behaviour for the default system's free().
+	Thank you to Yukimura Aneha for the report, example files and patch!
+
 2026-04-22  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* cabd_read_headers(): fixed the new salvage mode logic. It would

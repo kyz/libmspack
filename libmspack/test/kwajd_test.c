@@ -31,6 +31,12 @@ void kwajd_open_test_01() {
     TEST(hdr->filename == NULL);
     kwajd->close(kwajd, hdr);
 
+    TEST(!kwajd->open(kwajd, TESTFILE("empty.kwj")));
+    TEST(kwajd->last_error(kwajd) == MSPACK_ERR_READ);
+
+    TEST(!kwajd->open(kwajd, TESTFILE("blank.kwj")));
+    TEST(kwajd->last_error(kwajd) == MSPACK_ERR_SIGNATURE);
+
 #define GOOD(testfile, fname)                             \
     TEST(hdr = kwajd->open(kwajd, testfile));             \
     TEST(hdr->filename && !strcmp(fname, hdr->filename)); \
