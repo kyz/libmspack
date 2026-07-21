@@ -280,7 +280,7 @@ struct lzxd_stream *lzxd_init(struct mspack_system *system,
                               off_t output_length,
                               char is_delta)
 {
-  unsigned int window_size = 1 << window_bits;
+  unsigned int window_size = 1U << window_bits;
   struct lzxd_stream *lzx;
 
   if (!system) return NULL;
@@ -448,7 +448,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
       /* read 1 bit. if bit=0, intel filesize = 0.
        * if bit=1, read intel filesize (32 bits) */
       j = 0; READ_BITS(i, 1); if (i) { READ_BITS(i, 16); READ_BITS(j, 16); }
-      lzx->intel_filesize = (i << 16) | j;
+      lzx->intel_filesize = (int) (((unsigned int) i << 16) | (unsigned int) j);
       lzx->header_read = 1;
     } 
 
@@ -719,7 +719,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
 
       while (data < dataend) {
         if (*data++ != 0xE8) { curpos++; continue; }
-        abs_off = EndGetI32(data);
+        abs_off = (int) EndGetI32(data);
         if ((abs_off >= -curpos) && (abs_off < filesize)) {
           rel_off = (abs_off >= 0) ? abs_off - curpos : abs_off + filesize;
           data[0] = (unsigned char) rel_off;

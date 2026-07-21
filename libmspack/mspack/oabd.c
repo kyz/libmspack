@@ -323,7 +323,7 @@ static int oabd_decompress_incremental(struct msoab_decompressor *_self,
     }
 
 
-    window_size = (blk_ssize + 32767) & ~32767;
+    window_size = (blk_ssize + 32767U) & ~32767U;
     window_size += blk_dsize;
     window_bits = 17;
 

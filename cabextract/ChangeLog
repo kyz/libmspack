@@ -1,3 +1,14 @@
+2026-07-21  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* md5.c, src/cabextract.c: add explicit casts and integer suffixes
+	to make UBSan happy. Testing with clang-22 -fsanitize=undefined
+	-fsanitize=implicit-conversion -fsanitize=local-bounds brings up more
+	implicit type conversions and shifting 1s into the MSB of signed
+	integers. Switching to explicit casts changes this from undefined
+	behaviour to implementation-specific behaviour. See my comments in
+	the libmspack changelog entries for what I think of this. Thank you
+	to "0daydreamerr" who sent me a report on this.
+
 2023-02-19  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* ensure_filepath(): had wrong logic, for the archive-controlled

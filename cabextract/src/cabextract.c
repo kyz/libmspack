@@ -479,7 +479,7 @@ static int process_cabinet(char *basename) {
      * include that. So, we work out where the filename part of the
      * output name begins. This is the same for every extracted file.
      */
-    fname_offset = args.dir ? (strlen(args.dir) + 1) : 0;
+    fname_offset = args.dir ? ((int) strlen(args.dir) + 1) : 0;
 
     /* process all files */
     for (file = cab->files; file; file = file->next) {
@@ -526,7 +526,7 @@ static int process_cabinet(char *basename) {
 
           /* "  filename  OK  " is 8 chars + the length of filename,
            * the MD5 checksum itself is 32 chars. */
-          int spaces = 79 - (strlen(name) + 8 + 32);
+          int spaces = 79 - ((int) strlen(name) + 8 + 32);
           printf("  %s  OK  ", name);
           while (spaces-- > 0) putchar(' ');
           printf("%02x%02x%02x%02x%02x%02x%02x%02x"

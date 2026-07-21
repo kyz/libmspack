@@ -530,7 +530,8 @@ static int lzh_read_lens(struct kwajd_stream *lzh,
         READ_BITS_SAFE(c, 4); lens[0] = c;
         for (i = 1; i < numsyms; i++) {
             READ_BITS_SAFE(sel, 2);
-            if (sel == 3) READ_BITS_SAFE(c, 4); else c += (char) sel-1;
+            if (sel == 3) READ_BITS_SAFE(c, 4);
+            else c = (unsigned int) (c + sel-1);
             lens[i] = c;
         }
         break;

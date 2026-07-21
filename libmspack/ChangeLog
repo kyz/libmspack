@@ -1,3 +1,14 @@
+2026-07-21  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* kwajd.c, lzxd.c, oabd.c, qtmd.c, test/md5.c: add explicit casts
+	and integer suffixes to make UBSan happy. Testing with clang-22
+	-fsanitize=undefined -fsanitize=implicit-conversion -fsanitize=local-bounds
+	brings up more implicit type conversions and shifting 1s into the MSB of
+	signed integers. Switching to explicit casts changes this from undefined
+	behaviour to implementation-specific behaviour. See my comment in past
+	entries for what I think of this.  Thank you to "0daydreamerr" who sent
+	me a report on this, having tested with clang 21.
+
 2026-06-15  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* kwajd_read_headers(): initialise pointers before returning any error,

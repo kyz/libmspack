@@ -114,9 +114,10 @@ static const unsigned char length_extra[27] = {
       }                                                                 \
       else break;                                                       \
     }                                                                   \
-    L <<= 1; H = (H << 1) | 1;                                          \
+    L = (unsigned short) (L << 1);                                      \
+    H = (unsigned short) ((H << 1) | 1);                                \
     ENSURE_BITS(1);                                                     \
-    C  = (C << 1) | PEEK_BITS(1);                                       \
+    C  = (unsigned short) ((C << 1) | PEEK_BITS(1));                    \
     REMOVE_BITS(1);                                                     \
   }                                                                     \
 } while (0)
@@ -188,7 +189,7 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
                               struct mspack_file *output,
                               int window_bits, int input_buffer_size)
 {
-  unsigned int window_size = 1 << window_bits;
+  unsigned int window_size = 1U << window_bits;
   struct qtmd_stream *qtm;
   int i;
 
