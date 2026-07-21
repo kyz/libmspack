@@ -9,6 +9,9 @@
 	entries for what I think of this.  Thank you to "0daydreamerr" who sent
 	me a report on this, having tested with clang 21.
 
+	* test/md5.c: as I'm changing this file, I'll add a requested line to
+	quell a coverity warning: https://github.com/kyz/libmspack/pull/50
+
 2026-06-15  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* kwajd_read_headers(): initialise pointers before returning any error,

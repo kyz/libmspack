@@ -9,6 +9,9 @@
 	the libmspack changelog entries for what I think of this. Thank you
 	to "0daydreamerr" who sent me a report on this.
 
+	* test/md5.c: as I'm changing this file, I'll add a requested line to
+	quell a coverity warning: https://github.com/kyz/libmspack/pull/50
+
 2023-02-19  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* ensure_filepath(): had wrong logic, for the archive-controlled
