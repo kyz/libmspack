@@ -49,11 +49,6 @@ static const char rcsid[] =
    it is simpler to just do this in the source for each such file.
 */
 
-#if defined (_LIBC) || !defined (__GNU_LIBRARY__)
-
-#if !defined(__GNU_LIBRARY__) && !defined(STDC_HEADERS)
-#endif
-
 /* Match STRING against the filename pattern PATTERN, returning zero if
    it matches, nonzero if not.  */
 int
@@ -216,5 +211,3 @@ int         flags;
 
         return FNM_NOMATCH;
 }
-
-#endif /* _LIBC or not __GNU_LIBRARY__.  */
