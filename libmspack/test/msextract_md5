@@ -14,6 +14,7 @@ my $dir = tempdir("./.tempXXXX", CLEANUP => 1) . '/extradir';
 mkdir $dir;
 $ENV{LANG} = 'C';
 
+my @enddots;
 for my $cab (@ARGV) {
     my @files;
     print "*** $cab\n";
@@ -24,6 +25,7 @@ for my $cab (@ARGV) {
             my $file = $1;
             $file =~ s{\\}{/}g;
             $file =~ s{^/+}{};
+            push @enddots, $file if $file =~ /\.$/;
             push @files, $file;
         }
         else {
@@ -34,6 +36,11 @@ for my $cab (@ARGV) {
     next unless @files;
     my $olddir = cwd();
     chdir $dir;
+    for my $filewdots (@enddots) {
+        my $filenodots = $filewdots;
+        $filenodots =~ s/\.+$//;
+        `cp $filenodots $filewdots`;
+    }
     system 'md5sum', @files;
     chdir $olddir;
 }
