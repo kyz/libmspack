@@ -70,7 +70,7 @@
 #define pmgi_Signature      (0x0000)
 #define pmgi_QuickRefSize   (0x0004)
 #define pmgi_Entries        (0x0008)
-#define pmgi_headerSIZEOF   (0x000C)
+#define pmgi_headerSIZEOF   (0x0008)
 
 #define lzxcd_Length        (0x0000)
 #define lzxcd_Signature     (0x0004)

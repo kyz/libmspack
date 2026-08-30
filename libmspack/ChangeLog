@@ -1,3 +1,13 @@
+2026-08-30  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* chmd_fast_find(): reject infinite loops. There is now a limit on
+	how many chunks can be searched; enough to read every chunk once,
+	but no more than that. This means an infinite loop in PMGI or PMGL
+	chunks is no longer possible.
+
+	Thanks to Sumit Chakraborty for reporting the bug and developing
+	example CHM files.
+
 2026-08-29  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* build_decode_table(): add overflow check while allocating entries.

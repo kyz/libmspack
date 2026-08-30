@@ -536,9 +536,6 @@ static int chmd_read_headers(struct mspack_system *sys, struct mspack_file *fh,
  ***************************************
  * uses PMGI index chunks and quickref data to quickly locate a file
  * directly from the on-disk index.
- *
- * TODO: protect against infinite loops in chunks (where pgml_NextChunk
- * or a PMGI index entry point to an already visited chunk)
  */
 static int chmd_fast_find(struct mschm_decompressor *base,
                           struct mschmd_header *chm, const char *filename,
@@ -552,7 +549,7 @@ static int chmd_fast_find(struct mschm_decompressor *base,
      * https://developercommunity.visualstudio.com/content/problem/363489/c4701-false-positive-warning.html */
     const unsigned char *chunk, *p = NULL, *end = NULL;
     int err = MSPACK_ERR_OK, result = -1;
-    unsigned int n, sec;
+    unsigned int n, sec, max_chunks;
 
     if (!self || !chm || !f_ptr || (f_size != sizeof(struct mschmd_file))) {
         return MSPACK_ERR_ARGS;
@@ -566,10 +563,13 @@ static int chmd_fast_find(struct mschm_decompressor *base,
         return MSPACK_ERR_OPEN;
     }
 
+    /* upper limit on how many chunks to read */
+    max_chunks = chm->last_pmgl - chm->first_pmgl + 3;
+
     /* go through PMGI chunk hierarchy to reach PMGL chunk */
     if (chm->index_root < chm->num_chunks) {
         n = chm->index_root;
-        for (;;) {
+        while (--max_chunks > 0) {
             if (!(chunk = read_chunk(self, chm, fh, n))) {
                 sys->close(fh);
                 return self->error;
@@ -589,7 +589,8 @@ static int chmd_fast_find(struct mschm_decompressor *base,
     }
     else {
         /* PMGL chunks only, search from first_pmgl to last_pmgl */
-        for (n = chm->first_pmgl; n <= chm->last_pmgl;
+        for (n = chm->first_pmgl;
+             n <= chm->last_pmgl && --max_chunks > 0;
              n = EndGetI32(&chunk[pmgl_NextChunk]))
         {
             if (!(chunk = read_chunk(self, chm, fh, n))) {
@@ -601,12 +602,13 @@ static int chmd_fast_find(struct mschm_decompressor *base,
             if ((result = search_chunk(chm, chunk, filename, &p, &end)) > 0) {
                 break;
             }
-
-            /* stop simple infinite loops: can't visit the same chunk twice */
-            if (n == EndGetI32(&chunk[pmgl_NextChunk])) {
-                break;
-            }
         }
+    }
+
+    /* fail if we visited more chunks than exist in the file */
+    if (max_chunks == 0) {
+       D(("search index loop detected"))
+       result = -1;
     }
 
     /* if we found a file, read it */

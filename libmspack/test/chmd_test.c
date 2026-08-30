@@ -119,8 +119,31 @@ void chmd_search_test_01() {
                 TEST(f->length == result.length);
             }
         }
+        /* check a file which doesn't exist is not found */
+        TEST(chmd->fast_find(chmd, chm2, "/no-such-file",
+             &result, sizeof(result)) != 0 || result.section == NULL);
         chmd->close(chmd, chm2);
         chmd->close(chmd, chm1);
+    }
+    mspack_destroy_chm_decompressor(chmd);
+}
+
+/* check searching files with infinite loops doesn't hang */
+void chmd_search_test_02() {
+    struct mschm_decompressor *chmd;
+    unsigned int i;
+    const char *files[] = {
+        TESTFILE("pmgl-infinite-loop.chm"),
+        TESTFILE("pmgi-infinite-loop.chm"),
+    };
+
+    TEST(chmd = mspack_create_chm_decompressor(NULL));
+    for (i = 0; i < (sizeof(files)/sizeof(char *)); i++) {
+        struct mschmd_header *chm;
+        struct mschmd_file result;
+        TEST(chm = chmd->fast_open(chmd, files[i]));
+        TEST(chmd->fast_find(chmd, chm, "/zzz", &result, sizeof(result)) != 0);
+        chmd->close(chmd, chm);
     }
     mspack_destroy_chm_decompressor(chmd);
 }
@@ -167,6 +190,7 @@ int main() {
   chmd_open_test_02();
   chmd_open_test_03();
   chmd_search_test_01();
+  chmd_search_test_02();
   chmd_extract_test_01();
 
   printf("ALL %d TESTS PASSED.\n", test_count);
