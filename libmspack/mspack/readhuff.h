@@ -76,7 +76,8 @@
  *          in one lookup of the table.
  * length = A table to get code lengths from [0 to nsyms-1]
  * table  = The table to fill up with decoded symbols and pointers.
- *          Should be ((1<<nbits) + (nsyms*2)) in length.
+ *          Should be ((1<<nbits) + (nsyms*2)) in length,
+ *          or (nsyms*4) in length if (1<<nbits) < (nsyms*2)
  *
  * Returns 0 for OK or 1 for error
  */
