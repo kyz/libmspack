@@ -1,3 +1,21 @@
+2026-08-29  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* lzx.h: correctly size MAINTREE_table. It should be 10304 entries,
+	not 9248, as (1<<nbits) < (2*nsyms). It is 2112 bytes too small.
+
+	It has been wrong since adding OAB and LZX DELTA support in 2013.
+	LZX_MAINTREE_MAXSYMBOLS grew from 256+8*50 to 256+8*290 for more
+	position slots, but table size calculation wasn't changed.
+
+	It isn't an issue with CAB or CHM use of LZX, but unpacking an
+	OAB file with 32MB window size will write beyond MAINTREE_table
+	into the neighbouring LENGTH_table, and then be overwritten as
+	LENGTH_tree is built. Ultimately the file will fail to decode.
+	It doesn't write outwith struct lzxd_stream.
+
+	Thanks to Sumit Chakraborty for finding the bug and providing
+	a detailed report and examples.
+
 2026-07-21  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* kwajd.c, lzxd.c, oabd.c, qtmd.c, test/md5.c: add explicit casts

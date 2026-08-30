@@ -45,6 +45,31 @@ extern "C" {
 
 #define LZX_FRAME_SIZE (32768) /* the size of a frame in LZX */
 
+#if (1 << LZX_PRETREE_TABLEBITS) < (LZX_PRETREE_MAXSYMBOLS * 2)
+# define LZX_PRETREE_TABLESIZE (LZX_PRETREE_MAXSYMBOLS * 4)
+#else
+# define LZX_PRETREE_TABLESIZE ((1 << LZX_PRETREE_TABLEBITS) + \
+                                (LZX_PRETREE_MAXSYMBOLS * 2))
+#endif
+#if (1 << LZX_MAINTREE_TABLEBITS) < (LZX_MAINTREE_MAXSYMBOLS * 2)
+# define LZX_MAINTREE_TABLESIZE (LZX_MAINTREE_MAXSYMBOLS * 4)
+#else
+# define LZX_MAINTREE_TABLESIZE ((1 << LZX_MAINTREE_TABLEBITS) + \
+                                 (LZX_MAINTREE_MAXSYMBOLS * 2))
+#endif
+#if (1 << LZX_LENGTH_TABLEBITS) < (LZX_LENGTH_MAXSYMBOLS * 2)
+# define LZX_LENGTH_TABLESIZE (LZX_LENGTH_MAXSYMBOLS * 4)
+#else
+# define LZX_LENGTH_TABLESIZE ((1 << LZX_LENGTH_TABLEBITS) + \
+                               (LZX_LENGTH_MAXSYMBOLS * 2))
+#endif
+#if (1 << LZX_ALIGNED_TABLEBITS) < (LZX_ALIGNED_MAXSYMBOLS * 2)
+# define LZX_ALIGNED_TABLESIZE (LZX_ALIGNED_MAXSYMBOLS * 4)
+#else
+# define LZX_ALIGNED_TABLESIZE ((1 << LZX_ALIGNED_TABLEBITS) + \
+                                (LZX_ALIGNED_MAXSYMBOLS * 2))
+#endif
+
 struct lzxd_stream {
   struct mspack_system *sys;      /* I/O routines                            */
   struct mspack_file   *input;    /* input file handle                       */
@@ -87,14 +112,10 @@ struct lzxd_stream {
   unsigned char ALIGNED_len  [LZX_ALIGNED_MAXSYMBOLS  + LZX_LENTABLE_SAFETY];
 
   /* huffman decoding tables */
-  unsigned short PRETREE_table [(1 << LZX_PRETREE_TABLEBITS) +
-                                (LZX_PRETREE_MAXSYMBOLS * 2)];
-  unsigned short MAINTREE_table[(1 << LZX_MAINTREE_TABLEBITS) +
-                                (LZX_MAINTREE_MAXSYMBOLS * 2)];
-  unsigned short LENGTH_table  [(1 << LZX_LENGTH_TABLEBITS) +
-                                (LZX_LENGTH_MAXSYMBOLS * 2)];
-  unsigned short ALIGNED_table [(1 << LZX_ALIGNED_TABLEBITS) +
-                                (LZX_ALIGNED_MAXSYMBOLS * 2)];
+  unsigned short PRETREE_table [LZX_PRETREE_TABLESIZE];
+  unsigned short MAINTREE_table[LZX_MAINTREE_TABLESIZE];
+  unsigned short LENGTH_table  [LZX_LENGTH_TABLESIZE];
+  unsigned short ALIGNED_table [LZX_ALIGNED_TABLESIZE];
   unsigned char LENGTH_empty;
 
   /* this is used purely for doing the intel E8 transform */
