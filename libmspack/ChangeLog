@@ -1,5 +1,16 @@
 2026-08-29  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* build_decode_table(): add overflow check while allocating entries.
+	For example, an abnormal length on the last symbol could write up to
+	14 entries (56 bytes) beyond the end of the table. Fortunately, all
+	tables are followed by other tables or buffers, so this doesn't write
+	beyond any allocated structure... but it's still a bug worth fixing.
+
+	Thanks to Sumit Chakraborty for finding the bug and providing
+	a detailed report and examples.
+
+2026-08-29  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* lzx.h: correctly size MAINTREE_table. It should be 10304 entries,
 	not 9248, as (1<<nbits) < (2*nsyms). It is 2112 bytes too small.
 

@@ -84,7 +84,7 @@
 static int make_decode_table(unsigned int nsyms, unsigned int nbits,
                              unsigned char *length, unsigned short *table)
 {
-    register unsigned short sym, next_symbol;
+    register unsigned short sym, next_symbol, end;
     register unsigned int leaf, fill;
 #ifdef BITS_ORDER_LSB
     register unsigned int reverse;
@@ -135,6 +135,7 @@ static int make_decode_table(unsigned int nsyms, unsigned int nbits,
 
     /* next_symbol = base of allocation for long codes */
     next_symbol = ((table_mask >> 1) < nsyms) ? nsyms : (table_mask >> 1);
+    end = next_symbol + nsyms;
 
     /* give ourselves room for codes to grow by up to 16 more bits.
      * codes now start at bit nbits+16 and end at (nbits+16-codelength) */
@@ -157,6 +158,7 @@ static int make_decode_table(unsigned int nsyms, unsigned int nbits,
             for (fill = 0; fill < (bit_num - nbits); fill++) {
                 /* if this path hasn't been taken yet, 'allocate' two entries */
                 if (table[leaf] == 0xFFFF) {
+                    if (next_symbol >= end) return 1; /* table overflow */
                     table[(next_symbol << 1)     ] = 0xFFFF;
                     table[(next_symbol << 1) + 1 ] = 0xFFFF;
                     table[leaf] = next_symbol++;
