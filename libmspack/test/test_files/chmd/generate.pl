@@ -3,8 +3,7 @@ use strict;
 use Encode qw(encode);
 use bigint;
 
-my $clen  = 4096; # standard chunk length
-my $max_entries = $clen - 22; # max free space for entries in one chunk
+my $clen = 4096; # standard chunk length
 
 sub u1($) { pack 'C', $_[0] }
 sub u2($) { pack 'v', $_[0] }
@@ -25,7 +24,7 @@ sub encint($) {
   return $out;
 }
 
-sub entry {
+sub entry($$$$) {
     my ($name, $section, $offset, $length) = @_;
     return encint(length $name)
         . $name
@@ -34,29 +33,40 @@ sub entry {
         . encint($length);
 }
 
-sub chunk {
-    my @entries = @_;
+sub idx($$) {
+    my ($name, $idx) = @_;
+    return encint(length $name)
+        . $name
+        . encint($idx);
+}
 
-    my $chdr = 'PMGL' # PMGL id
+sub chunk($@) {
+    my ($chdr, @entries) = @_;
+    my $chunk = $chdr . join '', @entries;
+    my $cfree = $clen - length($chunk);
+    die if $cfree < 2;
+    # append empty "free space" area and number of entries
+    $chunk .= (u1(0) x ($cfree - 2)) . u2(@entries);
+    # fixup free space in header
+    substr($chunk, 0x04, 4, u4($cfree));
+    return $chunk;
+}
+
+sub pmgl_chunk(@) {
+    my $chdr = 'PMGL'  # 0x00 id
         . u4(0)        # 0x04 free space (FIXUP)
         . u4(0)        # 0x08 unknown
         . u4(-1)       # 0x0C previous chunk (FIXUP)
         . u4(-1)       # 0x10 next chunk (FIXUP)
         ;              # 0x14 SIZEOF
-    my $cdata = join '', @entries;
+    return chunk($chdr, @_);
+}
 
-    my $cfree = $clen - length($cdata) - length($chdr);
-    die if length($cdata) > $max_entries;
-
-    # append empty "free space" area and number of entries
-    my $chunk = $chdr
-        . $cdata
-        . (u1(0) x ($cfree - 2))
-        . u2(scalar @entries);
-
-    # fixup free space in header
-    substr($chunk, 0x04, 4, u4($cfree));
-    return $chunk;
+sub pmgi_chunk(@) {
+    my $chdr = 'PMGI'  # 0x00 id
+        . u4(0)        # 0x04 free space (FIXUP)
+        ;              # 0x08 SIZEOF
+    return chunk($chdr, @_);
 }
 
 sub hdr {
@@ -74,7 +84,7 @@ sub hdr {
         . u8(0)      # 0x40 hdr0 length (FIXUP)
         . u8(0)      # 0x48 hdr1 offset (FIXUP)
         . u8(0)      # 0x50 hdr1 length (FIXUP)
-        ;            # SIZEOF: 0x54
+        ;            # SIZEOF: 0x58
 }
 
 sub hs0 {
@@ -86,8 +96,8 @@ sub hs0 {
         ;            # SIZEOF: 0x18
 }
 
-sub hs1 {
-    my $cmax = shift;
+sub hs1($$$$) {
+    my ($chunks, $first, $last, $root) = @_;
     my $guid3 = guid('5D02926A-212E-11D0-9DF9-00A0C922E6EC');
     return 'ITSP'       # 0x00 id
         . u4(1)         # 0x04 unknown
@@ -96,32 +106,46 @@ sub hs1 {
         . u4($clen)     # 0x10 dir chunk size
         . u4(2)         # 0x14 quickref density
         . u4(1)         # 0x18 index depth
-        . u4(-1)        # 0x1C root PMGI chunk
-        . u4(0)         # 0x20 first PMGL chunk
-        . u4($cmax)     # 0x24 last PMGL chunk
+        . u4($root)     # 0x1C root PMGI chunk
+        . u4($first)    # 0x20 first PMGL chunk
+        . u4($last)     # 0x24 last PMGL chunk
         . u4(-1)        # 0x28 unknown
-        . u4(1)         # 0x2C number of chunks
+        . u4($chunks)   # 0x2C number of chunks
         . u4(0x904)     # 0x30 language
         . $guid3        # 0x34 GUID
         . u4(0x54)      # 0x44 header length
         . u4(-1)        # 0x48 unknown
         . u4(-1)        # 0x4C unknown
         . u4(-1)        # 0x50 unknown
-        ;                 # SIZEOF: 0x54
+        ;               # SIZEOF: 0x54
 }
+
+sub is_pmgl($) { substr($_[0], 0, 4) eq 'PMGL' }
 
 sub chm {
     my @chunks = @_;
-    my ($hdr, $hs0, $hs1) = (hdr(), hs0(), hs1($#chunks));
+
+    # link PMGL chunks, find first/last PMGL chunk and last PMGI chunk
+    my ($first, $last, $root, $prev) = (-1, -1, -1, -1);
+    for my $i (0 .. $#chunks) {
+        if (is_pmgl($chunks[$i])) {
+            $last = $i;
+            $first = $i if $first == -1;
+            substr($chunks[$i], 0x0C, 4, u4($prev)) if $prev != -1; # previous chunk
+            substr($chunks[$prev], 0x10, 4, u4($i)) if $prev != -1; # next chunk
+            $prev = $i;
+        } else {
+            $root = $i; # make last PMGI chunk the root
+        }
+    }
+    die unless $first >= 0;
+
+    my ($hdr, $hs0, $hs1) = (hdr(), hs0(), hs1(@chunks, $first, $last, $root));
     substr($hdr, 0x38, 8, u8(length($hdr))); # hs0 offset
     substr($hdr, 0x40, 8, u8(length($hs0))); # hs0 length
     substr($hdr, 0x48, 8, u8(length($hdr) + length($hs0))); # hs1 offset
     substr($hdr, 0x50, 8, u8(length($hs1))); # hs1 length
     substr($hs0, 0x08, 8, u8(length($hdr) + length($hs0) + length($hs1) + ($clen * @chunks))); # chm length
-    for (my $i = 1; $i <= $#chunks; $i++) {
-        substr($chunks[$i],     0x0C, 4, u4($i - 1)); # previous chunk
-        substr($chunks[$i - 1], 0x10, 4, u4($i));     # next chunk
-    }
     return join '', $hdr, $hs0, $hs1, @chunks;
 }
 
@@ -134,11 +158,10 @@ sub chm {
 sub chm_sysname_overread {
     if (open my $fh, '>', 'cve-2019-1010305-name-overread.chm') {
         my $sysname = entry('::', 0, 0, 0);
-        my $padding = entry('x' x $clen, 0, 0, 0);
-        my $padding_overhead = length($padding) - $clen;
-        my $maxlen = $max_entries - length($sysname) - $padding_overhead;
-        $padding = entry('x' x $maxlen, 0, 0, 0);
-        print $fh chm(chunk($padding, $sysname));
+        my $padding_overhead = length(entry('x' x $clen, 0, 0, 0)) - $clen;
+        my $maxlen = $clen - 0x14 - 0x02 - length($sysname) - $padding_overhead;
+        my $padding = entry('x' x $maxlen, 0, 0, 0);
+        print $fh chm(pmgl_chunk($padding, $sysname));
         close $fh;
     }
 }
@@ -149,7 +172,7 @@ sub chm_unicode_u100 {
         my $u100 = encode('UTF-8', chr(256));
         my $entry1 = entry("1", 0, 1, 1);
         my $entry2 = entry($u100, 0, 2, 2);
-        print $fh chm(chunk($entry1, $entry2));
+        print $fh chm(pmgl_chunk($entry1, $entry2));
         close $fh;
     }
 }
@@ -194,7 +217,27 @@ sub chm_encints {
         push @entries, entry($name, 0, $offset, $length);
     }
     if (open my $fh, '>', $fname) {
-        print $fh chm(chunk(@entries));
+        print $fh chm(pmgl_chunk(@entries));
+        close $fh;
+    }
+}
+
+# Create a CHM with an infinite loop of PMGL chunks
+sub chm_pmgl_loop {
+    if (open my $fh, '>', 'pmgl-infinite-loop.chm') {
+        my $chm = chm(pmgl_chunk(entry('/1', 0, 1, 1)), pmgl_chunk(entry('/2', 0, 2, 2)));
+        # change chunk 1's pmgl_NextChunk from 2 to 0, creating infinite loop
+        substr($chm, 0x58 + 0x18 + 0x54 + $clen + 0x10, 4, u4(0));
+        print $fh $chm;
+        close $fh;
+    }
+}
+
+# Create a CHM with an infinite loop of PMGI chunks
+sub chm_pmgi_loop {
+    if (open my $fh, '>', 'pmgi-infinite-loop.chm') {
+        # PMGI pointing back to itself
+        print $fh chm(pmgl_chunk(entry('/1', 0, 1, 1)), pmgi_chunk(idx('/', 1)));
         close $fh;
     }
 }
@@ -203,3 +246,5 @@ chm_sysname_overread();
 chm_unicode_u100();
 chm_encints_32bit();
 chm_encints_64bit();
+chm_pmgl_loop();
+chm_pmgi_loop();
