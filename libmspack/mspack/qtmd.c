@@ -226,6 +226,7 @@ struct qtmd_stream *qtmd_init(struct mspack_system *system,
   qtm->window_posn = 0;
   qtm->frame_todo  = QTM_FRAME_SIZE;
   qtm->header_read = 0;
+  qtm->window_wrap = 0;
   qtm->error       = MSPACK_ERR_OK;
 
   qtm->i_ptr = qtm->i_end = &qtm->inbuf[0];
@@ -349,6 +350,12 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
           return qtm->error = MSPACK_ERR_DECRUNCH;
         }
 
+        /* does match offset go beyond what we've decoded so far? */
+        if (match_offset > window_posn && !qtm->window_wrap) {
+            D(("match offset beyond decoded stream"))
+            return qtm->error = MSPACK_ERR_DECRUNCH;
+        }
+
         rundest = &window[window_posn];
         frame_todo -= match_length;
 
@@ -443,6 +450,7 @@ int qtmd_decompress(struct qtmd_stream *qtm, off_t out_bytes) {
 
     /* window wrap? */
     if (window_posn == qtm->window_size) {
+      qtm->window_wrap = 1;
       /* flush all currently stored data */
       i = (qtm->o_end - qtm->o_ptr);
       /* break out if we have more than enough to finish this request */

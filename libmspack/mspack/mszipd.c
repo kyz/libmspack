@@ -368,6 +368,9 @@ struct mszipd_stream *mszipd_init(struct mspack_system *system,
   zip->repair_mode     = repair_mode;
   zip->flush_window    = &mszipd_flush_window;
 
+  /* prevent overlong match offset reading uninitialised memory */
+  memset(&zip->window[0], 0, MSZIP_FRAME_SIZE);
+
   zip->i_ptr = zip->i_end = &zip->inbuf[0];
   zip->o_ptr = zip->o_end = NULL;
   zip->bit_buffer = 0; zip->bits_left = 0;
