@@ -42,6 +42,7 @@ struct qtmd_stream {
 
   unsigned short H, L, C;         /* high/low/current: arith coding state    */
   unsigned char header_read;      /* have we started decoding a new frame?   */
+  unsigned char window_wrap;      /* have we decoded >=1 window of data?     */
 
   int error;
 
