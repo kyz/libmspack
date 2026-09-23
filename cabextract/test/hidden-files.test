@@ -1,0 +1,31 @@
+#!/bin/sh
+# test cabextract sees hidden files at cfhead_FileOffset with -f option
+. test/testcase
+
+"$cabextract" -l cabs/hidden-files.cab >$actual 2>&1
+compare_with <<'EOF'
+cabs/hidden-files.cab: WARNING; atypical files offset in header
+Viewing cabinet: cabs/hidden-files.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+         0 | 12.03.1997 11:13:52 | normal1.txt
+         0 | 12.03.1997 11:13:52 | normal2.txt
+
+All done, no errors.
+EOF
+
+"$cabextract" -fl cabs/hidden-files.cab >$actual 2>&1
+compare_with <<'EOF'
+cabs/hidden-files.cab: WARNING; atypical files offset in header
+Viewing cabinet: cabs/hidden-files.cab
+ File size | Date       Time     | Name
+-----------+---------------------+-------------
+         0 | 12.03.1997 11:13:52 | normal1.txt
+         0 | 12.03.1997 11:13:52 | normal2.txt
+         0 | 12.03.1997 11:13:52 | hidden1.txt
+         0 | 12.03.1997 11:13:52 | hidden2.txt
+
+All done, no errors.
+EOF
+
+read status < $status && test "x$status" = xsuccess

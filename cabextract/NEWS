@@ -1,3 +1,14 @@
+New in 1.12
+* cabextract -f now finds "hidden" files. There are two ways to look in
+  cabinets for files, which normally have the same results, but don't have
+  to. 7-Zip and Microsoft extract.exe find "hidden" files but not "normal"
+  files, while cabextract and Microsoft expand.exe find "normal" files but
+  not "hidden" files. cabextract -f now finds both "hidden" and "normal"
+  files, if they differ.
+* cabextract now prints more warning and error messages for normal cab files
+  listed on the command line. For example, it now prints "WARNING; atypical
+  files offset in header" if cabextract -f might find "hidden" files
+
 New in 1.11
 * Fixed bug in creating directories given in archives, e.g. extracting file
   "a/b.c" from a cab file wouldn't create directory "a" (broken in 1.10)
