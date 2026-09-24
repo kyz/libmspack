@@ -1,3 +1,14 @@
+2026-09-24  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* lzxd_decompress(): you could get an overlong match_offset into
+	R0/R1/R2 using an uncompressed block, then reference it in a match
+	in the following verbatim/aligned block. If the value is over
+	2^31 + window_posn, that makes "j" negative, which makes the match
+	length "i" longer by up to 2GB, which means copying the match will
+	overwrite up to ~2GB past the end of the window.
+	I added a check against j < 0, but also now fail decompression for
+	overlong R0/R1/R2 values in an uncompressed block header.
+
 2026-09-23  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* mszipd_init(), qtmd_decompress(): prevent overlong match offsets

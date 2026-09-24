@@ -514,6 +514,12 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
           R0 = EndGetI32(&buf[0]);
           R1 = EndGetI32(&buf[4]);
           R2 = EndGetI32(&buf[8]);
+          if (R0 >= lzx->window_size || R1 >= lzx->window_size ||
+              R2 >= lzx->window_size)
+          {
+            D(("overlong R0/R1/R2 offset in uncompressed block header"))
+            return lzx->error = MSPACK_ERR_DECRUNCH;
+          }
           break;
 
         default:
@@ -628,7 +634,7 @@ int lzxd_decompress(struct lzxd_stream *lzx, off_t out_bytes) {
               }
               /* j = length from match offset to end of window */
               j = match_offset - window_posn;
-              if (j > (int) lzx->window_size) {
+              if (j < 0 || j > (int) lzx->window_size) {
                 D(("match offset beyond window boundaries"))
                 return lzx->error = MSPACK_ERR_DECRUNCH;
               }
