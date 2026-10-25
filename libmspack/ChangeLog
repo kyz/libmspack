@@ -1,3 +1,17 @@
+2026-10-25  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd_append(), cabd_prepend(): guard against the programmer
+	appending/prepending a search() result rather than an open() result
+	and trying to merge two parts of the same cabinet together, which
+	then causes problems freeing memory when closing the cabinet.
+
+	This was already an incorrect use of the API, which says the
+	cabinets being merged must span "more than one physical cabinet
+	file on disk", but I've added an even more explicit statement
+	that prevcab/nextcab must come from open() and not search().
+
+	Thanks to Hyunwoo Lee for reporting this.
+
 2026-09-24  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* lzxd_decompress(): you could get an overlong match_offset into
