@@ -1407,7 +1407,7 @@ static int chmd_error(struct mschm_decompressor *base) {
 /***************************************
  * READ_OFF64
  ***************************************
- * Reads a 64-bit signed integer from memory in Intel byte order.
+ * Reads a 64-bit integer from memory in Intel byte order. Must be unsigned.
  * If running on a system with a 64-bit off_t, this is simply done.
  * If running on a system with a 32-bit off_t, offsets up to 0x7FFFFFFF
  * are accepted, offsets beyond that cause an error message.
@@ -1417,6 +1417,7 @@ static int read_off64(off_t *var, unsigned char *mem,
 {
 #if SIZEOF_OFF_T >= 8
     *var = EndGetI64(mem);
+    if (*var < 0) return 1;
 #else
     if ((mem[3] & 0x80) | mem[4] | mem[5] | mem[6] | mem[7]) {
         sys->message(fh, "library not compiled to support large files.");

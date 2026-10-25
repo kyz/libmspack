@@ -94,6 +94,34 @@ void chmd_open_test_03() {
     mspack_destroy_chm_decompressor(chmd);
 }
 
+/* check that files with negative off64 values are rejected */
+void chmd_open_test_04() {
+    struct mschm_decompressor *chmd;
+    struct mschmd_header *chm;
+    unsigned int i;
+    const char *badfiles[] = {
+        TESTFILE("negative-off64-hs0-offset.chm"),
+        TESTFILE("negative-off64-hs1-offset.chm"),
+        TESTFILE("negative-off64-chm-length.chm"),
+    };
+    /* these have negative offsets but mspack never reads them */
+    const char *goodfiles[] = {
+        TESTFILE("negative-off64-hs0-length.chm"),
+        TESTFILE("negative-off64-hs1-length.chm"),
+    };
+
+    TEST(chmd = mspack_create_chm_decompressor(NULL));
+    for (i = 0; i < (sizeof(badfiles)/sizeof(char *)); i++) {
+        TEST(chmd->open(chmd, badfiles[i]) == NULL);
+        TEST(chmd->last_error(chmd) == MSPACK_ERR_DATAFORMAT);
+    }
+    for (i = 0; i < (sizeof(goodfiles)/sizeof(char *)); i++) {
+        TEST(chm = chmd->open(chmd, goodfiles[i]));
+        chmd->close(chmd, chm);
+    }
+    mspack_destroy_chm_decompressor(chmd);
+}
+
 /* check searching bad files doesn't crash */
 void chmd_search_test_01() {
     struct mschm_decompressor *chmd;
@@ -189,6 +217,7 @@ int main() {
   chmd_open_test_01();
   chmd_open_test_02();
   chmd_open_test_03();
+  chmd_open_test_04();
   chmd_search_test_01();
   chmd_search_test_02();
   chmd_extract_test_01();
