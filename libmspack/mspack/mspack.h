@@ -1080,10 +1080,10 @@ struct mscab_decompressor {
    *
    * @param  self     a self-referential pointer to the mscab_decompressor
    *                  instance being called
-   * @param  cab      the cabinet which will be appended to,
-   *                  predecessor of nextcab
-   * @param  nextcab  the cabinet which will be appended,
-   *                  successor of cab
+   * @param  cab      the cabinet which will be appended to, predecessor
+   *                  of nextcab. Can come from open() or search()
+   * @param  nextcab  the cabinet which will be appended, successor
+   *                  of cab. Must come from open(), not search()
    * @return an error code, or MSPACK_ERR_OK if successful
    * @see prepend(), open(), close()
    */

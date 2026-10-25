@@ -97,7 +97,7 @@ static int cabd_append(
   struct mscab_decompressor *base, struct mscabd_cabinet *cab,
   struct mscabd_cabinet *nextcab);
 static int cabd_merge(
-  struct mscab_decompressor *base, struct mscabd_cabinet *lcab,
+  struct mscab_decompressor_p *base, struct mscabd_cabinet *lcab,
   struct mscabd_cabinet *rcab);
 static int cabd_can_merge_folders(
   struct mspack_system *sys, struct mscabd_folder_p *lfol,
@@ -866,29 +866,43 @@ static int cabd_prepend(struct mscab_decompressor *base,
                         struct mscabd_cabinet *cab,
                         struct mscabd_cabinet *prevcab)
 {
-  return cabd_merge(base, prevcab, cab);
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
+
+  if (!self) return MSPACK_ERR_ARGS;
+
+  if (prevcab && (prevcab->next || prevcab->base_offset)) {
+    D(("prevcab is from search() not open()"))
+    return self->error = MSPACK_ERR_ARGS;
+  }
+
+  return cabd_merge(self, prevcab, cab);
 }
 
 static int cabd_append(struct mscab_decompressor *base,
                         struct mscabd_cabinet *cab,
                         struct mscabd_cabinet *nextcab)
 {
-  return cabd_merge(base, cab, nextcab);
+  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
+
+  if (!self) return MSPACK_ERR_ARGS;
+
+  if (nextcab && (nextcab->next || nextcab->base_offset)) {
+    D(("nextcab is from search() not open()"))
+    return self->error = MSPACK_ERR_ARGS;
+  }
+
+  return cabd_merge(self, cab, nextcab);
 }
 
-static int cabd_merge(struct mscab_decompressor *base,
+static int cabd_merge(struct mscab_decompressor_p *self,
                       struct mscabd_cabinet *lcab,
                       struct mscabd_cabinet *rcab)
 {
-  struct mscab_decompressor_p *self = (struct mscab_decompressor_p *) base;
   struct mscabd_folder_data *data, *ndata;
   struct mscabd_folder_p *lfol, *rfol;
   struct mscabd_file *fi, *rfi, *lfi;
   struct mscabd_cabinet *cab;
-  struct mspack_system *sys;
-
-  if (!self) return MSPACK_ERR_ARGS;
-  sys = self->system;
+  struct mspack_system *sys = self->system;
 
   /* basic args check */
   if (!lcab || !rcab || (lcab == rcab)) {

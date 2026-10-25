@@ -401,6 +401,26 @@ void cabd_merge_test_02() {
     mspack_destroy_cab_decompressor(cabd);
 }
 
+/* test merging two cabinets from the same search is rejected */
+void cabd_merge_test_03() {
+    struct mscab_decompressor *cabd;
+    struct mscabd_cabinet *cab, *c2, *c3, *c4, *c5;
+
+    TEST(cabd = mspack_create_cab_decompressor(NULL));
+    TEST(cab = cabd->search(cabd, TESTFILE("multi_basic_merged.cab")));
+    TEST(c2 = cab->next);
+    TEST(c3 = c2->next);
+    TEST(c4 = c3->next);
+    TEST(c5 = c4->next);
+    TEST(cabd->prepend(cabd, c2, cab) == MSPACK_ERR_ARGS);
+    TEST(cabd->append(cabd, cab, c2) == MSPACK_ERR_ARGS);
+    TEST(cabd->append(cabd, cab, c3) == MSPACK_ERR_ARGS);
+    TEST(cabd->append(cabd, cab, c4) == MSPACK_ERR_ARGS);
+    TEST(cabd->append(cabd, cab, c5) == MSPACK_ERR_ARGS);
+    cabd->close(cabd, cab);
+    mspack_destroy_cab_decompressor(cabd);
+}
+
 /* test bad cabinets cannot be extracted */
 void cabd_extract_test_01() {
     struct mscab_decompressor *cabd;
@@ -540,6 +560,7 @@ int main() {
 
     cabd_merge_test_01();
     cabd_merge_test_02();
+    cabd_merge_test_03();
 
     cabd_extract_test_01();
     cabd_extract_test_02();
