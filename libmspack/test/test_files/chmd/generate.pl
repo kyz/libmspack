@@ -242,9 +242,29 @@ sub chm_pmgi_loop {
     }
 }
 
+# Create CHMs with a negative off64 values
+sub chm_negative_off64s {
+    chm_negative_off64('negative-off64-hs0-offset.chm', 0x38);
+    chm_negative_off64('negative-off64-hs0-length.chm', 0x40);
+    chm_negative_off64('negative-off64-hs1-offset.chm', 0x48);
+    chm_negative_off64('negative-off64-hs1-length.chm', 0x50);
+    chm_negative_off64('negative-off64-chm-length.chm', 0x58 + 0x08);
+}
+
+sub chm_negative_off64 {
+    my ($fname, $offset) = @_;
+    if (open my $fh, '>', $fname) {
+        my $chm = chm(pmgl_chunk(entry('1', 0, 1, 1)));
+        substr($chm, $offset, 8, u8(-1));
+        print $fh $chm;
+        close $fh;
+    }
+}
+
 chm_sysname_overread();
 chm_unicode_u100();
 chm_encints_32bit();
 chm_encints_64bit();
 chm_pmgl_loop();
 chm_pmgi_loop();
+chm_negative_off64s();

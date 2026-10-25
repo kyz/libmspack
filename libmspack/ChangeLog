@@ -1,5 +1,10 @@
 2026-10-25  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* read_off64(): reject any CHM files with negative off64 values.
+	Thanks to StateCtrl Inc. for reporting it.
+
+2026-10-25  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* cabd_append(), cabd_prepend(): guard against the programmer
 	appending/prepending a search() result rather than an open() result
 	and trying to merge two parts of the same cabinet together, which
