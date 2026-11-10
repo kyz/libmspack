@@ -519,8 +519,6 @@ static char *cabd_read_string(struct mspack_system *sys,
 
   /* search for a null terminator in the buffer */
   for (i = 0, ok = 0; i < len; i++) if (!buf[i]) { ok = 1; break; }
-  /* optionally reject empty strings */
-  if (i == 0 && !permit_empty) ok = 0;
 
   if (!ok) {
     *error = MSPACK_ERR_DATAFORMAT;
@@ -532,6 +530,12 @@ static char *cabd_read_string(struct mspack_system *sys,
   /* set the data stream to just after the string and return */
   if (sys->seek(fh, base + (off_t)len, MSPACK_SYS_SEEK_START)) {
     *error = MSPACK_ERR_SEEK;
+    return NULL;
+  }
+
+  /* optionally reject empty strings */
+  if (len == 1 && !permit_empty) {
+    *error = MSPACK_ERR_DATAFORMAT;
     return NULL;
   }
 
