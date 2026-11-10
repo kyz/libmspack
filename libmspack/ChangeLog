@@ -1,5 +1,18 @@
 2026-11-11  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* cabd_read_files(): Don't set merge_next/merge_prev if the file
+	is skipped, which happens if salvage mode is enabled and the file's
+	filename is blank or overlong. Otherwise, cabd_can_merge_folders()
+	will read from the skipped file's freed memory when comparing file
+	lists, which typically crashes.
+
+	Thanks to Nguyen Duy Hung (Hugnd-UIT) for the report.
+
+	* cabd_read_files(): now rejects cabs for having file folder index
+	0xFFFF ("continued previous and next"), but more than one folder.
+
+2026-11-11  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* cabd_read_string(): seek to the byte after a string if it's
         null-terminated but empty (when it's not allowed to be), so that
         salvage mode can continue reading if that was the only problem.
