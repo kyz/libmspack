@@ -80,8 +80,7 @@ static char *cabd_read_string(
   int *error);
 static int cabd_read_files(
   struct mspack_system *sys, struct mspack_file *fh,
-  struct mscabd_cabinet_p *cab, struct mscabd_folder_p *fol,
-  int num_folders, int num_files, int salvage);
+  struct mscabd_cabinet_p *cab, int num_folders, int num_files, int salvage);
 
 static struct mscabd_cabinet *cabd_search(
   struct mscab_decompressor *base, const char *filename);
@@ -457,7 +456,7 @@ static int cabd_read_headers(struct mspack_system *sys,
   cffile_offset = sys->tell(fh) - cab->base.base_offset;
 
   /* read files */
-  err = cabd_read_files(sys, fh, cab, fol, num_folders, num_files, salvage);
+  err = cabd_read_files(sys, fh, cab, num_folders, num_files, salvage);
 
   /* if the header claimed file offset is not the typical value */
   if (cffile_offset != cfhead_file_offset) {
@@ -468,7 +467,7 @@ static int cabd_read_headers(struct mspack_system *sys,
       if (!sys->seek(fh, cfhead_file_offset + cab->base.base_offset, MSPACK_SYS_SEEK_START)) {
         /* save the existing list of files (if any), they are overwritten */
         struct mscabd_file *f1 = cab->base.files;
-        int err2 = cabd_read_files(sys, fh, cab, fol, num_folders, num_files, salvage);
+        int err2 = cabd_read_files(sys, fh, cab, num_folders, num_files, salvage);
         struct mscabd_file *f2 = cab->base.files;
         /* combine both lists of files */
         if (f1 && f1 != f2) {
@@ -552,7 +551,6 @@ static char *cabd_read_string(struct mspack_system *sys,
 static int cabd_read_files(struct mspack_system *sys,
                            struct mspack_file *fh,
                            struct mscabd_cabinet_p *cab,
-                           struct mscabd_folder_p *fol,
                            int num_folders, int num_files, int salvage)
 {
   int i, x, err, fidx;
@@ -587,31 +585,19 @@ static int cabd_read_files(struct mspack_system *sys,
         file->folder = NULL;
       }
     }
-    else {
-      /* either CONTINUED_TO_NEXT, CONTINUED_FROM_PREV or
-       * CONTINUED_PREV_AND_NEXT */
-      if ((fidx == cffileCONTINUED_TO_NEXT) ||
-          (fidx == cffileCONTINUED_PREV_AND_NEXT))
-      {
-        /* get last folder */
-        struct mscabd_folder *ifol = cab->base.folders;
-        while (ifol->next) ifol = ifol->next;
-        file->folder = ifol;
-
-        /* set "merge next" pointer */
-        fol = (struct mscabd_folder_p *) ifol;
-        if (!fol->merge_next) fol->merge_next = file;
-      }
-
-      if ((fidx == cffileCONTINUED_FROM_PREV) ||
-          (fidx == cffileCONTINUED_PREV_AND_NEXT))
-      {
-        /* get first folder */
-        file->folder = cab->base.folders;
-
-        /* set "merge prev" pointer */
-        fol = (struct mscabd_folder_p *) file->folder;
-        if (!fol->merge_prev) fol->merge_prev = file;
+    else if (fidx == cffileCONTINUED_FROM_PREV) {
+      file->folder = cab->base.folders; /* in the first folder */
+    }
+    else if (fidx == cffileCONTINUED_TO_NEXT) {
+      struct mscabd_folder *lastfol = cab->base.folders;
+      while (lastfol->next) lastfol = lastfol->next;
+      file->folder = lastfol; /* in the last folder */
+    }
+    else if (fidx == cffileCONTINUED_PREV_AND_NEXT) {
+      file->folder = cab->base.folders; /* in the first and ONLY folder */
+      if (cab->base.folders->next) {
+        D(("file continued prev and next but more than one folder in cab"))
+        file->folder = NULL; /* error if cab has more than one folder */
       }
     }
 
@@ -636,6 +622,16 @@ static int cabd_read_files(struct mspack_system *sys,
       sys->free(file);
       if (salvage) continue;
       return err ? err : MSPACK_ERR_DATAFORMAT;
+    }
+
+    /* if this is the first split file, set folder merge pointers */
+    if (fidx == cffileCONTINUED_TO_NEXT || fidx == cffileCONTINUED_PREV_AND_NEXT) {
+      struct mscabd_folder_p *fol = (struct mscabd_folder_p *) file->folder;
+      if (!fol->merge_next) fol->merge_next = file;
+    }
+    if (fidx == cffileCONTINUED_FROM_PREV || fidx == cffileCONTINUED_PREV_AND_NEXT) {
+      struct mscabd_folder_p *fol = (struct mscabd_folder_p *) file->folder;
+      if (!fol->merge_prev) fol->merge_prev = file;
     }
 
     /* link file entry into file list */

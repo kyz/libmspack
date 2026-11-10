@@ -129,6 +129,9 @@ void cabd_open_test_04() {
     /* second file in the cab has a folder index for a non-existent folder */
     TEST(!cabd->open(cabd, TESTFILE("bad_folderindex.cab")));
 
+    /* continued-prev-and-next folder index but more than one folder */
+    TEST(!cabd->open(cabd, TESTFILE("bad_continue.cab")));
+
     /* cab has one file with empty filename */
     TEST(!cabd->open(cabd, TESTFILE("filename-read-violation-1.cab")));
 
@@ -421,6 +424,33 @@ void cabd_merge_test_03() {
     mspack_destroy_cab_decompressor(cabd);
 }
 
+/* test cabd_read_files() clears merge_next/merge_prev for skipped files
+ * so that cabd_merge() doesn't later read freed memory */
+void cabd_merge_test_04() {
+    struct mscab_decompressor *cabd;
+    struct mscabd_cabinet *cab1, *cab2;
+
+    TEST(cabd = mspack_create_cab_decompressor(NULL));
+    /* skip bad files rather than error */
+    cabd->set_param(cabd, MSCABD_PARAM_SALVAGE, 1);
+
+    /* test appending bad-merge2.cab to bad-merge1.cab */
+    TEST(cab1 = cabd->open(cabd, TESTFILE("bad-merge1.cab")));
+    TEST(cab2 = cabd->open(cabd, TESTFILE("bad-merge2.cab")));
+    TEST(cabd->append(cabd, cab1, cab2) == MSPACK_ERR_DATAFORMAT);
+    cabd->close(cabd, cab1);
+    cabd->close(cabd, cab2);
+
+    /* test prepending bad-merge3.cab to bad-merge4.cab */
+    TEST(cab1 = cabd->open(cabd, TESTFILE("bad-merge3.cab")));
+    TEST(cab2 = cabd->open(cabd, TESTFILE("bad-merge4.cab")));
+    TEST(cabd->prepend(cabd, cab2, cab1) == MSPACK_ERR_DATAFORMAT);
+    cabd->close(cabd, cab1);
+    cabd->close(cabd, cab2);
+
+    mspack_destroy_cab_decompressor(cabd);
+}
+
 /* test bad cabinets cannot be extracted */
 void cabd_extract_test_01() {
     struct mscab_decompressor *cabd;
@@ -561,6 +591,7 @@ int main() {
     cabd_merge_test_01();
     cabd_merge_test_02();
     cabd_merge_test_03();
+    cabd_merge_test_04();
 
     cabd_extract_test_01();
     cabd_extract_test_02();
