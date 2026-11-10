@@ -1,3 +1,9 @@
+2026-11-11  Stuart Caie <kyzer@cabextract.org.uk>
+
+	* cabd_read_string(): seek to the byte after a string if it's
+        null-terminated but empty (when it's not allowed to be), so that
+        salvage mode can continue reading if that was the only problem.
+
 2026-10-25  Stuart Caie <kyzer@cabextract.org.uk>
 
 	* read_off64(): reject any CHM files with negative off64 values.
