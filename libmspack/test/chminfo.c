@@ -47,9 +47,9 @@ char *guid(unsigned char *data) {
   snprintf(result, sizeof(result),
            "{%08X-%04X-%04X-%04X-%02X%02X%02X%02X%02X%02X%02X%02X}",
            EndGetI32(&data[0]),
-           data[4] | (data[5] << 8),
-           data[6] | (data[7] << 8),
-           data[8] | (data[9] << 8),
+           EndGetI16(&data[4]),
+           EndGetI16(&data[6]),
+           EndGetI16(&data[8]),
            data[10], data[11], data[12], data[13],
            data[14], data[15], data[16], data[17]);
   return result;
@@ -106,7 +106,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
           (chunk[2] == 'G') && (chunk[3] == 'L'))
       {
         k = chm->chunk_size - 2;
-        num_entries = chunk[k] | (chunk[k+1] << 8);
+        num_entries = EndGetI16(&chunk[k]);
         quickref_size = EndGetI32(&chunk[4]);
         if (quickref_size > (chm->chunk_size - 20)) {
             printf("    QR size of %d too large (max is %d)\n",
@@ -123,7 +123,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
           k -= 2;
           if (k < (chm->chunk_size - quickref_size)) break;
           printf("    QR: entry %4u = offset %u\n",
-                 j, (chunk[k] | (chunk[k+1] << 8)) + 20);
+                 j, EndGetI16(&chunk[k]) + 20);
           j += (1 << chm->density) + 1;
         }
 
@@ -151,7 +151,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
                 (chunk[2] == 'G') && (chunk[3] == 'I'))
       {
         k = chm->chunk_size - 2;
-        num_entries = chunk[k] | (chunk[k+1] << 8);
+        num_entries = EndGetI16(&chunk[k]);
         quickref_size = EndGetI32(&chunk[4]);
         printf("    PMGI entries=%u free=%u\n", num_entries, quickref_size);
 
@@ -161,7 +161,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
           k -= 2;
           if (k < (chm->chunk_size - quickref_size)) break;
           printf("    QR: entry %4u = offset %u\n",
-                 j, (chunk[k] | (chunk[k+1] << 8)) + 8);
+                 j, EndGetI16(&chunk[k]) + 8);
           j += (1 << chm->density) + 1;
         }
 
