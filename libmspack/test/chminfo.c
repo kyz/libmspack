@@ -20,6 +20,7 @@ unsigned char *load_sys_data(struct mschm_decompressor *chmd,
   struct mschmd_file *file;
   unsigned char *data;
   FILE *fh;
+  size_t alloc_len = 36; /* minimum allocation */
 
   for (file = chm->sysfiles; file; file = file->next) {
     if (strcmp(file->filename, filename) == 0) break;
@@ -27,7 +28,8 @@ unsigned char *load_sys_data(struct mschm_decompressor *chmd,
   if (!file || file->section->id != 0) return NULL;
   if (chmd->extract(chmd, file, FILENAME)) return NULL;
   if (length_ptr) *length_ptr = file->length;
-  if (!(data = (unsigned char *) malloc((size_t) file->length))) return NULL;
+  if ((size_t) file->length > alloc_len) alloc_len = (size_t) file->length;
+  if (!(data = (unsigned char *) calloc(alloc_len, 1))) return NULL;
   if ((fh = fopen(FILENAME, "rb"))) {
     fread(data, (size_t) file->length, 1, fh);
     fclose(fh);
@@ -157,6 +159,7 @@ void print_dir(struct mschmd_header *chm, char *filename) {
         j = (1 << chm->density) + 1;
         while (j < num_entries) {
           k -= 2;
+          if (k < (chm->chunk_size - quickref_size)) break;
           printf("    QR: entry %4u = offset %u\n",
                  j, (chunk[k] | (chunk[k+1] << 8)) + 8);
           j += (1 << chm->density) + 1;
@@ -258,24 +261,24 @@ int main(int argc, char *argv[]) {
           pos = ((unsigned int) EndGetI32(&data[12]));
           switch (EndGetI32(&data[8])) {
           case 4:
-            for (i = 0; i < numf && pos < len; i++, pos += 4) {
+            for (i = 0; i < numf && (pos+4) <= len; i++, pos += 4) {
               unsigned int rtdata = EndGetI32(&data[pos]);
               printf("    %-10u -> %-10u [ %" LD " %u ]\n",
                      i * EndGetI32(&data[32]),
                      rtdata,
                      contents + rtdata,
-                     (i == (numf-1))
+                     (i == (numf-1) || pos+8 > len)
                      ? (EndGetI32(&data[24]) - rtdata)
                      : (EndGetI32(&data[pos + 4]) - rtdata)
                      );
             }
             break;
           case 8:
-            for (i = 0; i < numf && pos < len; i++, pos += 8) {
+            for (i = 0; i < numf && (pos+8) <= len; i++, pos += 8) {
               unsigned long long int rtdata = EndGetI64(&data[pos]);
               printf("    %-10llu -> %-10llu [ %llu %llu ]\n",
                      i * EndGetI64(&data[32]), rtdata, contents + rtdata,
-                     (i == (numf-1))
+                     (i == (numf-1) || pos+16 > len)
                      ? (EndGetI64(&data[24]) - rtdata)
                      : (EndGetI64(&data[pos + 8]) - rtdata)
                      );

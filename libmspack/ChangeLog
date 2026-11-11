@@ -1,5 +1,11 @@
 2026-11-11  Stuart Caie <kyzer@cabextract.org.uk>
 
+	* test/chminfo.c: add various guards to stop out-of-bounds reads
+	when reading CHM files with unusual structure sizes.
+	Thanks to quchenxuan23 for the report.
+
+2026-11-11  Stuart Caie <kyzer@cabextract.org.uk>
+
 	* cabd_read_files(): Don't set merge_next/merge_prev if the file
 	is skipped, which happens if salvage mode is enabled and the file's
 	filename is blank or overlong. Otherwise, cabd_can_merge_folders()
