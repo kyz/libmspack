@@ -38,6 +38,8 @@ static inline int compare(
 static int chmd_extract(
   struct mschm_decompressor *base, struct mschmd_file *file,
   const char *filename);
+static int chmd_extract_memory(struct mschm_decompressor *base,
+                               struct mschmd_file *file, void *memory);
 static int chmd_sys_write(
   struct mspack_file *file, void *buffer, int bytes);
 static int chmd_init_decomp(
@@ -88,6 +90,7 @@ struct mschm_decompressor *
     self->base.open       = &chmd_open;
     self->base.close      = &chmd_close;
     self->base.extract    = &chmd_extract;
+    self->base.extract_to_memory = &chmd_extract_memory;
     self->base.last_error = &chmd_error;
     self->base.fast_open  = &chmd_fast_open;
     self->base.fast_find  = &chmd_fast_find;
@@ -928,6 +931,7 @@ static int chmd_extract(struct mschm_decompressor *base,
     self->d->sys.write = &chmd_sys_write;
     self->d->infh      = NULL;
     self->d->outfh     = NULL;
+    self->d->outmem    = NULL;
   }
 
   /* open input chm file if not open, or the open one is a different chm */
@@ -1012,6 +1016,7 @@ static int chmd_extract(struct mschm_decompressor *base,
 
     /* get to correct offset. */
     self->d->outfh = NULL;
+    self->d->outmem = NULL;
     if ((bytes = file->offset - self->d->offset)) {
       self->error = lzxd_decompress(self->d->state, bytes);
     }
@@ -1042,6 +1047,168 @@ static int chmd_extract(struct mschm_decompressor *base,
   }
 
   sys->close(fh);
+  return self->error;
+}
+
+/***************************************
+ * CHMD_SYS_WRITE_MEMORY
+ ***************************************
+ * chmd_sys_write is the internal writer function which the decompressor
+ * uses. If either writes data to disk (self->d->outfh) with the real
+ * sys->write() function, or does nothing with the data when
+ * self->d->outfh == NULL. advances self->d->offset.
+ */
+static int chmd_sys_write_memory(struct mspack_file *file, void *buffer, int bytes) {
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) file;
+  self->d->offset += bytes;
+  memcpy(self->d->outmem, buffer, bytes);
+  return bytes;
+}
+
+/***************************************
+ * CHMD_EXTRACT
+ ***************************************
+ * extracts a file from a CHM helpfile
+ */
+static int chmd_extract_memory(struct mschm_decompressor *base,
+                               struct mschmd_file *file, void *memory)
+{
+  struct mschm_decompressor_p *self = (struct mschm_decompressor_p *) base;
+  struct mspack_system *sys;
+  struct mschmd_header *chm;
+  int (*old_write)(struct mspack_file *, void *buffer, int);
+  off_t bytes;
+
+  if (!self) return MSPACK_ERR_ARGS;
+  if (!file || !file->section) return self->error = MSPACK_ERR_ARGS;
+  sys = self->system;
+  chm = file->section->chm;
+
+  /* create decompression state if it doesn't exist */
+  if (!self->d) {
+    self->d = (struct mschmd_decompress_state *) sys->alloc(sys, sizeof(struct mschmd_decompress_state));
+    if (!self->d) return self->error = MSPACK_ERR_NOMEMORY;
+    self->d->chm       = chm;
+    self->d->offset    = 0;
+    self->d->state     = NULL;
+    self->d->sys       = *sys;
+    self->d->sys.write = &chmd_sys_write_memory;
+    self->d->infh      = NULL;
+    self->d->outfh     = NULL;
+    self->d->outmem    = memory;
+    old_write		   = NULL;
+  } else {
+     self->d->outmem = memory;
+	 old_write = self->d->sys.write;
+  }
+  
+  /* open input chm file if not open, or the open one is a different chm */
+  if (!self->d->infh || (self->d->chm != chm)) {
+    if (self->d->infh)  sys->close(self->d->infh);
+    if (self->d->state) lzxd_free(self->d->state);
+    self->d->chm    = chm;
+    self->d->offset = 0;
+    self->d->state  = NULL;
+    self->d->infh   = sys->open(sys, chm->filename, MSPACK_SYS_OPEN_READ);
+    if (!self->d->infh) {
+		self->d->outmem = NULL;
+		if (old_write) self->d->sys.write = old_write;
+        return self->error = MSPACK_ERR_OPEN;
+    }
+  }
+
+  /* if file is empty, simply creating it is enough */
+  if (!file->length) {
+	self->d->outmem = NULL;
+	if (old_write) self->d->sys.write = old_write;
+    return self->error = MSPACK_ERR_OK;
+  }
+  
+  self->error = MSPACK_ERR_OK;
+
+  switch (file->section->id) {
+  case 0: /* Uncompressed section file */
+    /* simple seek + copy */
+    if (sys->seek(self->d->infh, chm->sec0.offset + file->offset,
+                  MSPACK_SYS_SEEK_START))
+    {
+      self->error = MSPACK_ERR_SEEK;
+    }
+    else {
+      off_t length = file->length;
+      off_t maxlen = chm->length - sys->tell(self->d->infh);
+      
+      if (length > maxlen) {
+        sys->message(NULL, "WARNING; file is %" LD " bytes longer than CHM file",
+                     length - maxlen);
+      }
+      
+      if (sys->read(self->d->infh, memory, length) != length) {
+          self->error = MSPACK_ERR_READ;
+          break;
+      }
+    }
+    break;
+
+  case 1: /* MSCompressed section file */
+    /* (re)initialise compression state if not yet initialised,
+     * or we have advanced too far and have to backtrack
+     */
+    if (!self->d->state || (file->offset < self->d->offset)) {
+      if (self->d->state) {
+        lzxd_free(self->d->state);
+        self->d->state = NULL;
+      }
+      if (chmd_init_decomp(self, file)) break;
+    }
+
+    /* check file offset is not impossible */
+    if (file->offset > self->d->length) {
+        self->error = MSPACK_ERR_DECRUNCH;
+        break;
+    }
+
+    /* seek to input data */
+    if (sys->seek(self->d->infh, self->d->inoffset, MSPACK_SYS_SEEK_START)) {
+      self->error = MSPACK_ERR_SEEK;
+      break;
+    }
+
+    /* get to correct offset. */
+    self->d->outfh = NULL;
+    if ((bytes = file->offset - self->d->offset)) {
+      self->error = lzxd_decompress(self->d->state, bytes);
+    }
+
+    /* if getting to the correct offset was error free, unpack file */
+    if (!self->error) {
+      off_t length = file->length;
+      off_t maxlen = self->d->length - file->offset;
+      
+      if (length > maxlen) {
+        sys->message(NULL, "WARNING; file is %" LD " bytes longer than "
+                     "compressed section", length - maxlen);
+        length = maxlen + 1; /* should decompress but still error out */
+      }
+      
+      self->d->outmem = memory;
+      self->error = lzxd_decompress(self->d->state, length);
+    }
+
+    /* save offset in input source stream, in case there is a section 0
+     * file between now and the next section 1 file extracted */
+    self->d->inoffset = sys->tell(self->d->infh);
+
+    /* if an LZX error occured, the LZX decompressor is now useless */
+    if (self->error) {
+      if (self->d->state) lzxd_free(self->d->state);
+      self->d->state = NULL;
+    }
+    break;
+  }
+
+  self->d->outmem = NULL;
+  if (old_write) self->d->sys.write = old_write;
   return self->error;
 }
 

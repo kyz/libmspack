@@ -1639,6 +1639,27 @@ struct mschm_decompressor {
   int (*extract)(struct mschm_decompressor *self,
                  struct mschmd_file *file,
                  const char *filename);
+                 
+  /**
+   * Extracts a file from a CHM helpfile to a memory buffer.
+   *
+   * This extracts a file from a CHM helpfile and writes it to the given
+   * memory buffer, the buffer must be allocated by the caller and sized
+   * correctly;
+   *
+   * This method works both with files found in the mschmd_header::files
+   * and mschmd_header::sysfiles list and mschmd_file structures generated
+   * on the fly by fast_find().
+   *
+   * @param  self     a self-referential pointer to the mschm_decompressor
+   *                  instance being called
+   * @param  file     the file to be decompressed
+   * @param  memory   buffer in which contents should be written
+   * @return an error code, or MSPACK_ERR_OK if successful
+   */
+  int (*extract_to_memory)(struct mschm_decompressor *self,
+                           struct mschmd_file *file,
+                           void *memory);
 
   /**
    * Returns the error code set by the most recently called method.

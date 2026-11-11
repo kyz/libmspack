@@ -111,6 +111,7 @@ struct mschmd_decompress_state {
   struct mspack_system sys;          /* special I/O code for decompressor    */
   struct mspack_file *infh;          /* input file handle                    */
   struct mspack_file *outfh;         /* output file handle                   */
+  void *outmem;         			 /* output memory buffer                 */
 };
 
 struct mschm_decompressor_p {
