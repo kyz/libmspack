@@ -1,5 +1,5 @@
 NAME=cabextract
-VERSION=1.11
+VERSION=1.12
 RELEASE=1
 SUMMARY="Extract Microsoft cabinet (.CAB) files"
 DESCRIPTION="Extract Microsoft cabinet (.CAB) files"
