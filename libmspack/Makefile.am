@@ -21,8 +21,8 @@ pkgconfig_DATA =        libmspack.pc
 noinst_LTLIBRARIES =    libmscabd.la libmschmd.la
 noinst_PROGRAMS =       examples/cabd_memory examples/cabrip examples/chmextract \
                         examples/msexpand examples/multifh examples/oabextract \
-                        test/cabd_md5 test/chmd_find test/chmd_md5 test/chmd_order \
-                        test/chminfo
+                        examples/hlpextract test/cabd_md5 test/chmd_find \
+                        test/chmd_md5 test/chmd_order test/chminfo
 check_PROGRAMS =        test/cabd_test test/chmd_test test/kwajd_test
 
 libmspack_la_SOURCES =  mspack/mspack.h \
@@ -65,6 +65,8 @@ examples_cabrip_SOURCES =       examples/cabrip.c libmspack.la
 examples_cabrip_LDADD =         libmspack.la
 examples_chmextract_SOURCES =   examples/chmextract.c test/error.h libmspack.la
 examples_chmextract_LDADD =     libmspack.la
+examples_hlpextract_SOURCES =   examples/hlpextract.c test/error.h libmspack.la
+examples_hlpextract_LDADD =     libmspack.la
 examples_msexpand_SOURCES =     examples/msexpand.c test/error.h libmspack.la
 examples_msexpand_LDADD =       libmspack.la
 examples_multifh_SOURCES =      examples/multifh.c libmscabd.la
