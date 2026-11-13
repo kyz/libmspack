@@ -17,10 +17,10 @@ TESTS =                 test/bugs.test test/case-ascii.test test/case-utf8.test 
 EXTRA_DIST =            cabextract.spec \
                         doc/cabextract.1 doc/ja/cabextract.1 \
                         doc/magic doc/wince_cab_format.html \
-                        fnmatch_.h getopt.h src/cabsplit \
+                        fnmatch.c fnmatch_.h getopt.h src/cabsplit \
                         src/wince_info src/wince_rename \
                         mspack/ChangeLog $(bundled_mspack) \
-                        $(TESTS) test/bugs test/cabs
+                        $(TESTS) test/bugs test/cabs test/large-files.test
 
 bin_PROGRAMS =          cabextract
 check_PROGRAMS =        cabextract

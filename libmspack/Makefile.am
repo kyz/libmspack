@@ -36,7 +36,7 @@ libmspack_la_SOURCES =  mspack/mspack.h \
                         mspack/oab.h mspack/oabc.c mspack/oabd.c \
                         mspack/lzx.h mspack/lzxc.c mspack/lzxd.c \
                         mspack/mszip.h mspack/mszipc.c mspack/mszipd.c \
-                        mspack/qtm.h mspack/qtmd.c \
+                        mspack/qtm.h mspack/qtmc.c mspack/qtmd.c \
                         mspack/macros.h mspack/readbits.h mspack/readhuff.h \
                         mspack/lzss.h mspack/lzssd.c \
                         mspack/des.h mspack/sha.h \
