@@ -1738,14 +1738,34 @@ struct mslit_decompressor {
 
 /* --- support for .HLP (MS Help) file format ------------------------------ */
 
+/* TODO: DOCS */
+struct mshlpd_header {
+  unsigned int version;
+  const char *filename;
+  off_t length;
+  struct mshlpd_file *files;
+};
+
+struct mshlpd_file {
+  struct mshlpd_header *header;
+  struct mshlpd_file *next;
+  const char *filename;
+  off_t offset;
+  off_t length;
+};
+
 /** TODO */
 struct mshlp_compressor {
   int dummy; 
 };
 
-/** TODO */
 struct mshlp_decompressor {
-  int dummy; 
+  struct mshlpd_header *(*open)(struct mshlp_decompressor *self, const char *filename);
+  void (*close)(struct mshlp_decompressor *self, struct mshlpd_header *hlp);
+  int (*extract)(struct mshlp_decompressor *self, struct mshlpd_file *file, const char *filename);
+  int (*last_error)(struct mshlp_decompressor *self);
+  struct mshlpd_header *(*fast_open)(struct mshlp_decompressor *self, const char *filename);
+  int (*fast_find)(struct mshlp_decompressor *self, struct mshlpd_header *hlp, const char *filename, struct mshlpd_file *f_ptr, int f_size);
 };
 
 

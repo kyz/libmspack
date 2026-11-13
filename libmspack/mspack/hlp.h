@@ -24,10 +24,37 @@ struct mshlp_compressor_p {
 
 /* HLP decompression definitions */
 
+struct mshlpd_btreeheader {
+	unsigned short flags;
+	unsigned short page_size;
+	unsigned char structure[16];
+	short page_splits;
+	short root_page;
+	short total_pages;
+	short n_levels;
+	int total_entries;
+};
+
+struct mshlpd_fileheader {
+	off_t reserved, used;
+};
+
+struct mshlpd_header_p {
+	struct mshlpd_header base;
+	
+	off_t directory_start;
+	off_t free_list_start;
+	struct mshlpd_fileheader directory_fh;
+	struct mshlpd_btreeheader directory_bh;
+	off_t first_page_offset;
+	void *page_buffer;
+	off_t page_buffer_sz;
+};
+
 struct mshlp_decompressor_p {
   struct mshlp_decompressor base;
   struct mspack_system *system;
-  /* todo */
+  int error;
 };
 
 #endif
