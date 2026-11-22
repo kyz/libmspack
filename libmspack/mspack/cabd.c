@@ -613,8 +613,8 @@ static int cabd_read_files(struct mspack_system *sys,
     file->date_m = (x >> 5) & 0xF;
     file->date_y = (x >> 9) + 1980;
 
-    /* get filename */
-    file->filename = cabd_read_string(sys, fh, 0, &err);
+    /* get filename (some CABs use an empty name) */
+    file->filename = cabd_read_string(sys, fh, 1, &err);
 
     /* if folder index or filename are bad, either skip it or fail */
     if (err || !file->folder) {
